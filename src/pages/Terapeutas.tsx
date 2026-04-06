@@ -1141,7 +1141,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                               date.setDate(start.getDate() + i);
                               return (
                                 <div key={d} className="p-4 text-center border-r border-slate-100 last:border-r-0">
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d.substring(0, 3)} {date.getDate()}</span>
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d} {date.getDate()}</span>
                                 </div>
                               );
                             })

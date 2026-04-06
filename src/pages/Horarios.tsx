@@ -283,10 +283,18 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
   const handleNavigateCalendar = (direction: 'prev' | 'next') => {
     const newDate = new Date(calendarDate);
+    const prevMonth = newDate.getMonth();
+    const prevYear = newDate.getFullYear();
+
     if (calendarView === 'day') newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
     else if (calendarView === 'week') newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
     else if (calendarView === 'month') newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
     setCalendarDate(newDate);
+
+    if (newDate.getMonth() !== prevMonth || newDate.getFullYear() !== prevYear) {
+      setFilterMonth(newDate.getMonth() + 1);
+      setFilterYear(newDate.getFullYear());
+    }
   };
 
   const generateTimeSlots = () => {
@@ -411,9 +419,23 @@ export default function Horarios({ currentUser }: HorariosProps) {
                   <ChevronLeft size={18} />
                 </button>
                 <div className="px-4 text-xs font-bold text-slate-700 uppercase min-w-[150px] text-center">
-                  {calendarView === 'month' ? calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
-                   calendarView === 'week' ? `Semana ${Math.ceil(calendarDate.getDate() / 7)} - ${calendarDate.toLocaleDateString('es-ES', { month: 'short' })}` :
-                   calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                  {(() => {
+                    if (calendarView === 'day') return calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+                    if (calendarView === 'week') {
+                      const d = new Date(calendarDate);
+                      const day = d.getDay();
+                      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                      const start = new Date(d.setDate(diff));
+                      const end = new Date(start);
+                      end.setDate(start.getDate() + 6);
+                      if (start.getMonth() === end.getMonth()) {
+                        return `del ${start.getDate()} al ${end.getDate()} de ${start.toLocaleDateString('es-ES', { month: 'long' })}`;
+                      } else {
+                        return `del ${start.getDate()} de ${start.toLocaleDateString('es-ES', { month: 'short' })} al ${end.getDate()} de ${end.toLocaleDateString('es-ES', { month: 'short' })}`;
+                      }
+                    }
+                    return calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                  })()}
                 </div>
                 <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all">
                   <ChevronRight size={18} />
@@ -441,9 +463,25 @@ export default function Horarios({ currentUser }: HorariosProps) {
               <div className="min-w-[800px]">
                 <div className={cn("grid border-b border-slate-100 bg-slate-50/50", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
                   <div className="p-4 border-r border-slate-100"></div>
-                  {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(d => (
-                    <div key={d} className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">{d}</div>
-                  ))}
+                  {calendarView === 'week' ? (
+                    ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((d, i) => {
+                      const start = new Date(calendarDate);
+                      const day = start.getDay();
+                      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
+                      start.setDate(diff);
+                      const date = new Date(start);
+                      date.setDate(start.getDate() + i);
+                      return (
+                        <div key={d} className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">
+                          {d} {date.getDate()}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-4 text-center font-bold text-[10px] text-primary uppercase tracking-widest">
+                      {['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]} {calendarDate.getDate()}
+                    </div>
+                  )}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                   {generateTimeSlots().map(time => (
@@ -451,11 +489,34 @@ export default function Horarios({ currentUser }: HorariosProps) {
                       <div className="p-3 text-right pr-4 border-r border-slate-100 bg-slate-50/30">
                         <span className="text-[10px] font-bold text-slate-400">{time}</span>
                       </div>
-                      {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(day => {
-                        const slotBlocks = filteredHorariosData.flatMap(h => h.bloques.filter(b => {
+                      {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map((day, dayIndex) => {
+                        const actualDate = new Date(calendarDate);
+                        if (calendarView === 'week') {
+                          const d = actualDate.getDay();
+                          const diff = actualDate.getDate() - d + (d === 0 ? -6 : 1);
+                          actualDate.setDate(diff + dayIndex);
+                        }
+                        const actualMonth = actualDate.getMonth() + 1;
+                        const actualYear = actualDate.getFullYear();
+
+                        const dayHorarios = horarios.filter(h => {
+                          const matchTerapeuta = !filterTerapeuta || h.idTerapeuta === filterTerapeuta;
+                          const matchMes = h.mes === actualMonth;
+                          const matchAño = h.año === actualYear;
+                          
+                          let matchEspecialidad = true;
+                          if (filterEspecialidad) {
+                            const terapeuta = terapeutas.find(t => t.id === h.idTerapeuta);
+                            matchEspecialidad = terapeuta?.especialidades?.includes(filterEspecialidad) || false;
+                          }
+                          
+                          return matchTerapeuta && matchMes && matchAño && matchEspecialidad;
+                        });
+
+                        const slotBlocks = dayHorarios.flatMap(h => h.bloques.filter(b => {
                           if (!b.diasSemana.includes(day)) return false;
                           return time >= b.horaInicio && time < b.horaFin;
-                        }));
+                        }).map(b => ({ ...b, nombreTerapeuta: h.nombreTerapeuta })));
 
                         return (
                           <div key={day} className="p-1 border-r border-slate-50 last:border-r-0 min-h-[45px] relative group">
@@ -469,7 +530,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                                 }}
                               >
                                 <span className="text-[7px] font-black text-white uppercase leading-none truncate">
-                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta.split(' ')[0]}
+                                  {b.nombreTerapeuta.split(' ')[0]}
                                 </span>
                               </div>
                             ))}
