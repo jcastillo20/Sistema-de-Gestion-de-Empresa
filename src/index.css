@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary-color, #4f46e5);
+  --color-secondary: #64748b;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+  
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+}
+
+@layer base {
+  :root {
+    --primary-color: #4f46e5;
+  }
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+  }
+}
+
+.glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+.btn-primary {
+  @apply bg-primary text-white px-6 py-2.5 rounded-xl font-semibold hover:opacity-90 transition-all shadow-md shadow-primary/20;
+}
+
+.input-field {
+  @apply w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-slate-400;
+}
+
+.input-with-icon {
+  @apply pl-11;
+}

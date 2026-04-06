@@ -1,0 +1,316 @@
+import React, { useState, useEffect } from 'react';
+import { DataTable } from '../components/common/DataTable';
+import { Modal } from '../components/common/Modal';
+import { AlertModal } from '../components/common/AlertModal';
+import { Paciente, Sede } from '../types';
+import { UserPlus, Mail, Phone, CreditCard, User, Building2, ShieldCheck } from 'lucide-react';
+import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
+import { usePermissions } from '../hooks/usePermissions';
+import { cn } from '@/src/lib/utils';
+import { apiService } from '../services/apiService';
+
+interface PacientesProps {
+  currentUser: any;
+}
+
+export default function Pacientes({ currentUser }: PacientesProps) {
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'error' as 'error' | 'success' });
+  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const permissions = usePermissions(currentUser, 'pacientes');
+
+  if (!permissions.acceso) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+          <ShieldCheck size={32} />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 mb-2">Acceso Denegado</h3>
+        <p className="text-slate-500 max-w-md">
+          No tienes los permisos necesarios para acceder al módulo de pacientes. 
+          Por favor, contacta con el administrador si crees que esto es un error.
+        </p>
+      </div>
+    );
+  }
+
+  useEffect(() => {
+    loadData();
+  }, [currentUser.sede]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Use permission verTodo to decide if we filter by sede
+      const sedeFilter = permissions.verTodo ? undefined : currentUser.sede;
+      const [pacientesData, sedesData] = await Promise.all([
+        apiService.getPacientes(sedeFilter),
+        apiService.getSedes()
+      ]);
+      setPacientes(pacientesData);
+      setSedes(sedesData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const validateForm = (formData: any) => {
+    if (!formData.nombres || !formData.apellidoPaterno || !formData.documentoIdentidad) {
+      return 'Por favor complete los campos obligatorios.';
+    }
+    if (!VALIDATION_RULES.TEXT_ONLY.test(formData.nombres) || !VALIDATION_RULES.TEXT_ONLY.test(formData.apellidoPaterno)) {
+      return 'Los nombres y apellidos solo deben contener letras.';
+    }
+    if (formData.correo && !VALIDATION_RULES.EMAIL.test(formData.correo)) {
+      return 'El formato del correo electrónico no es válido.';
+    }
+    if (formData.documentoIdentidad && !VALIDATION_RULES.DNI.test(formData.documentoIdentidad)) {
+      return 'El DNI debe tener 8 dígitos.';
+    }
+    return null;
+  };
+
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    // Permission check
+    if (selectedPaciente && !permissions.puedeEditar) {
+      setAlertConfig({ title: 'Acceso Denegado', message: 'No tienes permisos para editar pacientes.', type: 'error' });
+      setIsAlertOpen(true);
+      return;
+    }
+    if (!selectedPaciente && !permissions.puedeCrear) {
+      setAlertConfig({ title: 'Acceso Denegado', message: 'No tienes permisos para crear pacientes.', type: 'error' });
+      setIsAlertOpen(true);
+      return;
+    }
+
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries()) as any;
+    
+    const error = validateForm(data);
+    if (error) {
+      setAlertConfig({ title: 'Error de Validación', message: error, type: 'error' });
+      setIsAlertOpen(true);
+      return;
+    }
+
+    try {
+      if (selectedPaciente) {
+        await apiService.updatePaciente(selectedPaciente.id, data, currentUser.nombreUsuario);
+        setAlertConfig({ title: 'Paciente Actualizado', message: 'Los datos se han guardado correctamente.', type: 'success' });
+      } else {
+        await apiService.createPaciente(data, currentUser.nombreUsuario);
+        setAlertConfig({ title: 'Paciente Registrado', message: 'El nuevo paciente ha sido creado con éxito.', type: 'success' });
+      }
+      
+      setIsModalOpen(false);
+      setIsAlertOpen(true);
+      loadData();
+    } catch (error) {
+      setAlertConfig({ title: 'Error', message: 'No se pudo completar la operación.', type: 'error' });
+      setIsAlertOpen(true);
+    }
+  };
+
+  const handleDelete = async (p: Paciente) => {
+    if (!permissions.puedeEliminar) {
+      setAlertConfig({ title: 'Acceso Denegado', message: 'No tienes permisos para eliminar pacientes.', type: 'error' });
+      setIsAlertOpen(true);
+      return;
+    }
+
+    try {
+      await apiService.deletePaciente(p.id, currentUser.nombreUsuario);
+      setAlertConfig({ title: 'Estado Actualizado', message: 'El estado del paciente ha sido modificado correctamente.', type: 'success' });
+      setIsAlertOpen(true);
+      loadData();
+    } catch (error) {
+      setAlertConfig({ title: 'Error', message: 'No se pudo cambiar el estado del paciente.', type: 'error' });
+      setIsAlertOpen(true);
+    }
+  };
+
+  const columns: any[] = [
+    { 
+      header: 'Paciente', 
+      accessor: (p: Paciente) => (
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+            {p.nombres.charAt(0)}{p.apellidoPaterno.charAt(0)}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900">{p.nombres} {p.apellidoPaterno}</p>
+            <p className="text-xs text-slate-500">{p.tipoDocumento}: {p.documentoIdentidad}</p>
+          </div>
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'apellidoPaterno'
+    },
+    { 
+      header: 'Contacto', 
+      accessor: (p: Paciente) => (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Mail size={14} className="text-slate-400" />
+            {p.correo}
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Phone size={14} className="text-slate-400" />
+            {p.telefono}
+          </div>
+        </div>
+      ),
+      sortable: true,
+      sortKey: 'correo'
+    }
+  ];
+
+  if (permissions.verTodo) {
+    columns.push({ header: 'Sede', accessor: 'sede', sortable: true, sortKey: 'sede' });
+  }
+
+  columns.push({ 
+    header: 'Estado', 
+    accessor: (p: Paciente) => (
+      <span className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        p.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+      )}>
+        {p.estado ? 'Activo' : 'Inactivo'}
+      </span>
+    ),
+    sortable: true,
+    sortKey: 'estado'
+  });
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Gestión de Pacientes</h2>
+          <p className="text-slate-500">Administra la información y expedientes de tus pacientes.</p>
+        </div>
+      </div>
+
+      <DataTable 
+        title="Listado de Pacientes"
+        data={pacientes}
+        columns={columns}
+        searchPlaceholder="Buscar por nombre, apellido o DNI..."
+        searchFields={['nombres', 'apellidoPaterno', 'apellidoMaterno', 'documentoIdentidad']}
+        onAdd={permissions.puedeCrear ? () => {
+          setSelectedPaciente(null);
+          setIsModalOpen(true);
+        } : undefined}
+        onEdit={permissions.puedeEditar ? (p) => {
+          setSelectedPaciente(p);
+          setIsModalOpen(true);
+        } : undefined}
+        onDelete={permissions.puedeEliminar ? handleDelete : undefined}
+      />
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={selectedPaciente ? 'Editar Paciente' : 'Nuevo Paciente'}
+      >
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Nombres *</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.nombres} required />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Apellido Paterno *</label>
+              <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoPaterno} required />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Apellido Materno</label>
+              <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoMaterno} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Tipo de Documento *</label>
+              <select name="tipoDocumento" className="input-field" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
+                <option value="DNI">DNI</option>
+                <option value="CE">CE</option>
+                <option value="PASAPORTE">Pasaporte</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Nro. Documento *</label>
+              <input name="documentoIdentidad" type="text" className="input-field" placeholder="12345678" defaultValue={selectedPaciente?.documentoIdentidad} required />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Sede *</label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                {permissions.verTodo ? (
+                  <select name="sede" className="input-field input-with-icon" defaultValue={selectedPaciente?.sede || currentUser.sede}>
+                    {sedes.map(s => (
+                      <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="input-field input-with-icon bg-slate-50 flex items-center text-slate-600">
+                    {selectedPaciente?.sede || currentUser.sede}
+                    <input type="hidden" name="sede" value={selectedPaciente?.sede || currentUser.sede} />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Teléfono</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.telefono} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedPaciente?.correo} />
+              </div>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Responsable / Familiar</label>
+              <input name="responsable" type="text" className="input-field" placeholder="Nombre del responsable" defaultValue={selectedPaciente?.responsable} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium text-slate-700">Motivo de Consulta</label>
+              <textarea name="motivo" className="input-field min-h-[100px]" placeholder="Breve descripción..." defaultValue={selectedPaciente?.motivo} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl text-slate-600 font-semibold hover:bg-slate-100 transition-all">
+              Cancelar
+            </button>
+            <button type="submit" className="btn-primary">
+              {selectedPaciente ? 'Guardar Cambios' : 'Registrar Paciente'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <AlertModal 
+        isOpen={isAlertOpen}
+        onClose={() => setIsAlertOpen(false)}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        type={alertConfig.type as any}
+      />
+    </div>
+  );
+}

@@ -1,5 +1,5 @@
 {
-  "name": "CliniGest Pro",
-  "description": "Sistema de Gestión Clínica Integral con RBAC, gestión de pacientes, terapeutas y horarios.",
+  "name": "CliniGest - Sistema de Gestión Clínica",
+  "description": "Sistema integral de gestión clínica para terapeutas, pacientes, citas y finanzas.",
   "requestFramePermissions": []
 }
