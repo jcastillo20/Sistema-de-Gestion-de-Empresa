@@ -100,14 +100,16 @@ export default function Login({ onLogin }: LoginProps) {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">Usuario</label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                    <User size={18} />
+                  </div>
                   <input
                     type="text"
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="input-field pl-11"
+                    className="input-field input-with-icon"
                     placeholder="Ingrese su usuario"
                   />
                 </div>
@@ -115,14 +117,16 @@ export default function Login({ onLogin }: LoginProps) {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña</label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                    <Lock size={18} />
+                  </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input-field pl-11 pr-11"
+                    className="input-field input-with-icon pr-11"
                     placeholder="••••••••"
                   />
                   <button

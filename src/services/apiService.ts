@@ -40,28 +40,41 @@ class ApiService {
   }
 
   private loadFromStorage() {
-    const savedConfig = localStorage.getItem('clini_config_v2');
-    const savedSedes = localStorage.getItem('clini_sedes');
-    const savedPermisos = localStorage.getItem('clini_permisos');
-    const savedUsuarios = localStorage.getItem('clini_usuarios');
-    const savedTerapeutas = localStorage.getItem('clini_terapeutas');
-    const savedPacientes = localStorage.getItem('clini_pacientes');
-    const savedAuditoria = localStorage.getItem('clini_auditoria');
-    const savedEspecialidades = localStorage.getItem('clini_especialidades');
-    const savedHorarios = localStorage.getItem('clini_horarios');
+    try {
+      const savedConfig = localStorage.getItem('clini_config_v2');
+      const savedSedes = localStorage.getItem('clini_sedes');
+      const savedPermisos = localStorage.getItem('clini_permisos');
+      const savedUsuarios = localStorage.getItem('clini_usuarios');
+      const savedTerapeutas = localStorage.getItem('clini_terapeutas');
+      const savedPacientes = localStorage.getItem('clini_pacientes');
+      const savedAuditoria = localStorage.getItem('clini_auditoria');
+      const savedEspecialidades = localStorage.getItem('clini_especialidades');
+      const savedHorarios = localStorage.getItem('clini_horarios');
 
-    this.config = savedConfig ? JSON.parse(savedConfig) : [...MOCK_CONFIG_DINAMICA];
-    this.sedes = savedSedes ? JSON.parse(savedSedes) : [...MOCK_SEDES];
-    this.permisos = savedPermisos ? JSON.parse(savedPermisos) : [...MOCK_PERMISOS];
-    this.usuarios = savedUsuarios ? JSON.parse(savedUsuarios) : [...MOCK_USUARIOS];
-    this.terapeutas = savedTerapeutas ? JSON.parse(savedTerapeutas) : [...MOCK_TERAPEUTAS];
-    this.pacientes = savedPacientes ? JSON.parse(savedPacientes) : [...MOCK_PACIENTES];
-    this.auditoria = savedAuditoria ? JSON.parse(savedAuditoria) : [...MOCK_AUDITORIA];
-    this.especialidades = savedEspecialidades ? JSON.parse(savedEspecialidades) : [...MOCK_ESPECIALIDADES];
-    this.horarios = savedHorarios ? JSON.parse(savedHorarios) : [...MOCK_HORARIOS];
+      this.config = savedConfig ? JSON.parse(savedConfig) : [...MOCK_CONFIG_DINAMICA];
+      this.sedes = savedSedes ? JSON.parse(savedSedes) : [...MOCK_SEDES];
+      this.permisos = savedPermisos ? JSON.parse(savedPermisos) : [...MOCK_PERMISOS];
+      this.usuarios = savedUsuarios ? JSON.parse(savedUsuarios) : [...MOCK_USUARIOS];
+      this.terapeutas = savedTerapeutas ? JSON.parse(savedTerapeutas) : [...MOCK_TERAPEUTAS];
+      this.pacientes = savedPacientes ? JSON.parse(savedPacientes) : [...MOCK_PACIENTES];
+      this.auditoria = savedAuditoria ? JSON.parse(savedAuditoria) : [...MOCK_AUDITORIA];
+      this.especialidades = savedEspecialidades ? JSON.parse(savedEspecialidades) : [...MOCK_ESPECIALIDADES];
+      this.horarios = savedHorarios ? JSON.parse(savedHorarios) : [...MOCK_HORARIOS];
+    } catch (e) {
+      console.error("Error al cargar localStorage, usando datos mock:", e);
+      this.config = [...MOCK_CONFIG_DINAMICA];
+      this.sedes = [...MOCK_SEDES];
+      this.permisos = [...MOCK_PERMISOS];
+      this.usuarios = [...MOCK_USUARIOS];
+      this.terapeutas = [...MOCK_TERAPEUTAS];
+      this.pacientes = [...MOCK_PACIENTES];
+      this.auditoria = [...MOCK_AUDITORIA];
+      this.especialidades = [...MOCK_ESPECIALIDADES];
+      this.horarios = [...MOCK_HORARIOS];
+    }
 
     // Migration: Ensure terapeutas have especialidades array
-    this.terapeutas = this.terapeutas.map(t => {
+    this.terapeutas = (this.terapeutas || []).map(t => {
       const anyT = t as any;
       if (anyT.especialidad && !t.especialidades) {
         return {

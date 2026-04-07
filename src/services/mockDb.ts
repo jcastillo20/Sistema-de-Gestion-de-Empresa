@@ -171,27 +171,35 @@ const generateMockPacientes = (): Paciente[] => {
 };
 
 export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
-  // CATEGORIA: BRANDING
-  { id: '1', clave: 'CLINICA_NOMBRE', valor: 'CLINIGEST PRO', etiqueta: 'Nombre de la Clínica', categoria: 'BRANDING', tipoControl: 'TEXT', orden: 1 },
+  // TAB 1: BRANDING
+  { id: '1', clave: 'CLINICA_NOMBRE', valor: 'CLINIGEST PRO', etiqueta: 'Nombre Comercial de Empresa', categoria: 'BRANDING', tipoControl: 'TEXT', orden: 1 },
   { id: '2', clave: 'COLOR_PRIMARIO', valor: '#4f46e5', etiqueta: 'Color Primario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 2 },
-  { id: '3', clave: 'CLINICA_LOGO', valor: '', etiqueta: 'Logo de la Clínica', categoria: 'BRANDING', tipoControl: 'IMAGE', orden: 3 },
-  
-  // CATEGORIA: MODULOS (Enlaces a componentes complejos)
-  { id: '4', clave: 'MODULO_SEDES', valor: 'SEDES', etiqueta: 'Gestión de Sedes', categoria: 'SEDES', tipoControl: 'MODULE_LINK', orden: 1 },
-  { id: '5', clave: 'MODULO_ESPECIALIDADES', valor: 'ESPECIALIDADES', etiqueta: 'Catálogo de Especialidades', categoria: 'ESPECIALIDADES', tipoControl: 'MODULE_LINK', orden: 1 },
-  { id: '6', clave: 'MODULO_PERMISOS', valor: 'PERMISOS', etiqueta: 'Matriz de Permisos y Roles', categoria: 'SEGURIDAD', tipoControl: 'MODULE_LINK', orden: 1 },
-  { id: '7', clave: 'MODULO_AUDITORIA', valor: 'AUDITORIA', etiqueta: 'Registro de Auditoría', categoria: 'SEGURIDAD', tipoControl: 'MODULE_LINK', orden: 2 },
-  
-  // CATEGORIA: NOTIFICACIONES
-  { id: '8', clave: 'NOTIF_EMAIL', valor: true, etiqueta: 'Notificaciones por Email', categoria: 'NOTIFICACIONES', tipoControl: 'CHECKBOX', orden: 1 },
-  { id: '9', clave: 'NOTIF_WHATSAPP', valor: false, etiqueta: 'Notificaciones por WhatsApp', categoria: 'NOTIFICACIONES', tipoControl: 'CHECKBOX', orden: 2 },
-  
-  // CATEGORIA: AGENDA
-  { id: '10', clave: 'TIPO_DURACION_SESION', valor: 'POR_ESPECIALIDAD', etiqueta: 'Tipo de Duración de Sesión', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['GLOBAL', 'POR_ESPECIALIDAD'], orden: 1 },
-  { id: '11', clave: 'DURACION_SESION_GLOBAL', valor: 45, etiqueta: 'Duración Global (min)', categoria: 'AGENDA', tipoControl: 'NUMBER', orden: 2, descripcion: 'Solo aplica si el tipo es GLOBAL' },
-  { id: '12', clave: 'COLOR_DISPONIBLE', valor: '#10b981', etiqueta: 'Color Disponible', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 3 },
-  { id: '13', clave: 'COLOR_OCUPADO', valor: '#ef4444', etiqueta: 'Color Ocupado', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 4 },
-  { id: '14', clave: 'COLOR_REFRIGERIO', valor: '#f59e0b', etiqueta: 'Color Refrigerio', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 5 },
+  { id: '2b', clave: 'COLOR_SECUNDARIO', valor: '#10b981', etiqueta: 'Color Secundario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 3 },
+  { id: '2c', clave: 'COLOR_ACCENT', valor: '#f59e0b', etiqueta: 'Color de Accent (Destacados)', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 4 },
+  { id: '3', clave: 'CLINICA_LOGO', valor: '', etiqueta: 'Logo de la Clínica (Base64)', categoria: 'BRANDING', tipoControl: 'IMAGE', orden: 5 },
+
+  // TAB 3: SEGURIDAD
+  { id: 's1', clave: 'PWD_MIN_LENGTH', valor: 8, etiqueta: 'Longitud Mínima de Password', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 1 },
+  { id: 's2', clave: 'PWD_EXPIRATION_DAYS', valor: 90, etiqueta: 'Días para Expiración de Clave', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 2 },
+
+  // TAB 4: AGENDA
+  { id: 'a1', clave: 'ESTADO_PENDIENTE_COLOR', valor: '#f59e0b', etiqueta: 'Color: Cita Pendiente', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 1 },
+  { id: 'a2', clave: 'ESTADO_CONFIRMADA_COLOR', valor: '#10b981', etiqueta: 'Color: Cita Confirmada', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 2 },
+  { id: 'a3', clave: 'ESTADO_CANCELADA_COLOR', valor: '#ef4444', etiqueta: 'Color: Cita Cancelada', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 3 },
+  { id: 'a4', clave: 'DURACION_SESION_GLOBAL', valor: 45, etiqueta: 'Duración Global Defecto (min)', categoria: 'AGENDA', tipoControl: 'NUMBER', orden: 4 },
+  { id: 'a5', clave: 'INTERVALO_CALENDARIO', valor: '30', etiqueta: 'Intervalo Visual de Agenda', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['15', '30', '60'], orden: 5 },
+
+  // TAB 5: DICCIONARIOS
+  { id: 'd1', clave: 'LISTA_TIPO_DOCUMENTO', valor: ['DNI', 'CE', 'PASAPORTE'], etiqueta: 'Tipos de Documento', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 1 },
+  { id: 'd2', clave: 'LISTA_MEDIO_PAGO', valor: ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'YAPE/PLIN'], etiqueta: 'Medios de Pago', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 2 },
+  { id: 'd3', clave: 'MONEDAS_OPERATIVAS', valor: 'PEN', etiqueta: 'Moneda Principal', categoria: 'DICCIONARIOS', tipoControl: 'SELECT', opciones: ['PEN', 'USD', 'AMBAS'], orden: 3 },
+  { id: 'd4', clave: 'LISTA_CATEGORIA_PAQUETE', valor: ['ESTANDAR', 'PREMIUM', 'PROMOCIONAL'], etiqueta: 'Categorías de Paquete', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 4 },
+  { id: 'd5', clave: 'MODALIDAD_PRESENCIAL', valor: true, etiqueta: 'Modalidad Presencial', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 5 },
+  { id: 'd6', clave: 'MODALIDAD_VIRTUAL', valor: true, etiqueta: 'Modalidad Virtual', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 6 },
+
+  // LISTAS TÉCNICAS (Necesarias para el sistema)
+  { id: '15', clave: 'LISTA_PERFILES', valor: ['ADMINISTRADOR', 'ADMINISTRADOR_SEDE', 'RECEPCIONISTA', 'TERAPEUTA', 'GERENTE'], etiqueta: 'Perfiles de Usuario', categoria: 'SEGURIDAD', tipoControl: 'LIST', orden: 10 },
+  { id: '16', clave: 'LISTA_MODULOS', valor: ['PACIENTES', 'TERAPEUTAS', 'HORARIOS', 'USUARIOS', 'CONFIGURACION', 'AGENDA', 'FINANZAS'], etiqueta: 'Módulos del Sistema', categoria: 'SEGURIDAD', tipoControl: 'LIST', orden: 11 },
 ];
 
 export const MOCK_ESPECIALIDADES: Especialidad[] = [
