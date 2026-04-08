@@ -14,7 +14,7 @@ import {
 const generateMockUsuarios = (): Usuario[] => {
   const users: Usuario[] = [
     {
-      id: '0',
+      id: 'USR001',
       apellidoPaterno: 'Sistema',
       apellidoMaterno: 'Global',
       nombres: 'Super Admin',
@@ -22,16 +22,16 @@ const generateMockUsuarios = (): Usuario[] => {
       contrasena: 'super123',
       correo: 'super@clinigest.com',
       telefono: '999999999',
-      tipoDocumento: 'DNI',
+      tipoDocumento: 'DNI', // En BD: DOC001
       documentoIdentidad: '00000000',
-      perfil: 'SUPER_ADMIN',
-      sede: 'SEDE CENTRAL',
+      perfil: 'SUPERADMIN', // En BD: PRF001
+      sede: 'ALL',          // Acceso Global a todas las sedes
       estado: true,
       fechaCreacion: '2024-01-01',
       usuarioCreacion: 'SYSTEM'
     },
     {
-      id: '1',
+      id: 'USR002',
       apellidoPaterno: 'Castillo',
       apellidoMaterno: 'Ramos',
       nombres: 'Juan',
@@ -42,47 +42,29 @@ const generateMockUsuarios = (): Usuario[] => {
       tipoDocumento: 'DNI',
       documentoIdentidad: '12345678',
       perfil: 'ADMINISTRADOR',
-      sede: 'SEDE CENTRAL',
+      sede: 'ALL', 
       estado: true,
       fechaCreacion: '2024-01-01',
       usuarioCreacion: 'SYSTEM'
-    },
-    {
-      id: '2',
-      apellidoPaterno: 'Sánchez',
-      apellidoMaterno: 'Díaz',
-      nombres: 'Ana María',
-      nombreUsuario: 'recepcion',
-      contrasena: 'recep123',
-      correo: 'ana.sanchez@clinigest.com',
-      telefono: '912345678',
-      tipoDocumento: 'DNI',
-      documentoIdentidad: '87654321',
-      perfil: 'RECEPCIONISTA',
-      sede: 'SEDE NORTE',
-      estado: true,
-      fechaCreacion: '2024-02-15',
-      usuarioCreacion: 'admin'
     }
   ];
 
-  for (let i = 3; i <= 25; i++) {
+  for (let i = 3; i <= 15; i++) {
     users.push({
-      id: i.toString(),
+      id: `USR00${i}`,
       apellidoPaterno: `ApellidoP${i}`,
       apellidoMaterno: `ApellidoM${i}`,
       nombres: `Usuario ${i}`,
       nombreUsuario: `user${i}`,
       contrasena: `pass${i}`,
       correo: `user${i}@clinica.com`,
-      telefono: `9000000${i.toString().padStart(2, '0')}`,
+      telefono: `9000000${i}`,
       tipoDocumento: 'DNI',
-      documentoIdentidad: `100000${i.toString().padStart(2, '0')}`,
-      perfil: i % 3 === 0 ? 'TERAPEUTA' : i % 4 === 0 ? 'GERENTE' : 'RECEPCIONISTA',
-      sede: i % 2 === 0 ? 'SEDE CENTRAL' : 'SEDE NORTE',
+      documentoIdentidad: `100000${i}`,perfil: i % 2 === 0 ? 'ADMINISTRADOR' : 'RECEPCIONISTA',
+      sede: i % 2 === 0 ? 'LIMA_SUR' : 'LIMA_NORTE',
       estado: true,
       fechaCreacion: '2024-03-01',
-      usuarioCreacion: 'admin'
+      usuarioCreacion: 'USR001'
     });
   }
   return users;
@@ -91,26 +73,26 @@ const generateMockUsuarios = (): Usuario[] => {
 const generateMockTerapeutas = (): Terapeuta[] => {
   const terapeutas: Terapeuta[] = [
     {
-      id: '1',
-      apellidoPaterno: 'García',
-      apellidoMaterno: 'Pérez',
-      nombres: 'Carlos',
+     id: 'TER001',
+      apellidoPaterno: 'Castillo',
+      apellidoMaterno: 'Jimenez',
+      nombres: 'Juan Aurelio',
       tipoDocumento: 'DNI',
-      documentoIdentidad: '87654321',
-      correo: 'carlos.garcia@clinica.com',
-      telefono: '912345678',
-      especialidades: ['TERAPIA OCUPACIONAL', 'PSICOMOTRICIDAD'],
+      documentoIdentidad: '45871293',
+      correo: 'zwells@example.com',
+      telefono: '947123846',
+      especialidades: ['PAREJA', 'CONDUCTUAL'], // Mapeado de string a Array
       colegiatura: 'CTO 1234',
-      sede: 'SEDE CENTRAL',
+      sede: 'LIMA_SUR',
       estado: true,
-      fechaCreacion: '2024-01-05',
+      fechaCreacion: '2025-05-02',
       usuarioCreacion: 'admin'
     }
   ];
 
   for (let i = 2; i <= 25; i++) {
     terapeutas.push({
-      id: i.toString(),
+      id: `TER00${i.toString().padStart(2, '0')}`,
       apellidoPaterno: `TerapeutaP${i}`,
       apellidoMaterno: `TerapeutaM${i}`,
       nombres: `Terapeuta ${i}`,
@@ -118,12 +100,13 @@ const generateMockTerapeutas = (): Terapeuta[] => {
       documentoIdentidad: `200000${i.toString().padStart(2, '0')}`,
       correo: `terapeuta${i}@clinica.com`,
       telefono: `9100000${i.toString().padStart(2, '0')}`,
-      especialidades: i % 2 === 0 ? ['FISIOTERAPIA'] : ['PSICOLOGÍA INFANTIL', 'TERAPIA DE LENGUAJE'],
+      // Asignación dinámica de IDs de especialidad
+      especialidades: i % 2 === 0 ? ['PAREJA'] : ['CONDUCTUAL'],
       colegiatura: `COL ${1000 + i}`,
-      sede: i % 2 === 0 ? 'SEDE CENTRAL' : 'SEDE NORTE',
+      sede: i % 2 === 0 ? 'LIMA_SUR' : 'LIMA_NORTE', // Alterna entre ID Sede 1 y 2
       estado: true,
       fechaCreacion: '2023-12-01',
-      usuarioCreacion: 'admin'
+      usuarioCreacion: 'U001'
     });
   }
   return terapeutas;
@@ -132,88 +115,127 @@ const generateMockTerapeutas = (): Terapeuta[] => {
 const generateMockPacientes = (): Paciente[] => {
   const pacientes: Paciente[] = [
     {
-      id: '1',
+      id: 'PAC001',
       apellidoPaterno: 'López',
       apellidoMaterno: 'Sánchez',
       nombres: 'María',
-      tipoDocumento: 'DNI',
+      tipoDocumento: 'DNI', // En BD: DOC001
       documentoIdentidad: '11223344',
       correo: 'maria.lopez@gmail.com',
       telefono: '998877665',
       responsable: 'Pedro López',
       motivo: 'Terapia de lenguaje',
-      sede: 'SEDE CENTRAL',
+      sede: 'LIMA_SUR', // En BD: SED001
       estado: true,
       fechaCreacion: '2024-02-01',
-      usuarioCreacion: 'admin'
+      usuarioCreacion: 'USR001'
     }
   ];
 
   for (let i = 2; i <= 25; i++) {
     pacientes.push({
-      id: i.toString(),
+      id: `PAC${i.toString().padStart(3, '0')}`,
       apellidoPaterno: `PacienteP${i}`,
       apellidoMaterno: `PacienteM${i}`,
       nombres: `Paciente ${i}`,
       tipoDocumento: 'DNI',
-      documentoIdentidad: `300000${i.toString().padStart(2, '0')}`,
+      documentoIdentidad: `3000000${i}`,
       correo: `paciente${i}@email.com`,
-      telefono: `9200000${i.toString().padStart(2, '0')}`,
-      sede: i % 2 === 0 ? 'SEDE CENTRAL' : 'SEDE NORTE',
+      telefono: `92000000${i}`,
+      sede: i % 2 === 0 ? 'LIMA_SUR' : 'LIMA_NORTE',
       estado: true,
       fechaCreacion: '2024-02-01',
-      usuarioCreacion: 'admin',
+      usuarioCreacion: 'USR001',
       responsable: `Responsable ${i}`,
-      motivo: 'Tratamiento continuo'
+      motivo: i % 3 === 0 ? 'Control mensual' : 'Tratamiento continuo'
     });
   }
   return pacientes;
 };
-
 export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
-  // TAB 1: BRANDING
-  { id: '1', clave: 'CLINICA_NOMBRE', valor: 'CLINIGEST PRO', etiqueta: 'Nombre Comercial de Empresa', categoria: 'BRANDING', tipoControl: 'TEXT', orden: 1 },
-  { id: '2', clave: 'COLOR_PRIMARIO', valor: '#4f46e5', etiqueta: 'Color Primario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 2 },
-  { id: '2b', clave: 'COLOR_SECUNDARIO', valor: '#10b981', etiqueta: 'Color Secundario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 3 },
-  { id: '2c', clave: 'COLOR_ACCENT', valor: '#f59e0b', etiqueta: 'Color de Accent (Destacados)', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 4 },
-  { id: '3', clave: 'CLINICA_LOGO', valor: '', etiqueta: 'Logo de la Clínica (Base64)', categoria: 'BRANDING', tipoControl: 'IMAGE', orden: 5 },
+  { id: 'CONF-01', clave: 'CLINICA_NOMBRE', valor: 'CLINIGEST PRO', etiqueta: 'Nombre Comercial de Empresa', categoria: 'BRANDING', tipoControl: 'TEXT', orden: 1 },
+  { id: 'CONF-02', clave: 'COLOR_PRIMARIO', valor: '#4f46e5', etiqueta: 'Color Primario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 2 },
+  { id: 'CONF-03', clave: 'COLOR_SECUNDARIO', valor: '#10b981', etiqueta: 'Color Secundario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 3 },
+  { id: 'CONF-04', clave: 'COLOR_ACCENT', valor: '#f59e0b', etiqueta: 'Color Accent (Destacados)', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 4 },
+  { id: 'CONF-05', clave: 'CLINICA_LOGO', valor: '', etiqueta: 'Logo Corporativo', categoria: 'BRANDING', tipoControl: 'IMAGE', orden: 5 },
 
-  // TAB 3: SEGURIDAD
-  { id: 's1', clave: 'PWD_MIN_LENGTH', valor: 8, etiqueta: 'Longitud Mínima de Password', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 1 },
-  { id: 's2', clave: 'PWD_EXPIRATION_DAYS', valor: 90, etiqueta: 'Días para Expiración de Clave', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 2 },
+  // --- CATEGORIA: SEGURIDAD (PWD + PERFILES + MODULOS) ---
+  { id: 'CONF-06', clave: 'PWD_MIN_LENGTH', valor: 8, etiqueta: 'Longitud Mínima de Contraseña', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 1 },
+  { id: 'CONF-07', clave: 'PWD_EXPIRATION_DAYS', valor: 90, etiqueta: 'Expiración de Clave (Días)', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 2 },
+  
+  // Perfiles desacoplados
+  { id: 'PRF-01', clave: 'PERFIL_ADMIN', valor: 'ADMINISTRADOR', etiqueta: 'Perfil: Administrador', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 3 },
+  { id: 'PRF-02', clave: 'PERFIL_ADMIN_SEDE', valor: 'ADMINISTRADOR_SEDE', etiqueta: 'Perfil: Administrador de Sede', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 4 },
+  { id: 'PRF-03', clave: 'PERFIL_RECEP', valor: 'RECEPCIONISTA', etiqueta: 'Perfil: Recepcionista', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 5 },
+  { id: 'PRF-04', clave: 'PERFIL_TERAP', valor: 'TERAPEUTA', etiqueta: 'Perfil: Terapeuta', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 6 },
+  { id: 'PRF-05', clave: 'PERFIL_GEREN', valor: 'GERENTE', etiqueta: 'Perfil: Gerente', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 7 },
+  { id: 'PRF-06', clave: 'PERFIL_SUPER', valor: 'SUPERADMIN', etiqueta: 'Perfil: Super Administrador', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 8 },
 
-  // TAB 4: AGENDA
-  { id: 'a1', clave: 'ESTADO_PENDIENTE_COLOR', valor: '#f59e0b', etiqueta: 'Color: Cita Pendiente', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 1 },
-  { id: 'a2', clave: 'ESTADO_CONFIRMADA_COLOR', valor: '#10b981', etiqueta: 'Color: Cita Confirmada', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 2 },
-  { id: 'a3', clave: 'ESTADO_CANCELADA_COLOR', valor: '#ef4444', etiqueta: 'Color: Cita Cancelada', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 3 },
-  { id: 'a4', clave: 'DURACION_SESION_GLOBAL', valor: 45, etiqueta: 'Duración Global Defecto (min)', categoria: 'AGENDA', tipoControl: 'NUMBER', orden: 4 },
-  { id: 'a5', clave: 'INTERVALO_CALENDARIO', valor: '30', etiqueta: 'Intervalo Visual de Agenda', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['15', '30', '60'], orden: 5 },
+  // Módulos desacoplados
+  { id: 'MOD-01', clave: 'MOD_PACIENTES', valor: 'PACIENTES', etiqueta: 'Módulo: Pacientes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 8 },
+  { id: 'MOD-02', clave: 'MOD_TERAPEUTAS', valor: 'TERAPEUTAS', etiqueta: 'Módulo: Terapeutas', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 9 },
+  { id: 'MOD-03', clave: 'MOD_HORARIOS', valor: 'HORARIOS', etiqueta: 'Módulo: Horarios', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 10 },
+  { id: 'MOD-04', clave: 'MOD_USUARIOS', valor: 'USUARIOS', etiqueta: 'Módulo: Usuarios', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 11 },
+  { id: 'MOD-05', clave: 'MOD_CONFIG', valor: 'CONFIGURACION', etiqueta: 'Módulo: Configuración', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 12 },
+  { id: 'MOD-06', clave: 'MOD_AGENDA', valor: 'AGENDA', etiqueta: 'Módulo: Agenda', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 13 },
+  { id: 'MOD-07', clave: 'MOD_FINANZAS', valor: 'FINANZAS', etiqueta: 'Módulo: Finanzas', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 14 },
 
-  // TAB 5: DICCIONARIOS
-  { id: 'd1', clave: 'LISTA_TIPO_DOCUMENTO', valor: ['DNI', 'CE', 'PASAPORTE'], etiqueta: 'Tipos de Documento', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 1 },
-  { id: 'd2', clave: 'LISTA_MEDIO_PAGO', valor: ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'YAPE/PLIN'], etiqueta: 'Medios de Pago', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 2 },
-  { id: 'd3', clave: 'MONEDAS_OPERATIVAS', valor: 'PEN', etiqueta: 'Moneda Principal', categoria: 'DICCIONARIOS', tipoControl: 'SELECT', opciones: ['PEN', 'USD', 'AMBAS'], orden: 3 },
-  { id: 'd4', clave: 'LISTA_CATEGORIA_PAQUETE', valor: ['ESTANDAR', 'PREMIUM', 'PROMOCIONAL'], etiqueta: 'Categorías de Paquete', categoria: 'DICCIONARIOS', tipoControl: 'LIST', orden: 4 },
-  { id: 'd5', clave: 'MODALIDAD_PRESENCIAL', valor: true, etiqueta: 'Modalidad Presencial', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 5 },
-  { id: 'd6', clave: 'MODALIDAD_VIRTUAL', valor: true, etiqueta: 'Modalidad Virtual', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 6 },
+  // --- CATEGORIA: AGENDA (ESTADOS + TIEMPOS) ---
+  { id: 'CONF-08', clave: 'COLOR_DISPONIBLE', valor: '#f59e0b', etiqueta: 'Color: Horario Disponible', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 1 },
+  { id: 'CONF-09', clave: 'COLOR_OCUPADO', valor: '#10b981', etiqueta: 'Color: Horario Ocupado', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 2 },
+  { id: 'CONF-10', clave: 'COLOR_REFRIGERIO', valor: '#ef4444', etiqueta: 'Color: Horario Refrigerio', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 3 },
+  { id: 'CONF-11', clave: 'DURACION_SESION_GLOBAL', valor: 45, etiqueta: 'Duración Global Defecto (min)', categoria: 'AGENDA', tipoControl: 'NUMBER', orden: 4 },
+  { id: 'CONF-12', clave: 'INTERVALO_CALENDARIO', valor: '30', etiqueta: 'Intervalo Visual de Agenda', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['15', '30', '60'], orden: 5 },
 
-  // LISTAS TÉCNICAS (Necesarias para el sistema)
-  { id: '15', clave: 'LISTA_PERFILES', valor: ['ADMINISTRADOR', 'ADMINISTRADOR_SEDE', 'RECEPCIONISTA', 'TERAPEUTA', 'GERENTE'], etiqueta: 'Perfiles de Usuario', categoria: 'SEGURIDAD', tipoControl: 'LIST', orden: 10 },
-  { id: '16', clave: 'LISTA_MODULOS', valor: ['PACIENTES', 'TERAPEUTAS', 'HORARIOS', 'USUARIOS', 'CONFIGURACION', 'AGENDA', 'FINANZAS'], etiqueta: 'Módulos del Sistema', categoria: 'SEGURIDAD', tipoControl: 'LIST', orden: 11 },
+  // --- CATEGORIA: DICCIONARIOS (DOCS + PAGOS + MONEDAS + MODALIDADES) ---
+  // Tipos de Documento desacoplados
+  { id: 'DOC-01', clave: 'DOC_DNI', valor: 'DNI', etiqueta: 'Tipo Doc: DNI', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 1 },
+  { id: 'DOC-02', clave: 'DOC_CE', valor: 'CE', etiqueta: 'Tipo Doc: Carnet Extranjería', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 2 },
+  { id: 'DOC-03', clave: 'DOC_PAS', valor: 'PASAPORTE', etiqueta: 'Tipo Doc: Pasaporte', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 3 },
+
+  // Medios de Pago desacoplados
+  { id: 'PAY-01', clave: 'PAGO_EFECTIVO', valor: 'EFECTIVO', etiqueta: 'Medio Pago: Efectivo', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 4 },
+  { id: 'PAY-02', clave: 'PAGO_TARJETA', valor: 'TARJETA', etiqueta: 'Medio Pago: Tarjeta', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 5 },
+  { id: 'PAY-03', clave: 'PAGO_TRANSF', valor: 'TRANSFERENCIA', etiqueta: 'Medio Pago: Transferencia', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 6 },
+  { id: 'PAY-04', clave: 'PAGO_YAPE', valor: 'YAPE', etiqueta: 'Medio Pago: Yape / Plin', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 7 },
+
+  // Monedas y Modalidades
+  { id: 'MON-13', clave: 'MONEDAS_SISTEMA', valor: 'PEN', etiqueta: 'Soles (S/.)', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 8 },
+  { id: 'MON-16', clave: 'MONEDAS_SISTEMA', valor: 'USD', etiqueta: 'Dolares ($.)', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 11 },
+  { id: 'MOD-14', clave: 'MODALIDAD_PRESENCIAL', valor: true, etiqueta: 'Atención Presencial Habilitada', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 9 },
+  { id: 'MOD-15', clave: 'MODALIDAD_VIRTUAL', valor: true, etiqueta: 'Atención Virtual Habilitada', categoria: 'DICCIONARIOS', tipoControl: 'CHECKBOX', orden: 10 },
+
+  // --- CATEGORIA: ESPECIALIDADES (DESACOPLADAS) ---
+  { id: 'ESP-01', clave: 'ESP_TERAPIA_OCUP', valor: '45', etiqueta: 'Terapia Ocupacional', categoria: 'ESPECIALIDADES', tipoControl: 'NUMBER', orden: 1 },
+  { id: 'ESP-02', clave: 'ESP_FISIOTERAPIA', valor: '60', etiqueta: 'Fisioterapia', categoria: 'ESPECIALIDADES', tipoControl: 'NUMBER', orden: 2 },
+  { id: 'ESP-03', clave: 'ESP_PSICO_INFANTIL', valor: '50', etiqueta: 'Psicología Infantil', categoria: 'ESPECIALIDADES', tipoControl: 'NUMBER', orden: 3 },
+  { id: 'ESP-04', clave: 'ESP_LENGUAJE', valor: '30', etiqueta: 'Terapia de Lenguaje', categoria: 'ESPECIALIDADES', tipoControl: 'NUMBER', orden: 4 },
+  { id: 'ESP-05', clave: 'ESP_PSICOMOTRICIDAD', valor: '45', etiqueta: 'Psicomotricidad', categoria: 'ESPECIALIDADES', tipoControl: 'NUMBER', orden: 5 },
 ];
 
-export const MOCK_ESPECIALIDADES: Especialidad[] = [
-  { id: '1', nombre: 'TERAPIA OCUPACIONAL', duracionSesion: 45, estado: true },
-  { id: '2', nombre: 'FISIOTERAPIA', duracionSesion: 60, estado: true },
-  { id: '3', nombre: 'PSICOLOGÍA INFANTIL', duracionSesion: 50, estado: true },
-  { id: '4', nombre: 'TERAPIA DE LENGUAJE', duracionSesion: 30, estado: true },
-  { id: '5', nombre: 'PSICOMOTRICIDAD', duracionSesion: 45, estado: true }
-];
+export const MOCK_PERFILES = MOCK_CONFIG_DINAMICA
+  .filter(c => c.categoria === 'SEGURIDAD' && c.clave.startsWith('PERFIL_'));
+
+// Extraer Módulos
+export const MOCK_MODULOS = MOCK_CONFIG_DINAMICA
+  .filter(c => c.categoria === 'SEGURIDAD' && c.clave.startsWith('MOD_'));
+
+// Extraer Tipos de Documento
+export const MOCK_TIPOS_DOCUMENTO = MOCK_CONFIG_DINAMICA
+  .filter(c => c.categoria === 'DICCIONARIOS' && c.clave.startsWith('DOC_'));
+
+// Extraer Medios de Pago
+export const MOCK_MEDIOS_PAGO = MOCK_CONFIG_DINAMICA
+  .filter(c => c.categoria === 'DICCIONARIOS' && c.clave.startsWith('PAGO_'));
+
+// Extraer Especialidades (como diccionario de IDs y nombres)
+export const MOCK_ESPECIALIDADES_DICT = MOCK_CONFIG_DINAMICA
+  .filter(c => c.categoria === 'ESPECIALIDADES');
 
 export const MOCK_SEDES: Sede[] = [
   { 
     idSede: '1', 
-    nombreSede: 'SEDE CENTRAL', 
+    nombreSede: 'LIMA_SUR', 
     direccion: 'Av. Principal 123', 
     horarioAtencion: [
       { dia: 'Lunes', activo: true, horaInicio: '08:00', horaFin: '20:00' },
@@ -228,7 +250,7 @@ export const MOCK_SEDES: Sede[] = [
   },
   { 
     idSede: '2', 
-    nombreSede: 'SEDE NORTE', 
+    nombreSede: 'LIMA_NORTE', 
     direccion: 'Calle Norte 456', 
     horarioAtencion: [
       { dia: 'Lunes', activo: true, horaInicio: '09:00', horaFin: '18:00' },
@@ -313,7 +335,7 @@ export const MOCK_PACIENTES: Paciente[] = generateMockPacientes();
 export const MOCK_HORARIOS: any[] = [
   {
     id: '1',
-    idTerapeuta: '1',
+    idTerapeuta: 'TER001',
     nombreTerapeuta: 'Carlos García',
     mes: 4,
     año: 2026,
@@ -322,7 +344,7 @@ export const MOCK_HORARIOS: any[] = [
       { id: 'b2', diasSemana: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: '13:00', horaFin: '14:00', tipo: 'PAUSA', estado: 'REFRIGERIO', descripcion: 'Almuerzo' },
       { id: 'b3', diasSemana: ['Lunes', 'Miércoles', 'Viernes'], horaInicio: '14:00', horaFin: '18:00', tipo: 'TRABAJO', estado: 'DISPONIBLE' }
     ],
-    sede: 'SEDE CENTRAL',
+    sede: 'LIMA_NORTE',
     estado: true,
     fechaCreacion: '2026-03-20',
     usuarioCreacion: 'admin'
@@ -331,12 +353,30 @@ export const MOCK_HORARIOS: any[] = [
 
 export const MOCK_AUDITORIA: Auditoria[] = [
   {
-    id: '1',
+    id: 'AUD001',
     tabla: 'USUARIOS',
     idRegistro: '1',
     accion: 'LOGIN',
     fecha: new Date().toISOString(),
     idUsuario: '1',
     nombreUsuario: 'admin'
+  }
+];
+
+export const MOCK_CITAS: any[] = [
+  {
+    id: '1',
+    idPaciente: '1',
+    nombrePaciente: 'María López',
+    idTerapeuta: '1',
+    nombreTerapeuta: 'Carlos García',
+    especialidad: 'TERAPIA OCUPACIONAL',
+    fecha: '2026-04-10',
+    horaInicio: '09:00',
+    horaFin: '09:45',
+    sede: 'SEDE CENTRAL',
+    estadoCita: 'PENDIENTE',
+    montoPagado: 0,
+    estadoPago: 'PENDIENTE'
   }
 ];

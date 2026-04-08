@@ -10,6 +10,7 @@ import {
   Trash2,
   Edit2,
   History,
+  Loader2,
   Palette,
   Image as ImageIcon,
   Type,
@@ -18,6 +19,7 @@ import {
   Search,
   Check,
   X,
+  ChevronRight,
   Stethoscope,
   LayoutGrid,
   Lock,
@@ -38,13 +40,19 @@ interface ConfiguracionProps {
 
 export default function Configuracion({ currentUser }: ConfiguracionProps) {
   const permissions = usePermissions(currentUser, 'configuracion');
-  const [activeSection, setActiveSection] = useState('');
+  const [activeSection, setActiveSection] = useState<'BRANDING' | 'SEDES' | 'ESPECIALIDADES' | 'SEGURIDAD' | 'AGENDA' | 'DICCIONARIOS'>('BRANDING');
   const [config, setConfig] = useState<ConfiguracionDinamica[]>([]);
+  const [initialConfig, setInitialConfig] = useState<ConfiguracionDinamica[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [permisos, setPermisos] = useState<Permiso[]>([]);
   const [auditoria, setAuditoria] = useState<Auditoria[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedDictionaryKey, setSelectedDictionaryKey] = useState<string | null>(null);
+  const [isNavigationModalOpen, setIsNavigationModalOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [searchMatriz, setSearchMatriz] = useState('');
+  const [pendingSection, setPendingSection] = useState<typeof activeSection | null>(null);
   
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'success' as 'success' | 'error' });
@@ -55,6 +63,9 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
   const [isEspecialidadModalOpen, setIsEspecialidadModalOpen] = useState(false);
   const [selectedEspecialidad, setSelectedEspecialidad] = useState<Especialidad | null>(null);
   
+  const [isDictModalOpen, setIsDictModalOpen] = useState(false);
+  const [editingDictItem, setEditingDictItem] = useState<ConfiguracionDinamica | null>(null);
+
   const [isPermisoModalOpen, setIsPermisoModalOpen] = useState(false);
   const [permisosEditados, setPermisosEditados] = useState<Permiso[]>([]);
 
@@ -88,21 +99,12 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         apiService.getEspecialidades()
       ]);
       setConfig(configData);
+      setInitialConfig(JSON.parse(JSON.stringify(configData)));
       setSedes(sedesData);
       setPermisos(permisosData);
       setPermisosEditados(JSON.parse(JSON.stringify(permisosData)));
       setAuditoria(auditoriaData);
       setEspecialidades(especialidadesData);
-      
-      if (!activeSection && configData.length > 0) {
-        // Find the first category by order
-        const sortedCats = Array.from(new Set(configData.map(c => c.categoria))).sort((a, b) => {
-          const orderA = configData.find(c => c.categoria === a)?.orden || 99;
-          const orderB = configData.find(c => c.categoria === b)?.orden || 99;
-          return orderA - orderB;
-        });
-        setActiveSection(sortedCats[0]);
-      }
     } catch (error) {
       console.error('Error loading config data:', error);
     } finally {
@@ -114,11 +116,61 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     setConfig(prev => prev.map(c => c.clave === clave ? { ...c, valor: value } : c));
   };
 
+  // Validador de cambios pendientes en Seguridad
+  const handleSectionChange = (section: typeof activeSection) => {
+    let isDirty = false;
+
+    // 1. Validar cambios en Matriz de Seguridad
+    if (activeSection === 'SEGURIDAD') {
+      isDirty = JSON.stringify(permisos) !== JSON.stringify(permisosEditados);
+    } 
+    // 2. Validar cambios en Categorías Dinámicas (Branding, Agenda, etc.)
+    else if (['BRANDING', 'AGENDA'].includes(activeSection)) {
+      const currentCategoryItems = config.filter(c => c.categoria === activeSection);
+      const initialCategoryItems = initialConfig.filter(c => c.categoria === activeSection);
+      isDirty = JSON.stringify(currentCategoryItems) !== JSON.stringify(initialCategoryItems);
+    }
+    
+    if (isDirty) {
+      setPendingSection(section);
+      setIsNavigationModalOpen(true);
+      return;
+    }
+    
+    setActiveSection(section);
+  };
+
+  const handleDiscardChanges = () => {
+    // Resetear estados locales a la data del servicio
+    if (activeSection === 'SEGURIDAD') {
+      setPermisosEditados(JSON.parse(JSON.stringify(permisos)));
+    } else {
+      setConfig(JSON.parse(JSON.stringify(initialConfig)));
+    }
+    
+    if (pendingSection) {
+      setActiveSection(pendingSection);
+    }
+    setIsNavigationModalOpen(false);
+    setPendingSection(null);
+  };
+
   const handleSaveConfig = async (categoria: string) => {
+    setIsProcessing(true);
     try {
-      const itemsToSave = config.filter(c => c.categoria === categoria && c.tipoControl !== 'MODULE_LINK');
+      const itemsToSave = config.filter(c => c.categoria === categoria);
       for (const item of itemsToSave) {
         await apiService.updateConfig(item.clave, item.valor, currentUser.nombreUsuario);
+      }
+
+      // Lógica unificada para Seguridad (Matriz de Permisos)
+      if (categoria === 'SEGURIDAD') {
+        for (const p of permisosEditados) {
+          const original = permisos.find(orig => orig.perfil === p.perfil && orig.modulo === p.modulo);
+          if (JSON.stringify(original) !== JSON.stringify(p)) {
+            await apiService.updatePermiso(p.perfil, p.modulo, p, currentUser.nombreUsuario);
+          }
+        }
       }
       
       // Special logic for Agenda
@@ -136,18 +188,92 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       if (primaryColor) {
         document.documentElement.style.setProperty('--primary-color', primaryColor);
       }
+      const secondaryColor = config.find(c => c.clave === 'COLOR_SECUNDARIO')?.valor;
+      if (secondaryColor) {
+        document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+      }
+      const accentColor = config.find(c => c.clave === 'COLOR_ACCENT')?.valor;
+      if (accentColor) {
+        document.documentElement.style.setProperty('--accent-color', accentColor);
+      }
       
       setAlertConfig({
         title: 'Configuración Guardada',
-        message: 'Los cambios se han aplicado correctamente.',
+        message: 'Todos los cambios (incluyendo permisos y catálogos) se han aplicado correctamente.',
         type: 'success'
       });
       setIsAlertOpen(true);
       window.dispatchEvent(new CustomEvent('configUpdated'));
       loadData();
     } catch (error) {
-      setAlertConfig({ title: 'Error', message: 'No se pudo guardar la configuración.', type: 'error' });
+      console.error('Error saving config:', error);
+      setAlertConfig({ 
+        title: 'Error al Guardar', 
+        message: error instanceof Error ? error.message : 'No se pudo guardar la configuración.', 
+        type: 'error' 
+      });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSaveDictionaryItem = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries()) as any;
+
+    try {
+      if (editingDictItem) {
+        // Update existing
+        await apiService.updateConfig(editingDictItem.clave, data.valor, currentUser.nombreUsuario);
+        // We also need to update label which isn't in updateConfig normally, 
+        // but since we are in a mock environment we'll update the local state.
+        setConfig(prev => prev.map(c => c.id === editingDictItem.id ? { ...c, etiqueta: data.etiqueta, valor: data.valor } : c));
+      } else {
+        // Create new
+        const prefix = selectedDictionaryKey || 'CAT';
+        const count = config.filter(c => c.id.startsWith(prefix)).length + 1;
+        const newItem: ConfiguracionDinamica = {
+          id: `${prefix}-${count.toString().padStart(2, '0')}`,
+          clave: `${prefix}_${data.valor.toString().toUpperCase().replace(/\s+/g, '_')}`,
+          valor: data.tipoControl === 'CHECKBOX' ? true : data.valor,
+          etiqueta: data.etiqueta,
+          categoria: 'DICCIONARIOS',
+          tipoControl: editingDictItem?.tipoControl || 'CHECKBOX',
+          orden: config.length + 1
+        };
+        await apiService.createConfig(newItem, currentUser.nombreUsuario);
+      }
+      
+      setIsDictModalOpen(false);
+      setEditingDictItem(null);
+      loadData();
+      setAlertConfig({ title: 'Éxito', message: 'Elemento de catálogo guardado.', type: 'success' });
+      setIsAlertOpen(true);
+    } catch (error) {
+      console.error('Error saving dictionary item:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteDictionaryItem = async (item: ConfiguracionDinamica) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar "${item.etiqueta}" de este catálogo?`)) return;
+    
+    setIsProcessing(true);
+    try {
+      await apiService.deleteConfig(item.clave, currentUser.nombreUsuario);
+      loadData();
+      setAlertConfig({ title: 'Éxito', message: 'Elemento eliminado correctamente.', type: 'success' });
+      setIsAlertOpen(true);
+    } catch (error) {
+      console.error('Error deleting dictionary item:', error);
+      setAlertConfig({ title: 'Error', message: 'No se pudo eliminar el elemento.', type: 'error' });
+      setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -165,6 +291,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
   // --- SEDE HANDLERS ---
   const handleSedeSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsProcessing(true);
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
     
@@ -193,10 +320,13 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     } catch (error) {
       setAlertConfig({ title: 'Error', message: 'No se pudo guardar la sede.', type: 'error' });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleSedeDelete = async (sede: Sede) => {
+    setIsProcessing(true);
     try {
       await apiService.deleteSede(sede.idSede, currentUser.nombreUsuario);
       setAlertConfig({ title: 'Estado Actualizado', message: 'El estado de la sede ha sido modificado.', type: 'success' });
@@ -205,12 +335,15 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     } catch (error) {
       setAlertConfig({ title: 'Error', message: 'No se pudo cambiar el estado de la sede.', type: 'error' });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   // --- ESPECIALIDAD HANDLERS ---
   const handleEspecialidadSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsProcessing(true);
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
     
@@ -243,10 +376,13 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     } catch (error) {
       setAlertConfig({ title: 'Error', message: 'No se pudo guardar la especialidad.', type: 'error' });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleEspecialidadDelete = async (especialidad: Especialidad) => {
+    setIsProcessing(true);
     try {
       await apiService.deleteEspecialidad(especialidad.id, currentUser.nombreUsuario);
       setAlertConfig({ title: 'Estado Actualizado', message: 'El estado de la especialidad ha sido modificado.', type: 'success' });
@@ -255,6 +391,8 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     } catch (error) {
       setAlertConfig({ title: 'Error', message: 'No se pudo cambiar el estado de la especialidad.', type: 'error' });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -269,6 +407,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
   };
 
   const handleSavePermisos = async () => {
+    setIsProcessing(true);
     try {
       for (const p of permisosEditados) {
         const original = permisos.find(orig => orig.perfil === p.perfil && orig.modulo === p.modulo);
@@ -283,11 +422,14 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     } catch (error) {
       setAlertConfig({ title: 'Error', message: 'No se pudieron guardar los permisos.', type: 'error' });
       setIsAlertOpen(true);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handlePermisoSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsProcessing(true);
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
     const newPermiso: Permiso = {
@@ -307,36 +449,21 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       loadData();
     } catch (error) {
       console.error('Error creating permiso:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // --- DYNAMIC ENGINE ---
-  const categories = (Array.from(new Set(config.map(c => c.categoria))) as string[]).sort((a, b) => {
-    const orderA = config.find(c => c.categoria === a)?.orden || 99;
-    const orderB = config.find(c => c.categoria === b)?.orden || 99;
-    return orderA - orderB;
-  });
-
-  const getCategoryIcon = (cat: string) => {
-    switch (cat) {
-      case 'BRANDING': return Palette;
-      case 'SEDES': return Building2;
-      case 'ESPECIALIDADES': return Stethoscope;
-      case 'SEGURIDAD': return Shield;
-      case 'NOTIFICACIONES': return Bell;
-      case 'AUDITORIA': return History;
-      case 'AGENDA': return Calendar;
-      default: return Settings;
-    }
-  };
+  const sections = [
+    { id: 'BRANDING', label: '🎨 Branding', icon: Palette },
+    { id: 'SEDES', label: '🏥 Sedes', icon: Building2 },
+    { id: 'ESPECIALIDADES', label: '🩺 Especialidades', icon: Stethoscope },
+    { id: 'SEGURIDAD', label: '🔐 Seguridad', icon: Shield },
+    { id: 'AGENDA', label: '📅 Agenda', icon: Calendar },
+    { id: 'DICCIONARIOS', label: '📑 Diccionarios', icon: LayoutGrid },
+  ];
 
   const renderControl = (item: ConfiguracionDinamica) => {
-    // Conditional visibility for Agenda
-    if (item.clave === 'DURACION_SESION_GLOBAL') {
-      const typeDuracion = config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor;
-      if (typeDuracion !== 'GLOBAL') return null;
-    }
-
     switch (item.tipoControl) {
       case 'TEXT':
         return (
@@ -388,6 +515,31 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             )} />
           </button>
         );
+      case 'LIST':
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {(item.valor || []).map((val: string, i: number) => (
+                <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200 uppercase">
+                  {val}
+                  <button type="button" onClick={() => handleConfigChange(item.clave, item.valor.filter((_: any, idx: number) => idx !== i))} className="hover:text-rose-500 transition-colors">
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <input type="text" className="input-field py-1.5 text-xs" placeholder="Presiona Enter para añadir..." onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.currentTarget.value.trim().toUpperCase();
+                if (val) {
+                  handleConfigChange(item.clave, [...(item.valor || []), val]);
+                  e.currentTarget.value = '';
+                }
+              }
+            }} />
+          </div>
+        );
       case 'IMAGE':
         return (
           <div className="space-y-3">
@@ -421,60 +573,46 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     }
   };
 
-  const currentConfigItems = config.filter(c => c.categoria === activeSection);
-  const hasFormFields = currentConfigItems.some(c => c.tipoControl !== 'MODULE_LINK');
-
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Configuración del Sistema</h2>
+        <h2 className="clini-title-main">Configuración del Sistema</h2>
         <p className="text-slate-500">Administra los parámetros globales de forma dinámica.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-64 shrink-0">
           <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-2 sticky top-24">
-            {categories.map((cat) => {
-              const Icon = getCategoryIcon(cat);
+            {sections.map((section) => {
+              const Icon = section.icon;
               return (
                 <button
-                  key={cat}
-                  onClick={() => setActiveSection(cat)}
+                  key={section.id}
+                  onClick={() => handleSectionChange(section.id as any)}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-medium",
-                    activeSection === cat 
+                    activeSection === section.id 
                       ? "bg-primary text-white shadow-md shadow-primary/20" 
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
                   <Icon size={18} />
-                  {cat.charAt(0) + cat.slice(1).toLowerCase()}
+                  {section.label.split(' ').slice(1).join(' ')}
                 </button>
               );
             })}
           </div>
         </div>
 
-        <div className="flex-1 bg-white rounded-3xl border border-slate-100 shadow-sm p-8 min-h-[600px]">
+        <div className="flex-1 clini-card min-h-[600px]">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : config.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8">
-              <div className="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
-                <Settings size={32} />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Sin Configuración</h3>
-              <p className="text-slate-500 max-w-md">
-                No se han encontrado parámetros de configuración en el sistema.
-              </p>
-            </div>
           ) : (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider">{activeSection}</h3>
-                {hasFormFields && permissions.puedeEditar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && (
+            <div className="animate-in fade-in duration-300">
+              <div className={cn("flex items-center justify-end mb-6", !['SEDES', 'ESPECIALIDADES', 'DICCIONARIOS'].includes(activeSection) ? "block" : "hidden")}>
+                {permissions.puedeEditar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && !['SEDES', 'ESPECIALIDADES', 'DICCIONARIOS'].includes(activeSection) && (
                   <button onClick={() => handleSaveConfig(activeSection)} className="btn-primary flex items-center gap-2">
                     <Save size={18} />
                     Guardar Cambios
@@ -482,237 +620,245 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                 )}
               </div>
 
-              <div className="space-y-8">
-                {currentConfigItems.map((item) => (
-                  <div key={item.id} className="space-y-4">
-                    {item.tipoControl === 'MODULE_LINK' ? (
-                      <div className="pt-4">
-                        {item.valor === 'SEDES' && (
-                          <div className="space-y-6">
-                            <div className="flex justify-end">
-                              {permissions.puedeCrear && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && (
-                                <button 
-                                  onClick={() => {
-                                    setSelectedSede(null);
-                                    setIsSedeModalOpen(true);
-                                  }} 
-                                  className="btn-primary flex items-center gap-2"
-                                >
-                                  <Plus size={18} />
-                                  Nueva Sede
-                                </button>
-                              )}
-                            </div>
-                            <DataTable 
-                              title="Gestión de Sedes"
-                              data={permissions.verTodo ? sedes : sedes.filter(s => s.idSede === currentUser.sede)}
-                              columns={[
-                                { header: 'Nombre', accessor: 'nombreSede', sortable: true, sortKey: 'nombreSede' },
-                                { header: 'Dirección', accessor: 'direccion' },
-                                { 
-                                  header: 'Estado', 
-                                  accessor: (s: Sede) => (
-                                    <span className={cn(
-                                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                                      s.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                                    )}>
-                                      {s.estado ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                  )
-                                }
-                              ]}
-                              onEdit={permissions.puedeEditar ? (s) => {
-                                setSelectedSede(s);
-                                setIsSedeModalOpen(true);
-                              } : undefined}
-                              onDelete={permissions.puedeEliminar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' ? handleSedeDelete : undefined}
-                            />
-                          </div>
-                        )}
-                        {item.valor === 'ESPECIALIDADES' && (
-                          <div className="space-y-6">
-                            <div className="flex justify-end">
-                              {permissions.puedeCrear && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && (
-                                <button 
-                                  onClick={() => {
-                                    setSelectedEspecialidad(null);
-                                    setIsEspecialidadModalOpen(true);
-                                  }} 
-                                  className="btn-primary flex items-center gap-2"
-                                >
-                                  <Plus size={18} />
-                                  Nueva Especialidad
-                                </button>
-                              )}
-                            </div>
-                            <DataTable 
-                              title="Catálogo de Especialidades"
-                              data={especialidades}
-                              columns={[
-                                { header: 'Especialidad', accessor: 'nombre', sortable: true, sortKey: 'nombre' },
-                                { 
-                                  header: 'Duración (min)', 
-                                  accessor: (e: Especialidad) => {
-                                    const typeDuracion = config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor;
-                                    return typeDuracion === 'GLOBAL' ? (
-                                      <span className="text-slate-400 italic">Global</span>
-                                    ) : (
-                                      `${e.duracionSesion || 0} min`
-                                    );
-                                  }
-                                },
-                                { 
-                                  header: 'Estado', 
-                                  accessor: (e: Especialidad) => (
-                                    <span className={cn(
-                                      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                                      e.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                                    )}>
-                                      {e.estado ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                  )
-                                }
-                              ]}
-                              onEdit={permissions.puedeEditar ? (e) => {
-                                setSelectedEspecialidad(e);
-                                setIsEspecialidadModalOpen(true);
-                              } : undefined}
-                              onDelete={permissions.puedeEliminar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' ? handleEspecialidadDelete : undefined}
-                            />
-                          </div>
-                        )}
-                        {item.valor === 'PERMISOS' && (
-                          <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                              <h4 className="text-sm font-bold text-slate-700">Matriz de Roles y Accesos</h4>
-                              <div className="flex gap-2">
-                                {permissions.puedeEditar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && (
-                                  <button onClick={handleSavePermisos} className="btn-primary flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-xs py-2">
-                                    <Save size={14} />
-                                    Guardar Matriz
-                                  </button>
-                                )}
-                                {permissions.puedeCrear && (
-                                  <button onClick={() => setIsPermisoModalOpen(true)} className="btn-primary flex items-center gap-2 text-xs py-2">
-                                    <Plus size={14} />
-                                    Nuevo
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                            <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-                              <table className="w-full text-left text-xs">
-                                <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
-                                  <tr>
-                                    <th className="px-4 py-3">Módulo</th>
-                                    <th className="px-4 py-3">Perfil</th>
-                                    <th className="px-4 py-3 text-center">Acceso</th>
-                                    <th className="px-4 py-3 text-center">Ver Todo</th>
-                                    <th className="px-4 py-3 text-center">Crear</th>
-                                    <th className="px-4 py-3 text-center">Editar</th>
-                                    <th className="px-4 py-3 text-center">Eliminar</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                  {permisosEditados
-                                    .filter(p => p.perfil !== 'SUPER_ADMIN')
-                                    .map((p, i) => (
-                                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                      <td className="px-4 py-3 font-bold text-slate-900 uppercase">{p.modulo}</td>
-                                      <td className="px-4 py-3 text-slate-600">{p.perfil}</td>
-                                      {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar'].map(f => (
-                                        <td key={f} className="px-4 py-3 text-center">
-                                          <button 
-                                            onClick={() => handleTogglePermiso(p.perfil, p.modulo, f as any)}
-                                            className={cn(
-                                              "p-1 rounded transition-colors", 
-                                              p[f as keyof Permiso] ? "text-emerald-600 bg-emerald-50" : "text-slate-300 bg-slate-50", 
-                                              currentUser.perfil === 'ADMINISTRADOR_SEDE' && "opacity-50 cursor-not-allowed"
-                                            )}
-                                            disabled={currentUser.perfil === 'ADMINISTRADOR_SEDE'}
-                                          >
-                                            {p[f as keyof Permiso] ? <Check size={14} /> : <X size={14} />}
-                                          </button>
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                        {item.valor === 'AUDITORIA' && (
-                          <DataTable 
-                            title="Registro de Actividad"
-                            data={auditoria}
-                            columns={[
-                              { 
-                                header: 'Fecha', 
-                                accessor: (a: Auditoria) => (
-                                  <div className="flex items-center gap-2 text-slate-600 text-xs">
-                                    <Calendar size={12} />
-                                    <span>{new Date(a.fecha).toLocaleDateString()}</span>
-                                    <Clock size={12} className="ml-1" />
-                                    <span>{new Date(a.fecha).toLocaleTimeString()}</span>
-                                  </div>
-                                )
-                              },
-                              { header: 'Usuario', accessor: 'nombreUsuario' },
-                              { 
-                                header: 'Acción', 
-                                accessor: (a: Auditoria) => (
-                                  <span className={cn(
-                                    "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                                    a.accion === 'LOGIN' ? "bg-blue-100 text-blue-700" :
-                                    a.accion === 'INSERT' ? "bg-emerald-100 text-emerald-700" :
-                                    a.accion === 'UPDATE' ? "bg-amber-100 text-amber-700" :
-                                    a.accion === 'UPDATE_STATUS' ? "bg-purple-100 text-purple-700" :
-                                    "bg-red-100 text-red-700"
-                                  )}>
-                                    {a.accion}
-                                  </span>
-                                )
-                              },
-                              { header: 'Tabla', accessor: 'tabla' },
-                              { header: 'ID', accessor: 'idRegistro', className: 'max-w-[100px] truncate' }
-                            ]}
-                            searchPlaceholder="Buscar en logs..."
-                            searchFields={['nombreUsuario', 'tabla', 'idRegistro', 'accion']}
-                          />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="max-w-2xl space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <label className="text-sm font-bold text-slate-700">{item.etiqueta}</label>
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 uppercase tracking-wider">
-                              {item.tipoControl}
-                            </span>
-                          </div>
-                        </div>
-                        {item.descripcion && <p className="text-xs text-slate-500">{item.descripcion}</p>}
+              <div className="flex flex-col gap-0">
+                {/* 1. CAMPOS DINÁMICOS (Solo si no es Diccionarios y hay items) */}
+                {activeSection !== 'DICCIONARIOS' && activeSection !== 'ESPECIALIDADES' && activeSection !== 'SEGURIDAD' && config.some(c => c.categoria === activeSection) && (
+                  <div className="grid grid-cols-1 gap-8 mb-12">
+                    {config.filter(c => c.categoria === activeSection).map((item) => (
+                      <div key={item.id} className="max-w-2xl space-y-2">
+                        <label className="clini-label">{item.etiqueta}</label>
                         {currentUser.perfil === 'ADMINISTRADOR_SEDE' && item.tipoControl !== 'CHECKBOX' ? (
-                          <div className="p-3 bg-slate-50 rounded-xl text-slate-600 text-sm border border-slate-100">
+                          <div className="p-3 bg-slate-50 rounded-xl text-slate-600 text-sm border border-slate-100 font-medium italic">
                             {item.tipoControl === 'COLOR' ? (
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded border border-slate-200" style={{ backgroundColor: item.valor }} />
+                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: item.valor }} />
                                 <span>{item.valor}</span>
                               </div>
-                            ) : item.tipoControl === 'IMAGE' ? (
-                              <img src={item.valor} alt="Logo" className="h-10 object-contain" />
-                            ) : (
-                              item.valor
-                            )}
+                            ) : item.valor}
                           </div>
                         ) : (
                           renderControl(item)
                         )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                )}
+
+                {/* 2. SECCIONES DE ENTIDAD (Sedes / Especialidades) */}
+                {activeSection === 'SEDES' && (
+                  <div className="mb-12 space-y-6">
+                    <div>
+                      <h4 className="clini-title-section">Sedes Físicas</h4>
+                      <p className="text-xs text-slate-500">Administra las ubicaciones y horarios de atención de tus centros.</p>
+                    </div>
+                  <DataTable 
+                    title=""
+                    data={permissions.verTodo ? sedes : sedes.filter(s => s.idSede === currentUser.sede)}
+                    columns={[
+                      { header: 'Nombre', accessor: 'nombreSede', sortable: true, sortKey: 'nombreSede' },
+                      { header: 'Dirección', accessor: 'direccion' },
+                      { header: 'Estado', accessor: (s: Sede) => <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", s.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600")}>{s.estado ? 'Activo' : 'Inactivo'}</span> }
+                    ]}
+                    onAdd={() => { setSelectedSede(null); setIsSedeModalOpen(true); }}
+                    onEdit={(s) => { setSelectedSede(s); setIsSedeModalOpen(true); }}
+                    onDelete={handleSedeDelete}
+                  />
+                  </div>
+                )}
+
+                {activeSection === 'ESPECIALIDADES' && (
+                  <div className="mb-12 space-y-6">
+                    <div>
+                      <h4 className="clini-title-section">Servicios Médicos</h4>
+                      <p className="text-xs text-slate-500">Configura las especialidades y la duración estimada de las sesiones.</p>
+                    </div>
+                  <DataTable 
+                    title=""
+                    data={especialidades}
+                    columns={[
+                      { header: 'Especialidad', accessor: 'nombre', sortable: true, sortKey: 'nombre' },
+                      { header: 'Duración', accessor: (e: Especialidad) => <span className="font-bold text-primary">{e.duracionSesion} min</span> },
+                      { header: 'Estado', accessor: (e: Especialidad) => <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", e.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600")}>{e.estado ? 'Activo' : 'Inactivo'}</span> }
+                    ]}
+                    onAdd={() => { setSelectedEspecialidad(null); setIsEspecialidadModalOpen(true); }}
+                    onEdit={(e) => { setSelectedEspecialidad(e); setIsEspecialidadModalOpen(true); }}
+                    onDelete={handleEspecialidadDelete}
+                  />
+                  </div>
+                )}
+
+                {/* 3. SEGURIDAD (Matriz + Auditoría) */}
+                {activeSection === 'SEGURIDAD' && (
+                  <div className="space-y-12 mb-12">
+                    <div className="pt-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                        <div>
+                          <h4 className="clini-title-section">Matriz de Roles y Accesos</h4>
+                          <p className="text-xs text-slate-500">Define los permisos granulares por perfil y módulo.</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                            <input 
+                              type="text" 
+                              placeholder="Buscar perfil o módulo..." 
+                              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-accent outline-none w-64"
+                              value={searchMatriz}
+                              onChange={(e) => setSearchMatriz(e.target.value)}
+                            />
+                          </div>
+                        <button 
+                          onClick={() => setIsPermisoModalOpen(true)} 
+                          className="btn-primary py-2 px-4 text-xs flex items-center gap-2"
+                        >
+                          <Plus size={14} /> Nuevo Permiso
+                        </button>
+                        </div>
+                      </div>
+                      <div className="overflow-x-auto border border-slate-100 rounded-2xl">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                            <tr>
+                              <th className="px-4 py-3">Módulo</th><th className="px-4 py-3">Perfil</th>
+                              {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'filtrarPersonas'].map(f => (
+                                <th key={f} className="px-4 py-3 text-center capitalize">{f.replace(/([A-Z])/g, ' $1')}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-50">
+                            {permisosEditados
+                              .filter(p => p.perfil !== 'SUPER_ADMIN')
+                              .filter(p => 
+                                p.perfil.toLowerCase().includes(searchMatriz.toLowerCase()) || 
+                                p.modulo.toLowerCase().includes(searchMatriz.toLowerCase())
+                              ).map((p, i) => (
+                              <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="px-4 py-3 font-bold text-slate-900 uppercase">{p.modulo}</td>
+                                <td className="px-4 py-3 text-slate-600">{p.perfil}</td>
+                                {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'filtrarPersonas'].map(f => (
+                                  <td key={f} className="px-4 py-3 text-center">
+                                    <button 
+                                      onClick={() => handleTogglePermiso(p.perfil, p.modulo, f as any)} 
+                                      className={cn("p-1.5 rounded-lg transition-all", p[f as keyof Permiso] ? "text-primary bg-primary/10 shadow-sm" : "text-slate-300 hover:bg-slate-50")} 
+                                      disabled={currentUser.perfil === 'ADMINISTRADOR_SEDE'}
+                                    >{p[f as keyof Permiso] ? <Check size={14} /> : <X size={14} />}</button>
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div className="pt-8 border-t border-slate-100">
+                      <DataTable title="Registro de Auditoría" data={auditoria} columns={[{ header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px]">{new Date(a.fecha).toLocaleString()}</span> }, { header: 'Usuario', accessor: 'nombreUsuario' }, { header: 'Acción', accessor: (a: Auditoria) => <span className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase", a.accion === 'INSERT' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>{a.accion}</span> }, { header: 'Tabla', accessor: 'tabla' }]} searchPlaceholder="Buscar logs..." searchFields={['nombreUsuario', 'tabla', 'accion']} />
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. DICCIONARIOS (Submenú Dinámico) */}
+                {activeSection === 'DICCIONARIOS' && (
+                  <div className="flex flex-col md:flex-row gap-8 bg-slate-50/30 rounded-3xl p-2 border border-slate-100 min-h-[500px]">
+                    {/* Sidebar de Grupos de Diccionarios */}
+                    <div className="w-full md:w-64 space-y-1 p-2 bg-white rounded-2xl shadow-sm">
+                      <p className="clini-label px-4 py-2">Maestros del Sistema</p>
+                      {Array.from(new Set(config.filter(c => c.categoria === 'DICCIONARIOS').map(c => c.id.split('-')[0]))).sort().map(prefix => {
+                        const groupTitle = {
+                          'DOC': 'Tipos de Documento',
+                          'PAY': 'Medios de Pago',
+                          'MON': 'Monedas del Sistema',
+                          'MOD': 'Modalidades de Atención'
+                        }[prefix as string] || `Grupo ${prefix}`;
+
+                        return (
+                          <button 
+                            key={prefix} 
+                            onClick={() => setSelectedDictionaryKey(prefix)} 
+                            className={cn(
+                              "w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group", 
+                              selectedDictionaryKey === prefix ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
+                            )}
+                          >
+                            {groupTitle} 
+                            <ChevronRight size={14} className={cn("transition-transform", selectedDictionaryKey === prefix ? "translate-x-0" : "-translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0")} />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Contenido del Grupo Seleccionado */}
+                    <div className="flex-1 p-6">
+                      {selectedDictionaryKey ? (
+                        <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                            <div>
+                              <h4 className="clini-title-section uppercase tracking-tight">
+                                {{
+                                  'DOC': 'Tipos de Documento',
+                                  'PAY': 'Medios de Pago',
+                                  'MON': 'Monedas del Sistema',
+                                  'MOD': 'Modalidades de Atención'
+                                }[selectedDictionaryKey as string] || 'Gestión de Diccionario'}
+                              </h4>
+                              <p className="text-xs text-slate-500">Administra los valores de los catálogos maestros.</p>
+                            </div>
+                            <button 
+                              onClick={() => { setEditingDictItem(null); setIsDictModalOpen(true); }} 
+                              className="btn-primary py-2 px-4 text-xs flex items-center gap-2"
+                            >
+                              <Plus size={14} />
+                              Nuevo Registro
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-3">
+                            {config
+                              .filter(c => c.categoria === 'DICCIONARIOS' && c.id.startsWith(selectedDictionaryKey))
+                              .map(dicItem => (
+                                <div key={dicItem.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 hover:border-primary/20 transition-all group/item">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-primary transition-colors">
+                                      <LayoutGrid size={20} />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-bold text-slate-700">{dicItem.etiqueta}</p>
+                                      <p className="text-[10px] text-slate-400 font-mono uppercase">{dicItem.clave}</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <button 
+                                      onClick={() => handleDeleteDictionaryItem(dicItem)}
+                                      className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                      title="Eliminar registro"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                    <button 
+                                      onClick={() => { setEditingDictItem(dicItem); setIsDictModalOpen(true); }}
+                                      className="p-2 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-lg transition-all"
+                                      title="Editar registro"
+                                    >
+                                      <Edit2 size={14} />
+                                    </button>
+                                  </div>
+                              </div>
+                              ))
+                            }
+                          </div>
+
+                        </div>
+                      ) : (
+                        <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
+                          <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                            <LayoutGrid size={40} />
+                          </div>
+                          <p className="text-sm font-bold text-slate-600">Gestión de Catálogos</p>
+                          <p className="text-xs text-slate-400 max-w-[200px] mt-1">Seleccione una categoría de la izquierda para administrar sus elementos.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -728,11 +874,11 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         <form onSubmit={handleSedeSave} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nombre de Sede</label>
+              <label className="clini-label">Nombre de Sede</label>
               <input name="nombreSede" type="text" className="input-field" defaultValue={selectedSede?.nombreSede} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Dirección</label>
+              <label className="clini-label">Dirección</label>
               <input name="direccion" type="text" className="input-field" defaultValue={selectedSede?.direccion} required />
             </div>
           </div>
@@ -816,7 +962,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="px-4 py-2 text-slate-600">Cancelar</button>
+            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -829,11 +975,11 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       >
         <form onSubmit={handleEspecialidadSave} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Nombre de Especialidad</label>
+            <label className="clini-label">Nombre de Especialidad</label>
             <input name="nombre" type="text" className="input-field" defaultValue={selectedEspecialidad?.nombre} required />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Duración de Sesión (minutos)</label>
+            <label className="clini-label">Duración de Sesión (minutos)</label>
             <input 
               name="duracionSesion" 
               type="number" 
@@ -847,7 +993,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             )}
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="px-4 py-2 text-slate-600">Cancelar</button>
+            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -860,40 +1006,116 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       >
         <form onSubmit={handlePermisoSave} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Perfil</label>
+            <label className="clini-label">Perfil / Rol</label>
             <select name="perfil" className="input-field" required>
-              <option value="ADMINISTRADOR">Administrador</option>
-              <option value="ADMINISTRADOR_SEDE">Administrador Sede</option>
-              <option value="RECEPCIONISTA">Recepcionista</option>
-              <option value="TERAPEUTA">Terapeuta</option>
-              <option value="GERENTE">Gerente</option>
+              {config
+                .filter(c => c.categoria === 'SEGURIDAD' && c.clave.startsWith('PERFIL_'))
+                .map(perf => (
+                  <option key={perf.id} value={perf.valor}>{perf.etiqueta.replace('Perfil: ', '')}</option>
+                ))
+              }
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Módulo</label>
+            <label className="clini-label">Módulo del Sistema</label>
             <select name="modulo" className="input-field" required>
-              <option value="PACIENTES">Pacientes</option>
-              <option value="TERAPEUTAS">Terapeutas</option>
-              <option value="HORARIOS">Horarios</option>
-              <option value="USUARIOS">Usuarios</option>
-              <option value="CONFIGURACION">Configuración</option>
-              <option value="AGENDA">Agenda</option>
-              <option value="FINANZAS">Finanzas</option>
+              {config
+                .filter(c => c.categoria === 'SEGURIDAD' && c.clave.startsWith('MOD_'))
+                .map(mod => (
+                  <option key={mod.id} value={mod.valor}>{mod.etiqueta.replace('Módulo: ', '')}</option>
+                ))
+              }
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar'].map(f => (
-              <label key={f} className="flex items-center gap-2 text-sm font-bold text-slate-500 uppercase">
-                <input type="checkbox" name={f} className="rounded border-slate-300 text-primary" /> {f}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2">
+            {[
+              { id: 'acceso', label: 'Acceso' },
+              { id: 'verTodo', label: 'Ver Todo' },
+              { id: 'puedeCrear', label: 'Crear' },
+              { id: 'puedeEditar', label: 'Editar' },
+              { id: 'puedeEliminar', label: 'Eliminar' },
+              { id: 'filtrarPersonas', label: 'Filtrar' }
+            ].map(f => (
+              <label key={f.id} className="flex items-center gap-2 text-sm font-bold text-slate-500 uppercase cursor-pointer hover:text-slate-700 transition-colors">
+                <input type="checkbox" name={f.id} className="rounded border-slate-300 text-primary focus:ring-primary/20" /> {f.label}
               </label>
             ))}
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="px-4 py-2 text-slate-600">Cancelar</button>
+            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Crear</button>
           </div>
         </form>
       </Modal>
+
+      <Modal
+        isOpen={isDictModalOpen}
+        onClose={() => setIsDictModalOpen(false)}
+        title={editingDictItem ? "Editar Elemento" : "Nuevo Elemento de Catálogo"}
+      >
+        <form onSubmit={handleSaveDictionaryItem} className="space-y-4">
+          <div className="space-y-2">
+            <label className="clini-label">Etiqueta Visible</label>
+            <input name="etiqueta" type="text" className="input-field" defaultValue={editingDictItem?.etiqueta} placeholder="Ej: Pago con Cripto" required />
+          </div>
+          <div className="space-y-2">
+            <label className="clini-label">Valor Interno / Código</label>
+            <input 
+              name="valor" 
+              type="text" 
+              className="input-field font-mono" 
+              defaultValue={editingDictItem?.valor} 
+              placeholder="Ej: CRIPTO" 
+              required 
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <button type="button" onClick={() => setIsDictModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
+            <button type="submit" className="btn-primary">Guardar Registro</button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Confirmación de Navegación (Dirty Check) */}
+      <Modal
+        isOpen={isNavigationModalOpen}
+        onClose={() => setIsNavigationModalOpen(false)}
+        title="Cambios sin guardar"
+      >
+        <div className="space-y-4 text-center py-2 w-[85%] max-w-[280px] mx-auto"> {/* Ajustado para ser más compacto */}
+          <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto shadow-sm">
+            <History size={20} /> {/* Icono de historial para indicar cambios */}
+          </div>
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-slate-900 leading-tight">¿Deseas salir de la sección?</p> {/* Título más directo */}
+            <p className="text-[11px] text-slate-500 leading-relaxed"> {/* Texto más conciso */}
+              Tienes modificaciones pendientes. Si sales ahora, los cambios se perderán definitivamente.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 pt-2">
+            <button onClick={() => setIsNavigationModalOpen(false)} className="btn-primary w-full py-2.5 text-xs">
+              Seguir Editando
+            </button>
+            <button onClick={handleDiscardChanges} className="w-full py-2 text-[10px] font-bold text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+              Descartar y Salir
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Overlay de Procesamiento (Transition Popup) */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-[1px] animate-in fade-in duration-300">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white p-6 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center gap-4 min-w-[200px]"
+          >
+            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] animate-pulse">Procesando</p>
+          </motion.div>
+        </div>
+      )}
 
       <AlertModal 
         isOpen={isAlertOpen} 

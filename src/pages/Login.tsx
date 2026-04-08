@@ -22,6 +22,9 @@ export default function Login({ onLogin }: LoginProps) {
         const config = await apiService.getConfiguracion();
         const logoConfig = config.find(c => c.clave === 'CLINICA_LOGO')?.valor;
         const nameConfig = config.find(c => c.clave === 'CLINICA_NOMBRE')?.valor;
+        const primary = config.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
+
+        if (primary) document.documentElement.style.setProperty('--primary-color', primary);
         if (logoConfig) setLogo(logoConfig);
         if (nameConfig) setClinicName(nameConfig);
       } catch (err) {
@@ -31,13 +34,14 @@ export default function Login({ onLogin }: LoginProps) {
     loadBranding();
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    setTimeout(async () => {
-      const user = MOCK_USUARIOS.find(
+    try {
+      const allUsers = await apiService.getUsuarios();
+      const user = allUsers.find(
         u => u.nombreUsuario === username && u.contrasena === password
       );
 
@@ -46,11 +50,16 @@ export default function Login({ onLogin }: LoginProps) {
           setError('El usuario se encuentra inactivo.');
         } else {
           try {
-            // Refresh permissions from apiService (which handles localStorage)
-            const allPermisos = await apiService.getPermisos();
-            const userPermissions = allPermisos.filter(p => 
-              p.perfil.toUpperCase() === user.perfil.toUpperCase()
-            );
+            const [allPermisos, allConfigs] = await Promise.all([
+              apiService.getPermisos(),
+              apiService.getConfiguracion()
+            ]);
+            
+            // Map PRF-XX ID to actual Profile Name from Config
+            const profileConfig = allConfigs.find(c => c.id === user.perfil || c.valor === user.perfil);
+            const profileName = profileConfig ? (profileConfig.valor || profileConfig.etiqueta) : user.perfil;
+
+            const userPermissions = allPermisos.filter(p => p.perfil === profileName);
             const permissionsMap: any = {};
             userPermissions.forEach(p => {
               // Normalize module name to lowercase to match NAVIGATION IDs
@@ -66,8 +75,11 @@ export default function Login({ onLogin }: LoginProps) {
       } else {
         setError('Usuario o contraseña incorrectos.');
       }
+    } catch (err) {
+      setError('Error de conexión con el servicio.');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -85,7 +97,7 @@ export default function Login({ onLogin }: LoginProps) {
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">{clinicName}</h1>
+                <h1 className="clini-title-main">{clinicName}</h1>
                 <p className="text-slate-500 text-sm">Sistema de Gestión Clínica</p>
               </div>
             </div>

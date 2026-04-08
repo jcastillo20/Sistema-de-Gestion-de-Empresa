@@ -52,7 +52,7 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Bienvenido al Panel de Control</h2>
+          <h2 className="clini-title-main">Bienvenido al Panel de Control</h2>
           <p className="text-slate-500">Resumen de actividad clínica para <span className="font-bold text-primary">{isAdmin ? 'Todas las Sedes' : currentUser.sede}</span></p>
         </div>
         {!isAdmin && (
@@ -113,7 +113,7 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
         {/* Recent Appointments */}
         <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-            <h3 className="font-bold text-slate-900">Citas Recientes</h3>
+            <h3 className="clini-title-section">Citas Recientes</h3>
             <button className="text-primary text-sm font-semibold hover:opacity-80">Ver todas</button>
           </div>
           <div className="overflow-x-auto">

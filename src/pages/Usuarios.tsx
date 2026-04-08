@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
-import { Usuario, UserProfile, DocumentType, Sede } from '../types';
+import { Usuario, Sede, ConfiguracionDinamica } from '../types';
 import { User, Mail, Phone, Shield, Eye, EyeOff, Building2, Calendar, UserCheck, ShieldCheck } from 'lucide-react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
@@ -22,6 +22,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [allProfilesConfig, setAllProfilesConfig] = useState<ConfiguracionDinamica[]>([]);
 
   const permissions = usePermissions(currentUser, 'usuarios');
 
@@ -48,12 +49,14 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     setIsLoading(true);
     try {
       const sedeFilter = permissions.verTodo ? undefined : currentUser.sede;
-      const [usuariosData, sedesData] = await Promise.all([
+      const [usuariosData, sedesData, configData] = await Promise.all([
         apiService.getUsuarios(sedeFilter),
-        apiService.getSedes()
+        apiService.getSedes(),
+        apiService.getConfiguracion()
       ]);
       setUsuarios(usuariosData);
       setSedes(sedesData);
+      setAllProfilesConfig(configData.filter(c => c.categoria === 'SEGURIDAD' && c.clave.startsWith('PERFIL_')));
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -95,6 +98,17 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries()) as any;
     
+    // Si el perfil seleccionado es global y la sede es 'ALL', no la hacemos requerida
+    const selectedProfileValue = data.perfil;
+    const isSelectedProfileGlobal = PROFILES_WITH_SEDE_ACCESS.includes(selectedProfileValue);
+    if (isSelectedProfileGlobal && data.sede === 'ALL') {
+      // No es necesario validar la sede si es un perfil global y se seleccionó 'ALL'
+    } else if (!data.sede) { // Si no es global y la sede está vacía
+      setAlertConfig({ title: 'Error de Validación', message: 'La sede es obligatoria para este perfil.', type: 'error' });
+      setIsAlertOpen(true);
+      return;
+    }
+
     const error = validateForm(data);
     if (error) {
       setAlertConfig({ title: 'Error de Validación', message: error, type: 'error' });
@@ -282,12 +296,18 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Perfil *</label>
-              <select name="perfil" className="input-field" defaultValue={selectedUsuario?.perfil || 'RECEPCIONISTA'}>
-                <option value="ADMINISTRADOR">Administrador</option>
-                <option value="ADMINISTRADOR_SEDE">Administrador Sede</option>
-                <option value="RECEPCIONISTA">Recepcionista</option>
-                <option value="TERAPEUTA">Terapeuta</option>
-                <option value="GERENTE">Gerente</option>
+              <select 
+                name="perfil" 
+                className="input-field" 
+                defaultValue={selectedUsuario?.perfil || 'RECEPCIONISTA'}
+                onChange={(e) => {
+                  // Forcing a re-render or state update might be needed if sede logic depends on this immediately
+                  // For now, the handleSave will re-evaluate based on the final form data
+                }}
+              >
+                {allProfilesConfig.map(p => (
+                  <option key={p.id} value={p.valor}>{p.etiqueta.replace('Perfil: ', '')}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">
@@ -295,7 +315,15 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 {permissions.verTodo ? (
-                  <select name="sede" className="input-field input-with-icon" defaultValue={selectedUsuario?.sede || currentUser.sede}>
+                  <select 
+                    name="sede" 
+                    className="input-field input-with-icon" 
+                    defaultValue={selectedUsuario?.sede || (PROFILES_WITH_SEDE_ACCESS.includes(selectedUsuario?.perfil || 'RECEPCIONISTA') ? 'ALL' : currentUser.sede)}
+                    required={!PROFILES_WITH_SEDE_ACCESS.includes(selectedUsuario?.perfil || 'RECEPCIONISTA')}
+                  >
+                    {PROFILES_WITH_SEDE_ACCESS.includes(selectedUsuario?.perfil || 'RECEPCIONISTA') && (
+                      <option value="ALL">Todas las Sedes</option>
+                    )}
                     {sedes.map(s => (
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}

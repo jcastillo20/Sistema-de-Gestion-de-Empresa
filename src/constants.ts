@@ -35,7 +35,7 @@ export const API_CONFIG = {
 };
 
 // Perfiles que pueden ver la columna SEDE en todas las tablas y cambiarla en formularios
-export const PROFILES_WITH_SEDE_ACCESS = ['SUPER_ADMIN', 'ADMINISTRADOR', 'GERENTE'];
+export const PROFILES_WITH_SEDE_ACCESS = ['SUPERADMIN', 'ADMINISTRADOR', 'GERENTE'];
 
 export const NAVIGATION = [
   { id: 'dashboard', label: 'Dashboard', path: '/', icon: 'LayoutDashboard' },

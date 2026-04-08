@@ -17,12 +17,19 @@ import {
   MOCK_TERAPEUTAS, 
   MOCK_PACIENTES, 
   MOCK_AUDITORIA,
-  MOCK_ESPECIALIDADES,
-  MOCK_HORARIOS
+  MOCK_HORARIOS,
+  MOCK_ESPECIALIDADES_DICT
 } from './mockDb';
 
 // Simulated delay to mimic API calls
 const DELAY = 500;
+
+const MOCK_ESPECIALIDADES: Especialidad[] = MOCK_ESPECIALIDADES_DICT.map(item => ({
+  id: item.id,
+  nombre: item.etiqueta,
+  duracionSesion: Number(item.valor) || 45,
+  estado: true
+}));
 
 class ApiService {
   private config: ConfiguracionDinamica[] = [];
@@ -51,7 +58,15 @@ class ApiService {
       const savedEspecialidades = localStorage.getItem('clini_especialidades');
       const savedHorarios = localStorage.getItem('clini_horarios');
 
-      this.config = savedConfig ? JSON.parse(savedConfig) : [...MOCK_CONFIG_DINAMICA];
+      // Fusionar configuración: Mantener estructura de MOCK pero usar valores de LocalStorage si existen
+      const savedConfigArr = savedConfig ? JSON.parse(savedConfig) : [];
+      this.config = MOCK_CONFIG_DINAMICA.map(mockItem => {
+        const savedItem = Array.isArray(savedConfigArr) 
+          ? savedConfigArr.find((s: any) => s.clave === mockItem.clave) 
+          : null;
+        return savedItem ? { ...mockItem, valor: savedItem.valor } : mockItem;
+      });
+
       this.sedes = savedSedes ? JSON.parse(savedSedes) : [...MOCK_SEDES];
       this.permisos = savedPermisos ? JSON.parse(savedPermisos) : [...MOCK_PERMISOS];
       this.usuarios = savedUsuarios ? JSON.parse(savedUsuarios) : [...MOCK_USUARIOS];
@@ -91,15 +106,31 @@ class ApiService {
   }
 
   private saveToStorage() {
-    localStorage.setItem('clini_config_v2', JSON.stringify(this.config));
-    localStorage.setItem('clini_sedes', JSON.stringify(this.sedes));
-    localStorage.setItem('clini_permisos', JSON.stringify(this.permisos));
-    localStorage.setItem('clini_usuarios', JSON.stringify(this.usuarios));
-    localStorage.setItem('clini_terapeutas', JSON.stringify(this.terapeutas));
-    localStorage.setItem('clini_pacientes', JSON.stringify(this.pacientes));
-    localStorage.setItem('clini_auditoria', JSON.stringify(this.auditoria));
-    localStorage.setItem('clini_especialidades', JSON.stringify(this.especialidades));
-    localStorage.setItem('clini_horarios', JSON.stringify(this.horarios));
+    try {
+      localStorage.setItem('clini_config_v2', JSON.stringify(this.config));
+      localStorage.setItem('clini_sedes', JSON.stringify(this.sedes));
+      localStorage.setItem('clini_permisos', JSON.stringify(this.permisos));
+      localStorage.setItem('clini_usuarios', JSON.stringify(this.usuarios));
+      localStorage.setItem('clini_terapeutas', JSON.stringify(this.terapeutas));
+      localStorage.setItem('clini_pacientes', JSON.stringify(this.pacientes));
+      localStorage.setItem('clini_auditoria', JSON.stringify(this.auditoria));
+      localStorage.setItem('clini_especialidades', JSON.stringify(this.especialidades));
+      localStorage.setItem('clini_horarios', JSON.stringify(this.horarios));
+    } catch (error: any) {
+      if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
+        console.warn("LocalStorage lleno. Pruning logs de auditoría para liberar espacio...");
+        // Estrategia de emergencia: quedarnos solo con los últimos 5 logs y reintentar
+        this.auditoria = this.auditoria.slice(0, 5);
+        try {
+          localStorage.setItem('clini_auditoria', JSON.stringify(this.auditoria));
+          return; // Si logramos salvar tras el recorte, evitamos lanzar el error al UI
+        } catch (retryError) {
+          console.error("No se pudo liberar suficiente espacio incluso borrando auditoría.");
+        }
+      }
+      console.error("Error crítico al guardar en localStorage:", error);
+      throw new Error("No se pudo persistir la información. El almacenamiento del navegador está lleno.");
+    }
   }
 
   private async delay() {
@@ -124,6 +155,25 @@ class ApiService {
       this.saveToStorage();
     }
     return this.config[index];
+  }
+
+  async createConfig(item: ConfiguracionDinamica, currentUser: string) {
+    await this.delay();
+    this.config.push(item);
+    this.addAudit('CONFIGURACION', item.clave, 'INSERT', currentUser, null, item);
+    this.saveToStorage();
+    return item;
+  }
+
+  async deleteConfig(clave: string, currentUser: string) {
+    await this.delay();
+    const index = this.config.findIndex(c => c.clave === clave);
+    if (index !== -1) {
+      const oldData = { ...this.config[index] };
+      this.config.splice(index, 1);
+      this.addAudit('CONFIGURACION', clave, 'DELETE', currentUser, oldData, null);
+      this.saveToStorage();
+    }
   }
 
   // --- SEDES ---
@@ -195,7 +245,7 @@ class ApiService {
   async getUsuarios(sede?: string) {
     await this.delay();
     let filtered = this.usuarios.filter(u => u.estado !== false);
-    if (sede && sede !== 'all') {
+    if (sede && sede.toLowerCase() !== 'all') {
       return filtered.filter(u => u.sede === sede);
     }
     return filtered;
@@ -238,7 +288,7 @@ class ApiService {
   async getTerapeutas(sede?: string) {
     await this.delay();
     let filtered = this.terapeutas.filter(t => t.estado !== false);
-    if (sede && sede !== 'all') {
+    if (sede && sede.toLowerCase() !== 'all') {
       return filtered.filter(t => t.sede === sede);
     }
     return filtered;
@@ -281,7 +331,7 @@ class ApiService {
   async getPacientes(sede?: string) {
     await this.delay();
     let filtered = this.pacientes.filter(p => p.estado !== false);
-    if (sede && sede !== 'all') {
+    if (sede && sede.toLowerCase() !== 'all') {
       return filtered.filter(p => p.sede === sede);
     }
     return filtered;
@@ -378,7 +428,7 @@ class ApiService {
   async getHorarios(sede?: string, idTerapeuta?: string) {
     await this.delay();
     let filtered = this.horarios.filter(h => h.estado !== false);
-    if (sede && sede !== 'all') {
+    if (sede && sede.toLowerCase() !== 'all') {
       filtered = filtered.filter(h => h.sede === sede);
     }
     if (idTerapeuta) {
@@ -427,18 +477,36 @@ class ApiService {
   }
 
   private addAudit(tabla: string, idRegistro: string, accion: string, usuario: string, datosAnteriores?: any, datosNuevos?: any) {
+    // Función para omitir valores gigantes (como Base64 de imágenes) en los logs de auditoría
+    const sanitize = (data: any) => {
+      if (!data || typeof data !== 'object') return data;
+      const clean = { ...data };
+      Object.keys(clean).forEach(key => {
+        if (typeof clean[key] === 'string' && clean[key].length > 1000) {
+          clean[key] = `[Omitido: Dato demasiado grande (${clean[key].length} chars)]`;
+        }
+      });
+      return clean;
+    };
+
     const audit: Auditoria = {
       id: Math.random().toString(36).substr(2, 9),
       tabla,
       idRegistro,
       accion: accion as 'INSERT' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'UPDATE_STATUS',
-      datosAnteriores,
-      datosNuevos,
+      datosAnteriores: sanitize(datosAnteriores),
+      datosNuevos: sanitize(datosNuevos),
       fecha: new Date().toISOString(),
       idUsuario: usuario,
       nombreUsuario: usuario
     };
     this.auditoria.unshift(audit);
+
+    // Limitar el tamaño del log de auditoría para prevenir problemas de cuota de localStorage
+    const MAX_AUDIT_LOGS = 50; // Reducido para evitar QuotaExceededError
+    if (this.auditoria.length > MAX_AUDIT_LOGS) {
+      this.auditoria = this.auditoria.slice(0, MAX_AUDIT_LOGS);
+    }
     this.saveToStorage();
   }
 }

@@ -2,12 +2,15 @@
 
 @theme {
   --color-primary: var(--primary-color, #4f46e5);
-  --color-secondary: #64748b;
+  --color-secondary: var(--secondary-color, #64748b);
+  --color-accent: var(--accent-color, #f59e0b);
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --color-info: #3b82f6;
-  
+
+  --font-main: var(--clini-font, 'Inter', system-ui, sans-serif);
+
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-3xl: 2rem;
@@ -16,9 +19,27 @@
 @layer base {
   :root {
     --primary-color: #4f46e5;
+    --secondary-color: #64748b;
+    --accent-color: #f59e0b;
   }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
+    font-family: var(--font-main);
+  }
+}
+
+@layer components {
+  .clini-title-main {
+    @apply text-2xl font-bold text-slate-900 tracking-tight;
+  }
+  .clini-title-section {
+    @apply text-lg font-bold text-slate-800 tracking-tight;
+  }
+  .clini-label {
+    @apply text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1;
+  }
+  .clini-card {
+    @apply bg-white rounded-3xl border border-slate-100 shadow-sm p-8;
   }
 }
 
@@ -31,7 +52,7 @@
 }
 
 .input-field {
-  @apply w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all placeholder:text-slate-400;
+  @apply w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all placeholder:text-slate-400;
 }
 
 .input-with-icon {

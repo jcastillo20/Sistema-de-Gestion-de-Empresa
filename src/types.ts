@@ -1,5 +1,4 @@
-export type DocumentType = 'DNI' | 'CE' | 'PASAPORTE' | 'RUC';
-export type UserProfile = 'SUPER_ADMIN' | 'ADMINISTRADOR' | 'ADMINISTRADOR_SEDE' | 'RECEPCIONISTA' | 'TERAPEUTA' | 'GERENTE';
+// Los Enums de estado se mantienen porque son LÓGICA DE NEGOCIO (Hardcoded en el flujo)
 export type AppointmentStatus = 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA' | 'COMPLETADA' | 'REPROGRAMADA';
 export type PaymentStatus = 'PENDIENTE' | 'PAGADO' | 'PARCIAL' | 'ANULADO';
 
@@ -12,9 +11,9 @@ export interface Usuario {
   contrasena: string;
   correo: string;
   telefono: string;
-  tipoDocumento: DocumentType;
+  tipoDocumento: string;
   documentoIdentidad: string;
-  perfil: UserProfile;
+  perfil: string;
   sede: string;
   estado: boolean;
   fechaCreacion: string;
@@ -28,7 +27,7 @@ export interface Terapeuta {
   apellidoPaterno: string;
   apellidoMaterno: string;
   nombres: string;
-  tipoDocumento: DocumentType;
+  tipoDocumento: string;
   documentoIdentidad: string;
   correo: string;
   telefono: string;
@@ -47,7 +46,7 @@ export interface Paciente {
   apellidoPaterno: string;
   apellidoMaterno: string;
   nombres: string;
-  tipoDocumento: DocumentType;
+  tipoDocumento: string;
   documentoIdentidad: string;
   correo: string;
   telefono: string;
@@ -201,7 +200,7 @@ export interface Sede {
 }
 
 export interface Permiso {
-  perfil: UserProfile;
+  perfil: string;
   modulo: string;
   acceso: boolean;
   verTodo: boolean;
