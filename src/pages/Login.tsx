@@ -16,15 +16,27 @@ export default function Login({ onLogin }: LoginProps) {
   const [logo, setLogo] = useState('');
   const [clinicName, setClinicName] = useState('ST Clínica');
 
+  // Helper function to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+  };
+
   useEffect(() => {
     const loadBranding = async () => {
       try {
         const config = await apiService.getConfiguracion();
         const logoConfig = config.find(c => c.clave === 'CLINICA_LOGO')?.valor;
         const nameConfig = config.find(c => c.clave === 'CLINICA_NOMBRE')?.valor;
-        const primary = config.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
+        const primaryColor = config.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
 
-        if (primary) document.documentElement.style.setProperty('--primary-color', primary);
+        if (primaryColor) {
+          document.documentElement.style.setProperty('--primary-color', primaryColor);
+          const primaryRgb = hexToRgb(primaryColor);
+          if (primaryRgb) document.documentElement.style.setProperty('--primary-rgb', primaryRgb);
+        }
         if (logoConfig) setLogo(logoConfig);
         if (nameConfig) setClinicName(nameConfig);
       } catch (err) {

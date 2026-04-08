@@ -283,18 +283,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
   const handleNavigateCalendar = (direction: 'prev' | 'next') => {
     const newDate = new Date(calendarDate);
-    const prevMonth = newDate.getMonth();
-    const prevYear = newDate.getFullYear();
-
     if (calendarView === 'day') newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
     else if (calendarView === 'week') newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
     else if (calendarView === 'month') newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
     setCalendarDate(newDate);
-
-    if (newDate.getMonth() !== prevMonth || newDate.getFullYear() !== prevYear) {
-      setFilterMonth(newDate.getMonth() + 1);
-      setFilterYear(newDate.getFullYear());
-    }
   };
 
   const generateTimeSlots = () => {
@@ -314,7 +306,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Horarios de Terapeutas</h2>
+          <h2 className="clini-title-main">Horarios de Terapeutas</h2>
           <p className="text-slate-500 text-sm">Gestiona los turnos rotativos y pausas mensuales.</p>
         </div>
         {permissions.puedeCrear && (
@@ -328,7 +320,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
       {/* Filtros Avanzados */}
       <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
         <div className="flex items-center gap-2 text-slate-900 font-bold text-sm uppercase tracking-wider">
-          <Filter size={16} className="text-primary" />
+          <Filter size={16} className="text-primary" /> {/* Uses text-primary */}
           Filtros de Búsqueda
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -391,7 +383,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           onClick={() => setActiveTab('listado')}
           className={cn(
             "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-            activeTab === 'listado' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+            activeTab === 'listado' ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-700"
           )}
         >
           <LayoutGrid size={16} />
@@ -401,7 +393,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           onClick={() => setActiveTab('calendario')}
           className={cn(
             "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-            activeTab === 'calendario' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+            activeTab === 'calendario' ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-700"
           )}
         >
           <Calendar size={16} />
@@ -414,30 +406,16 @@ export default function Horarios({ currentUser }: HorariosProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-100 p-1">
-                <button onClick={() => handleNavigateCalendar('prev')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all">
+              <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-100 p-1"> {/* Uses bg-slate-50 */}
+                <button onClick={() => handleNavigateCalendar('prev')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all"> {/* Uses text-primary */}
                   <ChevronLeft size={18} />
                 </button>
                 <div className="px-4 text-xs font-bold text-slate-700 uppercase min-w-[150px] text-center">
-                  {(() => {
-                    if (calendarView === 'day') return calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-                    if (calendarView === 'week') {
-                      const d = new Date(calendarDate);
-                      const day = d.getDay();
-                      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-                      const start = new Date(d.setDate(diff));
-                      const end = new Date(start);
-                      end.setDate(start.getDate() + 6);
-                      if (start.getMonth() === end.getMonth()) {
-                        return `del ${start.getDate()} al ${end.getDate()} de ${start.toLocaleDateString('es-ES', { month: 'long' })}`;
-                      } else {
-                        return `del ${start.getDate()} de ${start.toLocaleDateString('es-ES', { month: 'short' })} al ${end.getDate()} de ${end.toLocaleDateString('es-ES', { month: 'short' })}`;
-                      }
-                    }
-                    return calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
-                  })()}
+                  {calendarView === 'month' ? calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
+                   calendarView === 'week' ? `Semana ${Math.ceil(calendarDate.getDate() / 7)} - ${calendarDate.toLocaleDateString('es-ES', { month: 'short' })}` :
+                   calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                 </div>
-                <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all">
+                <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all"> {/* Uses text-primary */}
                   <ChevronRight size={18} />
                 </button>
               </div>
@@ -449,7 +427,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                   onClick={() => setCalendarView(view)}
                   className={cn(
                     "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all",
-                    calendarView === view ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
+                    calendarView === view ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-600"
                   )}
                 >
                   {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}
@@ -462,61 +440,22 @@ export default function Horarios({ currentUser }: HorariosProps) {
             <div className="overflow-x-auto">
               <div className="min-w-[800px]">
                 <div className={cn("grid border-b border-slate-100 bg-slate-50/50", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
-                  <div className="p-4 border-r border-slate-100"></div>
-                  {calendarView === 'week' ? (
-                    ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map((d, i) => {
-                      const start = new Date(calendarDate);
-                      const day = start.getDay();
-                      const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-                      start.setDate(diff);
-                      const date = new Date(start);
-                      date.setDate(start.getDate() + i);
-                      return (
-                        <div key={d} className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">
-                          {d} {date.getDate()}
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="p-4 text-center font-bold text-[10px] text-primary uppercase tracking-widest">
-                      {['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]} {calendarDate.getDate()}
-                    </div>
-                  )}
+                  <div className="p-4 border-r border-slate-100"></div> {/* Uses border-slate-100 */}
+                  {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(d => (
+                    <div key={d} className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">{d}</div>
+                  ))}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                   {generateTimeSlots().map(time => (
                     <div key={time} className={cn("grid border-b border-slate-50 last:border-b-0", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
-                      <div className="p-3 text-right pr-4 border-r border-slate-100 bg-slate-50/30">
+                      <div className="p-3 text-right pr-4 border-r border-slate-100 bg-slate-50/30"> {/* Uses bg-slate-50/30 */}
                         <span className="text-[10px] font-bold text-slate-400">{time}</span>
                       </div>
-                      {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map((day, dayIndex) => {
-                        const actualDate = new Date(calendarDate);
-                        if (calendarView === 'week') {
-                          const d = actualDate.getDay();
-                          const diff = actualDate.getDate() - d + (d === 0 ? -6 : 1);
-                          actualDate.setDate(diff + dayIndex);
-                        }
-                        const actualMonth = actualDate.getMonth() + 1;
-                        const actualYear = actualDate.getFullYear();
-
-                        const dayHorarios = horarios.filter(h => {
-                          const matchTerapeuta = !filterTerapeuta || h.idTerapeuta === filterTerapeuta;
-                          const matchMes = h.mes === actualMonth;
-                          const matchAño = h.año === actualYear;
-                          
-                          let matchEspecialidad = true;
-                          if (filterEspecialidad) {
-                            const terapeuta = terapeutas.find(t => t.id === h.idTerapeuta);
-                            matchEspecialidad = terapeuta?.especialidades?.includes(filterEspecialidad) || false;
-                          }
-                          
-                          return matchTerapeuta && matchMes && matchAño && matchEspecialidad;
-                        });
-
-                        const slotBlocks = dayHorarios.flatMap(h => h.bloques.filter(b => {
+                      {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(day => {
+                        const slotBlocks = filteredHorariosData.flatMap(h => h.bloques.filter(b => {
                           if (!b.diasSemana.includes(day)) return false;
                           return time >= b.horaInicio && time < b.horaFin;
-                        }).map(b => ({ ...b, nombreTerapeuta: h.nombreTerapeuta })));
+                        }));
 
                         return (
                           <div key={day} className="p-1 border-r border-slate-50 last:border-r-0 min-h-[45px] relative group">
@@ -530,7 +469,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                                 }}
                               >
                                 <span className="text-[7px] font-black text-white uppercase leading-none truncate">
-                                  {b.nombreTerapeuta.split(' ')[0]}
+                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta.split(' ')[0]}
                                 </span>
                               </div>
                             ))}
@@ -552,7 +491,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Terapeuta', 
               accessor: (h: Horario) => (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3"> {/* Uses bg-primary/10 */}
                   <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
                     {h.nombreTerapeuta.charAt(0)}
                   </div>
@@ -565,7 +504,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Bloques', 
               accessor: (h: Horario) => (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1"> {/* Uses bg-primary/10 */}
                   {h.bloques.map((b, i) => (
                     <span key={i} className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm border border-black/5" style={{ 
                       backgroundColor: configAgenda[`COLOR_${b.estado}`] || '#e2e8f0',
@@ -606,7 +545,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
                 <Building2 size={14} className="text-slate-400" />
                 Sede
               </label>
@@ -623,7 +562,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
                 <User size={14} className="text-slate-400" />
                 Terapeuta
               </label>
@@ -642,7 +581,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
                 <Calendar size={14} className="text-slate-400" />
                 Mes
               </label>
@@ -658,7 +597,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
+              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
                 <Calendar size={14} className="text-slate-400" />
                 Año
               </label>
@@ -674,7 +613,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2 uppercase tracking-wider">
+              <h3 className="clini-title-section text-sm flex items-center gap-2 uppercase tracking-wider"> {/* Uses clini-title-section */}
                 <Clock size={16} />
                 Bloques de Horario
               </h3>
@@ -686,7 +625,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
             <div className="space-y-3">
               {formData.bloques?.length === 0 ? (
-                <div className="p-8 border-2 border-dashed border-slate-100 rounded-3xl text-center">
+                <div className="p-8 border-2 border-dashed border-slate-100 rounded-3xl text-center"> {/* Uses border-slate-100 */}
                   <p className="text-slate-400 text-sm">No hay bloques definidos para este horario.</p>
                 </div>
               ) : (
@@ -694,7 +633,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                   <div key={bloque.id} className="flex flex-col md:flex-row items-end gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-3 w-full">
                       <div className="space-y-1 md:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Días</label>
+                        <label className="clini-label">Días</label> {/* Uses clini-label */}
                         <div className="flex flex-wrap gap-1">
                           {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
                             const isSelected = bloque.diasSemana.includes(d);
@@ -711,7 +650,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                                 className={cn(
                                   "w-7 h-7 rounded-lg text-[10px] font-bold transition-all border",
                                   isSelected 
-                                    ? "bg-primary border-primary text-white shadow-sm" 
+                                    ? "bg-primary border-primary text-white shadow-sm" /* Uses bg-primary */
                                     : "bg-white border-slate-200 text-slate-400 hover:border-primary/50"
                                 )}
                               >
@@ -721,7 +660,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                           })}
                         </div>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1"> {/* Uses clini-label */}
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
                         <select 
                           className="input-field py-1 text-xs"
@@ -732,7 +671,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                           <option value="PAUSA">Pausa</option>
                         </select>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1"> {/* Uses clini-label */}
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Inicio</label>
                         <input 
                           type="time" 
@@ -741,7 +680,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                           onChange={(e) => handleUpdateBloque(bloque.id, 'horaInicio', e.target.value)}
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1"> {/* Uses clini-label */}
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Fin</label>
                         <input 
                           type="time" 
@@ -750,7 +689,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                           onChange={(e) => handleUpdateBloque(bloque.id, 'horaFin', e.target.value)}
                         />
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1"> {/* Uses clini-label */}
                         <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
                         <div className="flex items-center gap-2 h-9 px-3 bg-white rounded-xl border border-slate-200">
                           <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: configAgenda[`COLOR_${bloque.estado}`] }}></div>
@@ -771,7 +710,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-slate-600 font-medium">
+            <button onClick={() => setIsModalOpen(false)} className="btn-secondary px-4 py-2 text-xs"> {/* Uses btn-secondary */}
               Cancelar
             </button>
             <button onClick={handleSave} className="btn-primary flex items-center gap-2">

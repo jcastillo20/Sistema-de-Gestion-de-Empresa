@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { 
   Users, 
@@ -16,35 +16,89 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { Sede } from '../types';
 import { usePermissions } from '../hooks/usePermissions';
-import { MOCK_SEDES } from '../services/mockDb';
+import { apiService } from '../services/apiService';
+
+const ICON_MAP: Record<string, any> = {
+  Users,
+  Calendar,
+  TrendingUp,
+  Clock,
+  CreditCard,
+  CheckCircle2,
+  PieChart,
+  UserRound,
+  Building2,
+  AlertCircle
+};
 
 export default function Dashboard({ currentUser }: { currentUser: any }) {
   const permissions = usePermissions(currentUser, 'dashboard');
-  const activeSedesCount = MOCK_SEDES.filter(s => s.estado).length;
-  const isAdmin = permissions.verTodo;
+  const isAdmin = permissions.verTodo; // Determines if the user has global access
 
-  const stats = [
-    { label: 'Pacientes Totales', value: isAdmin ? '1,284' : '412', icon: Users, color: 'bg-primary', trend: '+12%', trendUp: true },
-    { label: 'Citas Hoy', value: isAdmin ? '42' : '15', icon: Calendar, color: 'bg-primary/80', trend: '+5%', trendUp: true },
-    { label: 'Ingresos Mensuales', value: isAdmin ? 'S/ 12,450' : 'S/ 4,120', icon: TrendingUp, color: 'bg-emerald-500', trend: '+18%', trendUp: true },
-    { label: 'Terapeutas Activos', value: isAdmin ? '18' : '6', icon: UserRound, color: 'bg-amber-500', trend: '0%', trendUp: true },
+  const [stats, setStats] = useState<any[]>([]);
+  const [secondaryStats, setSecondaryStats] = useState<any[]>([]);
+  const [recentAppointments, setRecentAppointments] = useState<any[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [selectedSedeFilter, setSelectedSedeFilter] = useState(isAdmin ? 'ALL' : currentUser.sede);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      setIsLoading(true);
+      try {
+        const sedeFilter = selectedSedeFilter === 'ALL' ? undefined : selectedSedeFilter;
+        
+        const [
+          statsData, 
+          secondaryStatsData, 
+          appointmentsData, 
+          sedesData
+        ] = await Promise.all([
+          apiService.getDashboardStats(sedeFilter),
+          apiService.getDashboardSecondaryStats(sedeFilter),
+          apiService.getRecentAppointments(sedeFilter),
+          apiService.getSedes()
+        ]);
+
+        setStats(statsData);
+        setSecondaryStats(secondaryStatsData);
+        setRecentAppointments(appointmentsData);
+        setSedes(sedesData);
+
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [currentUser.sede, isAdmin, selectedSedeFilter]);
+
+  // Default stats structure for loading or if API fails
+  const defaultStats = [
+    { label: 'Pacientes Totales', value: '...', icon: Users, color: 'bg-primary', trend: '...', trendUp: true },
+    { label: 'Citas Hoy', value: '...', icon: Calendar, color: 'bg-primary/80', trend: '...', trendUp: true },
+    { label: 'Ingresos Mensuales', value: '...', icon: TrendingUp, color: 'bg-success', trend: '...', trendUp: true },
+    { label: 'Terapeutas Activos', value: '...', icon: UserRound, color: 'bg-warning', trend: '...', trendUp: true },
   ];
 
-  const secondaryStats = [
-    { label: 'Pendientes de Pago', value: isAdmin ? '15' : '4', icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Paquetes Activos', value: isAdmin ? '84' : '22', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Nuevos Pacientes', value: isAdmin ? '28' : '9', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Tasa de Asistencia', value: '94%', icon: PieChart, color: 'text-primary', bg: 'bg-primary/5' },
-    { label: 'Sedes Operativas', value: isAdmin ? activeSedesCount.toString() : '1', icon: Building2, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Horas Terapia', value: isAdmin ? '1,420' : '380', icon: Clock, color: 'text-violet-600', bg: 'bg-violet-50' },
+  const defaultSecondaryStats = [
+    { label: 'Pendientes de Pago', value: '...', icon: AlertCircle, color: 'text-danger', bg: 'bg-danger/10' },
+    { label: 'Paquetes Activos', value: '...', icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
+    { label: 'Nuevos Pacientes', value: '...', icon: Users, color: 'text-info', bg: 'bg-info/10' },
+    { label: 'Tasa de Asistencia', value: '...', icon: PieChart, color: 'text-primary', bg: 'bg-primary/5' },
+    { label: 'Sedes Operativas', value: '...', icon: Building2, color: 'text-warning', bg: 'bg-warning/10' },
+    { label: 'Horas Terapia', value: '...', icon: Clock, color: 'text-purple', bg: 'bg-purple/10' },
   ];
 
-  const recentAppointments = [
-    { id: 1, patient: 'Juan Pérez', therapist: 'Dra. Ana García', time: '09:00 AM', status: 'COMPLETADA' },
-    { id: 2, patient: 'María Rodríguez', therapist: 'Dr. Carlos Ruiz', time: '10:30 AM', status: 'CONFIRMADA' },
-    { id: 3, patient: 'Roberto Gómez', therapist: 'Dra. Ana García', time: '11:45 AM', status: 'PENDIENTE' },
-    { id: 4, patient: 'Elena Martínez', therapist: 'Lic. Sofía López', time: '02:15 PM', status: 'CONFIRMADA' },
+  const defaultRecentAppointments = [
+    { id: 1, patient: 'Cargando...', therapist: '...', time: '...', status: 'PENDIENTE' },
+    { id: 2, patient: 'Cargando...', therapist: '...', time: '...', status: 'PENDIENTE' },
+    { id: 3, patient: 'Cargando...', therapist: '...', time: '...', status: 'PENDIENTE' },
+    { id: 4, patient: 'Cargando...', therapist: '...', time: '...', status: 'PENDIENTE' },
   ];
 
   return (
@@ -53,65 +107,80 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="clini-title-main">Bienvenido al Panel de Control</h2>
-          <p className="text-slate-500">Resumen de actividad clínica para <span className="font-bold text-primary">{isAdmin ? 'Todas las Sedes' : currentUser.sede}</span></p>
+          <p className="text-slate-500">Resumen de actividad clínica para <span className="font-bold text-primary">{selectedSedeFilter === 'ALL' ? 'Todas las Sedes' : selectedSedeFilter}</span></p>
         </div>
-        {!isAdmin && (
-          <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100">
-            <Building2 size={18} />
-            <span className="text-sm font-bold uppercase tracking-wider">{currentUser.sede}</span>
+        {isAdmin && (
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <select 
+              className="input-field input-with-icon py-2 text-xs"
+              value={selectedSedeFilter}
+              onChange={(e) => setSelectedSedeFilter(e.target.value)}
+            >
+              <option value="ALL">Todas las Sedes</option>
+              {sedes.map(s => (
+                <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
+              ))}
+            </select>
           </div>
         )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {(isLoading ? defaultStats : stats).map((stat, index) => {
+          const Icon = typeof stat.icon === 'string' ? ICON_MAP[stat.icon] : stat.icon;
+          return (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm"
+            className="clini-card p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={cn("p-3 rounded-2xl text-white shadow-lg", stat.color)}>
-                <stat.icon size={24} />
+              <div className={cn("p-3 rounded-2xl text-white shadow-lg", stat.color, stat.color === 'bg-primary' && 'shadow-primary/20', stat.color === 'bg-success' && 'shadow-success/20', stat.color === 'bg-warning' && 'shadow-warning/20')}>
+                {Icon && <Icon size={24} />}
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${stat.trendUp ? 'text-emerald-600' : 'text-rose-600'}`}>
+              <div className={`flex items-center gap-1 text-sm font-medium ${stat.trendUp ? 'text-success' : 'text-danger'}`}>
                 {stat.trend}
                 {stat.trendUp ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
               </div>
             </div>
             <p className="text-slate-500 text-sm font-medium">{stat.label}</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</p>
+            <div className="text-2xl font-bold text-slate-900 mt-1">{isLoading ? <div className="h-8 w-24 bg-slate-200 rounded animate-pulse"></div> : stat.value}</div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-        {secondaryStats.map((stat, index) => (
+        {(isLoading ? defaultSecondaryStats : secondaryStats).map((stat, index) => {
+          const Icon = typeof stat.icon === 'string' ? ICON_MAP[stat.icon] : stat.icon;
+          return (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 + (index * 0.1) }}
-            className={cn("p-4 rounded-2xl flex items-center gap-4 border border-transparent", stat.bg)}
+            className={cn("p-4 rounded-2xl flex items-center gap-4 border border-transparent", stat.bg, isLoading && 'animate-pulse')}
           >
             <div className={cn("p-2 rounded-xl bg-white shadow-sm", stat.color)}>
-              <stat.icon size={20} />
+              {Icon && <Icon size={20} />}
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
-              <p className={cn("text-lg font-bold", stat.color)}>{stat.value}</p>
+              <div className={cn("text-lg font-bold", stat.color)}>{isLoading ? <div className="h-6 w-16 bg-slate-200 rounded"></div> : stat.value}</div>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Recent Appointments */}
-        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="lg:col-span-2 clini-card overflow-hidden p-0">
           <div className="p-6 border-b border-slate-50 flex items-center justify-between">
             <h3 className="clini-title-section">Citas Recientes</h3>
             <button className="text-primary text-sm font-semibold hover:opacity-80">Ver todas</button>
@@ -128,20 +197,26 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {recentAppointments.map((apt) => (
+                {(isLoading ? defaultRecentAppointments : recentAppointments).map((apt) => (
                   <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-900">{apt.patient}</span>
+                      <span className="font-semibold text-slate-900">{isLoading ? <div className="h-4 w-24 bg-slate-200 rounded"></div> : apt.patient}</span>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{apt.therapist}</td>
-                    <td className="px-6 py-4 text-slate-600">{apt.time}</td>
+                    <td className="px-6 py-4 text-slate-600">{isLoading ? <div className="h-4 w-20 bg-slate-200 rounded"></div> : apt.therapist}</td>
+                    <td className="px-6 py-4 text-slate-600">{isLoading ? <div className="h-4 w-12 bg-slate-200 rounded"></div> : apt.time}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                        ${apt.status === 'COMPLETADA' ? 'bg-emerald-100 text-emerald-700' : 
-                          apt.status === 'CONFIRMADA' ? 'bg-blue-100 text-blue-700' : 
-                          'bg-amber-100 text-amber-700'}`}>
-                        {apt.status}
-                      </span>
+                      {isLoading ? (
+                        <div className="h-5 w-20 bg-slate-200 rounded-full"></div>
+                      ) : (
+                        <span className={cn(
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+                          apt.status === 'COMPLETADA' ? 'bg-success/10 text-success' : 
+                          apt.status === 'CONFIRMADA' ? 'bg-info/10 text-info' : 
+                          'bg-warning/10 text-warning'
+                        )}>
+                          {apt.status}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button className="text-slate-400 hover:text-slate-600">
@@ -156,8 +231,8 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
         </div>
 
         {/* Quick Actions / Summary */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-          <h3 className="font-bold text-slate-900 mb-6">Acciones Rápidas</h3>
+        <div className="clini-card p-6">
+          <h3 className="clini-title-section mb-6">Acciones Rápidas</h3>
           <div className="space-y-4">
             <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-primary/5 text-primary hover:bg-primary/10 transition-all group">
               <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
@@ -165,7 +240,7 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
               </div>
               <span className="font-semibold">Nueva Cita</span>
             </button>
-            <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all group">
+            <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-success/10 text-success hover:bg-success/20 transition-all group">
               <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
                 <Users size={20} />
               </div>
@@ -180,37 +255,39 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
           </div>
 
           <div className="mt-8 pt-8 border-t border-slate-100">
-            <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">
-              {isAdmin ? 'Ocupación de Sedes' : 'Ocupación de mi Sede'}
+            <h4 className="clini-title-section text-sm mb-4">
+              Ocupación de Sedes
             </h4>
             <div className="space-y-4">
-              {isAdmin ? (
-                MOCK_SEDES.map(sede => (
-                  <div key={sede.idSede}>
+              {isLoading ? (
+                Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
                     <div className="flex justify-between text-sm mb-1">
-                      <span className="text-slate-600">{sede.nombreSede}</span>
-                      <span className="font-bold text-slate-900">
-                        {sede.nombreSede === 'SEDE CENTRAL' ? '85%' : '42%'}
-                      </span>
+                      <div className="h-4 w-24 bg-slate-200 rounded animate-pulse"></div>
+                      <div className="h-4 w-12 bg-slate-200 rounded animate-pulse"></div>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className={cn("h-full rounded-full", sede.nombreSede === 'SEDE CENTRAL' ? 'bg-primary' : 'bg-amber-500')} 
-                        style={{ width: sede.nombreSede === 'SEDE CENTRAL' ? '85%' : '42%' }}
-                      ></div>
-                    </div>
+                    <div className="w-full h-2 bg-slate-200 rounded-full animate-pulse"></div>
                   </div>
                 ))
               ) : (
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-slate-600">{currentUser.sede}</span>
-                    <span className="font-bold text-slate-900">65%</span>
-                  </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-primary rounded-full" style={{ width: '65%' }}></div>
-                  </div>
-                </div>
+                sedes
+                  .filter(s => selectedSedeFilter === 'ALL' || s.nombreSede === selectedSedeFilter)
+                  .map(sede => (
+                    <div key={sede.idSede}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-slate-600">{sede.nombreSede}</span>
+                        <span className="font-bold text-slate-900">
+                          {sede.nombreSede === 'LIMA_SUR' ? '85%' : '42%'} {/* Mocked values */}
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className={cn("h-full rounded-full", sede.nombreSede === 'LIMA_SUR' ? 'bg-primary' : 'bg-accent')} 
+                          style={{ width: sede.nombreSede === 'LIMA_SUR' ? '85%' : '42%' }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))
               )}
             </div>
           </div>

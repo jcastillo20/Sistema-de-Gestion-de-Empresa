@@ -176,6 +176,55 @@ class ApiService {
     }
   }
 
+  // --- DASHBOARD ---
+  async getDashboardStats(sede?: string) {
+    await this.delay();
+    const isGlobal = !sede || sede.toLowerCase() === 'all';
+    const activeSedesCount = this.sedes.filter(s => s.estado).length;
+
+    return [
+      { label: 'Pacientes Totales', value: isGlobal ? '1,284' : '412', icon: 'Users', color: 'bg-primary', trend: '+12%', trendUp: true },
+      { label: 'Citas Hoy', value: isGlobal ? '42' : '15', icon: 'Calendar', color: 'bg-primary', trend: '+5%', trendUp: true },
+      { label: 'Ingresos Mensuales', value: isGlobal ? 'S/ 12,450' : 'S/ 4,120', icon: 'TrendingUp', color: 'bg-success', trend: '+18%', trendUp: true },
+      { label: 'Terapeutas Activos', value: isGlobal ? '18' : '6', icon: 'UserRound', color: 'bg-warning', trend: '0%', trendUp: true },
+    ];
+  }
+
+  async getDashboardSecondaryStats(sede?: string) {
+    await this.delay();
+    const isGlobal = !sede || sede.toLowerCase() === 'all';
+    const activeSedesCount = this.sedes.filter(s => s.estado).length;
+
+    return [
+      { label: 'Pendientes de Pago', value: isGlobal ? '15' : '4', icon: 'AlertCircle', color: 'text-danger', bg: 'bg-danger/10' },
+      { label: 'Paquetes Activos', value: isGlobal ? '84' : '22', icon: 'CheckCircle2', color: 'text-success', bg: 'bg-success/10' },
+      { label: 'Nuevos Pacientes', value: isGlobal ? '28' : '9', icon: 'Users', color: 'text-info', bg: 'bg-info/10' },
+      { label: 'Tasa de Asistencia', value: '94%', icon: 'PieChart', color: 'text-primary', bg: 'bg-primary/5' },
+      { label: 'Sedes Operativas', value: isGlobal ? activeSedesCount.toString() : '1', icon: 'Building2', color: 'text-warning', bg: 'bg-warning/10' },
+      { label: 'Horas Terapia', value: isGlobal ? '1,420' : '380', icon: 'Clock', color: 'text-purple', bg: 'bg-purple/10' },
+    ];
+  }
+
+  async getRecentAppointments(sede?: string) {
+    await this.delay();
+    const isGlobal = !sede || sede.toLowerCase() === 'all';
+
+    const mockAppointments = [
+      { id: 1, patient: 'Juan Pérez', therapist: 'Dra. Ana García', time: '09:00 AM', status: 'COMPLETADA', sede: 'LIMA_SUR' },
+      { id: 2, patient: 'María Rodríguez', therapist: 'Dr. Carlos Ruiz', time: '10:30 AM', status: 'CONFIRMADA', sede: 'LIMA_NORTE' },
+      { id: 3, patient: 'Roberto Gómez', therapist: 'Dra. Ana García', time: '11:45 AM', status: 'PENDIENTE', sede: 'LIMA_SUR' },
+      { id: 4, patient: 'Elena Martínez', therapist: 'Lic. Sofía López', time: '02:15 PM', status: 'CONFIRMADA', sede: 'LIMA_NORTE' },
+      { id: 5, patient: 'Pedro Sánchez', therapist: 'Dra. Ana García', time: '03:00 PM', status: 'PENDIENTE', sede: 'LIMA_SUR' },
+      { id: 6, patient: 'Laura Torres', therapist: 'Dr. Carlos Ruiz', time: '04:30 PM', status: 'COMPLETADA', sede: 'LIMA_NORTE' },
+    ];
+
+    if (isGlobal) {
+      return mockAppointments;
+    } else {
+      return mockAppointments.filter(apt => apt.sede === sede);
+    }
+  }
+
   // --- SEDES ---
   async getSedes() {
     await this.delay();

@@ -144,7 +144,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       accessor: (p: Paciente) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-            {p.nombres.charAt(0)}{p.apellidoPaterno.charAt(0)}
+            {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div>
             <p className="font-bold text-slate-900">{p.nombres} {p.apellidoPaterno}</p>
@@ -196,7 +196,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Gestión de Pacientes</h2>
+          <h2 className="clini-title-main">Gestión de Pacientes</h2>
           <p className="text-slate-500">Administra la información y expedientes de tus pacientes.</p>
         </div>
       </div>
@@ -226,22 +226,22 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Nombres *</label>
+              <label className="clini-label">Nombres *</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.nombres} required />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Apellido Paterno *</label>
+              <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoPaterno} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Apellido Materno</label>
+              <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoMaterno} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Tipo de Documento *</label>
+              <label className="clini-label">Tipo de Documento *</label>
               <select name="tipoDocumento" className="input-field" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
                 <option value="DNI">DNI</option>
                 <option value="CE">CE</option>
@@ -249,11 +249,11 @@ export default function Pacientes({ currentUser }: PacientesProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Nro. Documento *</label>
+              <label className="clini-label">Nro. Documento *</label>
               <input name="documentoIdentidad" type="text" className="input-field" placeholder="12345678" defaultValue={selectedPaciente?.documentoIdentidad} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Sede *</label>
+              <label className="clini-label">Sede *</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 {permissions.verTodo ? (
@@ -263,7 +263,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
                     ))}
                   </select>
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-50 flex items-center text-slate-600">
+                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
                     {selectedPaciente?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedPaciente?.sede || currentUser.sede} />
                   </div>
@@ -271,30 +271,30 @@ export default function Pacientes({ currentUser }: PacientesProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Teléfono</label>
+              <label className="clini-label">Teléfono</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.telefono} />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
+              <label className="clini-label">Correo Electrónico</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedPaciente?.correo} />
               </div>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-slate-700">Responsable / Familiar</label>
+              <label className="clini-label">Responsable / Familiar</label>
               <input name="responsable" type="text" className="input-field" placeholder="Nombre del responsable" defaultValue={selectedPaciente?.responsable} />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-slate-700">Motivo de Consulta</label>
+              <label className="clini-label">Motivo de Consulta</label>
               <textarea name="motivo" className="input-field min-h-[100px]" placeholder="Breve descripción..." defaultValue={selectedPaciente?.motivo} />
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl text-slate-600 font-semibold hover:bg-slate-100 transition-all">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">

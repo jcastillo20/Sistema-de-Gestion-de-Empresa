@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: var(--primary-color, #4f46e5);
-  --color-secondary: var(--secondary-color, #64748b);
-  --color-accent: var(--accent-color, #f59e0b);
+  --color-primary: rgb(var(--primary-rgb, 79, 70, 229));
+  --color-secondary: rgb(var(--secondary-rgb, 100, 116, 139));
+  --color-accent: rgb(var(--accent-rgb, 245, 158, 11));
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
@@ -19,8 +19,11 @@
 @layer base {
   :root {
     --primary-color: #4f46e5;
+    --primary-rgb: 79, 70, 229;
     --secondary-color: #64748b;
+    --secondary-rgb: 100, 116, 139;
     --accent-color: #f59e0b;
+    --accent-rgb: 245, 158, 11;
   }
   body {
     @apply bg-slate-50 text-slate-900 antialiased;

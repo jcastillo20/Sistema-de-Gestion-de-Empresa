@@ -25,6 +25,7 @@ import {
   User as UserIcon,
   ChevronDown
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { cn } from './lib/utils';
 import { apiService } from './services/apiService';
 
@@ -36,6 +37,14 @@ export default function App() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [displayNameInfo, setDisplayNameInfo] = useState({ sede: '', perfil: '' });
   const [clinicLogo, setClinicLogo] = useState('');
+
+  // Helper function to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+  };
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -52,11 +61,23 @@ export default function App() {
 
       // Aplicar colores dinámicos al entorno global
       const primary = configs.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
-      if (primary) document.documentElement.style.setProperty('--primary-color', primary);
+      if (primary) {
+        document.documentElement.style.setProperty('--primary-color', primary);
+        const primaryRgb = hexToRgb(primary);
+        if (primaryRgb) document.documentElement.style.setProperty('--primary-rgb', primaryRgb);
+      }
       const secondary = configs.find(c => c.clave === 'COLOR_SECUNDARIO')?.valor;
-      if (secondary) document.documentElement.style.setProperty('--secondary-color', secondary);
+      if (secondary) {
+        document.documentElement.style.setProperty('--secondary-color', secondary);
+        const secondaryRgb = hexToRgb(secondary);
+        if (secondaryRgb) document.documentElement.style.setProperty('--secondary-rgb', secondaryRgb);
+      }
       const accent = configs.find(c => c.clave === 'COLOR_ACCENT')?.valor;
-      if (accent) document.documentElement.style.setProperty('--accent-color', accent);
+      if (accent) {
+        document.documentElement.style.setProperty('--accent-color', accent);
+        const accentRgb = hexToRgb(accent);
+        if (accentRgb) document.documentElement.style.setProperty('--accent-rgb', accentRgb);
+      }
 
       if (user) {
         // Lógica unificada para determinar si el usuario es global
@@ -69,7 +90,7 @@ export default function App() {
           ? 'Todas las Sedes' 
           : sedes.find(s => s.idSede === user.sede || s.nombreSede === user.sede)?.nombreSede || user.sede;
         
-        const perfilName = configs.find(c => c.valor === user.perfil || c.id === user.perfil)?.etiqueta.replace('Perfil: ', '') || user.perfil;
+        const perfilName = configs.find(c => c.valor === user.perfil || c.id === user.perfil)?.etiqueta?.replace('Perfil: ', '') || user.perfil;
         setDisplayNameInfo({ sede: sedeName, perfil: perfilName });
       }
     };
@@ -185,7 +206,10 @@ export default function App() {
             </div>
           </div>
 
-          <div className="relative">
+          <div 
+            className="relative"
+            onMouseLeave={() => setIsUserMenuOpen(false)}
+          >
             <button 
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
               className="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
@@ -196,46 +220,54 @@ export default function App() {
               <ChevronDown size={16} className={cn("text-slate-400 transition-transform", isUserMenuOpen && "rotate-180")} />
             </button>
 
-            {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 p-6 z-50 animate-in fade-in zoom-in-95 duration-200">
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                    <UserIcon size={32} />
-                  </div>
-                  <div>
-                    <p className="clini-title-main text-lg">{user.nombres} {user.apellidoPaterno}</p>
-                    <span className="inline-block mt-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase">
-                      {displayNameInfo.perfil}
-                    </span>
-                  </div>
-                  
-                  <div className="w-full space-y-3 pt-2">
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 text-slate-600">
-                      <Mail size={16} className="text-slate-400 shrink-0" />
-                      <span className="text-xs truncate">{user.correo}</span>
+            <AnimatePresence>
+              {isUserMenuOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 p-6 z-50 overflow-hidden"
+                >
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                      <UserIcon size={32} />
                     </div>
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 text-slate-600">
-                      <UserIcon size={16} className="text-slate-400 shrink-0" />
-                      <span className="text-xs font-medium italic">({user.nombreUsuario})</span>
+                    <div>
+                      <p className="clini-title-main text-lg">{user.nombres} {user.apellidoPaterno}</p>
+                      <span className="inline-block mt-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                        {displayNameInfo.perfil}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 text-primary">
-                      <Building2 size={16} className="text-primary/40 shrink-0" />
-                      <span className="text-xs font-bold uppercase tracking-wider">{displayNameInfo.sede}</span>
+                    
+                    <div className="w-full space-y-3 pt-2">
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 text-slate-600">
+                        <Mail size={16} className="text-slate-400 shrink-0" />
+                        <span className="text-xs truncate">{user.correo}</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-slate-50 text-slate-600">
+                        <UserIcon size={16} className="text-slate-400 shrink-0" />
+                        <span className="text-xs font-medium italic">(@{user.nombreUsuario})</span>
+                      </div>
+                      <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/5 text-primary border border-primary/10">
+                        <Building2 size={16} className="text-primary/40 shrink-0" />
+                        <span className="text-xs font-bold uppercase tracking-wider">{displayNameInfo.sede}</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="w-full pt-4 border-t border-slate-50">
-                    <button 
-                      onClick={handleLogout}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-rose-500 hover:bg-rose-50 font-bold text-sm transition-all"
-                    >
-                      <LogOut size={18} />
-                      Cerrar Sesión
-                    </button>
+                    <div className="w-full pt-4 border-t border-slate-50">
+                      <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-rose-500 hover:bg-rose-50 font-bold text-sm transition-all group"
+                      >
+                        <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
+                        Cerrar Sesión
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </header>
 

@@ -41,7 +41,7 @@ const generateMockUsuarios = (): Usuario[] => {
       telefono: '987654321',
       tipoDocumento: 'DNI',
       documentoIdentidad: '12345678',
-      perfil: 'ADMINISTRADOR',
+      perfil: 'ADMINISTRADOR', // Asegúrate de que este perfil tenga verTodo en la matriz de permisos
       sede: 'ALL', 
       estado: true,
       fechaCreacion: '2024-01-01',

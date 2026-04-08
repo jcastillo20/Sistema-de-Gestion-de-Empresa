@@ -41,6 +41,15 @@ interface ConfiguracionProps {
 export default function Configuracion({ currentUser }: ConfiguracionProps) {
   const permissions = usePermissions(currentUser, 'configuracion');
   const [activeSection, setActiveSection] = useState<'BRANDING' | 'SEDES' | 'ESPECIALIDADES' | 'SEGURIDAD' | 'AGENDA' | 'DICCIONARIOS'>('BRANDING');
+
+  // Helper function to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
+  };
+
   const [config, setConfig] = useState<ConfiguracionDinamica[]>([]);
   const [initialConfig, setInitialConfig] = useState<ConfiguracionDinamica[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
@@ -187,14 +196,20 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       const primaryColor = config.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
       if (primaryColor) {
         document.documentElement.style.setProperty('--primary-color', primaryColor);
+        const primaryRgb = hexToRgb(primaryColor);
+        if (primaryRgb) document.documentElement.style.setProperty('--primary-rgb', primaryRgb);
       }
       const secondaryColor = config.find(c => c.clave === 'COLOR_SECUNDARIO')?.valor;
       if (secondaryColor) {
         document.documentElement.style.setProperty('--secondary-color', secondaryColor);
+        const secondaryRgb = hexToRgb(secondaryColor);
+        if (secondaryRgb) document.documentElement.style.setProperty('--secondary-rgb', secondaryRgb);
       }
       const accentColor = config.find(c => c.clave === 'COLOR_ACCENT')?.valor;
       if (accentColor) {
         document.documentElement.style.setProperty('--accent-color', accentColor);
+        const accentRgb = hexToRgb(accentColor);
+        if (accentRgb) document.documentElement.style.setProperty('--accent-rgb', accentRgb);
       }
       
       setAlertConfig({

@@ -489,7 +489,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       accessor: (t: Terapeuta) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0">
-            {t.nombres.charAt(0)}{t.apellidoPaterno.charAt(0)}
+            {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="font-bold text-slate-900 truncate">{t.nombres} {t.apellidoPaterno}</p>
@@ -504,7 +504,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       header: 'Especialidades', 
       accessor: (t: Terapeuta) => (
         <div className="flex flex-wrap gap-1 max-w-[200px]">
-          {(t.especialidades || []).slice(0, 2).map((esp, idx) => (
+          {(t.especialidades || []).slice(0, 2).map((esp: string, idx: number) => (
             <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold border border-indigo-100 whitespace-nowrap">
               {esp}
             </span>
@@ -558,7 +558,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Gestión de Terapeutas</h2>
+          <h2 className="clini-title-main">Gestión de Terapeutas</h2>
           <p className="text-slate-500">Administra el personal médico y sus especialidades.</p>
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nombres *</label>
+              <label className="clini-label ml-1">Nombres *</label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <User size={18} />
@@ -606,22 +606,22 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Apellido Paterno *</label>
+              <label className="clini-label ml-1">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoPaterno} required />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Apellido Materno</label>
+              <label className="clini-label ml-1">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoMaterno} />
             </div>
             <div className="space-y-1.5 md:col-span-2">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Especialidades *</label>
+              <label className="clini-label ml-1">Especialidades *</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                 {especialidades.map(e => (
                   <label key={e.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-xl hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100">
                     <input 
                       type="checkbox" 
                       name={`spec_${e.id}`}
-                      className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/20 transition-all"
+                      className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-accent/50 transition-all"
                       defaultChecked={selectedTerapeuta?.especialidades?.includes(e.nombre) || false}
                     />
                     <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{e.nombre}</span>
@@ -630,7 +630,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nro. Colegiatura</label>
+              <label className="clini-label ml-1">Nro. Colegiatura</label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Award size={18} />
@@ -639,7 +639,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Sede Principal *</label>
+              <label className="clini-label ml-1">Sede Principal *</label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Building2 size={18} />
@@ -651,7 +651,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                     ))}
                   </select>
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-50 flex items-center text-slate-600">
+                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
                     {selectedTerapeuta?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedTerapeuta?.sede || currentUser.sede} />
                   </div>
@@ -659,7 +659,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Teléfono</label>
+              <label className="clini-label ml-1">Teléfono</label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Phone size={18} />
@@ -668,7 +668,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Correo</label>
+              <label className="clini-label ml-1">Correo</label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Mail size={18} />
@@ -678,7 +678,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl text-slate-600 font-semibold hover:bg-slate-100 transition-all">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">
@@ -1141,7 +1141,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                               date.setDate(start.getDate() + i);
                               return (
                                 <div key={d} className="p-4 text-center border-r border-slate-100 last:border-r-0">
-                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d} {date.getDate()}</span>
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d.substring(0, 3)} {date.getDate()}</span>
                                 </div>
                               );
                             })

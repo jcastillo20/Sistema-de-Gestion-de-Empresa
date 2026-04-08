@@ -158,7 +158,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
       accessor: (u: Usuario) => (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
-            {u.nombres.charAt(0)}{u.apellidoPaterno.charAt(0)}
+            {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div>
             <p className="font-bold text-slate-900">{u.nombreUsuario}</p>
@@ -222,7 +222,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Gestión de Usuarios</h2>
+          <h2 className="clini-title-main">Gestión de Usuarios</h2>
           <p className="text-slate-500">Administra los accesos y perfiles del personal del sistema.</p>
         </div>
       </div>
@@ -264,29 +264,29 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
         <form onSubmit={handleSave} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Nombres *</label>
+              <label className="clini-label">Nombres *</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.nombres} required />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Apellido Paterno *</label>
+              <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoPaterno} required />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Apellido Materno</label>
+              <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoMaterno} />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Nombre de Usuario *</label>
+              <label className="clini-label">Nombre de Usuario *</label>
               <div className="relative">
                 <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="nombreUsuario" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.nombreUsuario} required />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Contraseña *</label>
+              <label className="clini-label">Contraseña *</label>
               <div className="relative">
                 <input name="contrasena" type={showPassword ? "text" : "password"} className="input-field pr-10" defaultValue={selectedUsuario?.contrasena} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -295,14 +295,14 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Perfil *</label>
+              <label className="clini-label">Perfil *</label>
               <select 
                 name="perfil" 
                 className="input-field" 
                 defaultValue={selectedUsuario?.perfil || 'RECEPCIONISTA'}
                 onChange={(e) => {
-                  // Forcing a re-render or state update might be needed if sede logic depends on this immediately
-                  // For now, the handleSave will re-evaluate based on the final form data
+                  // This onChange is primarily for re-evaluating the 'required' attribute of the sede field
+                  // The actual value is read from formData in handleSave
                 }}
               >
                 {allProfilesConfig.map(p => (
@@ -311,7 +311,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Sede *</label>
+              <label className="clini-label">Sede *</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 {permissions.verTodo ? (
@@ -329,7 +329,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
                     ))}
                   </select>
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-50 flex items-center text-slate-600">
+                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
                     {selectedUsuario?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedUsuario?.sede || currentUser.sede} />
                   </div>
@@ -337,21 +337,21 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Correo Electrónico *</label>
+              <label className="clini-label">Correo Electrónico *</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedUsuario?.correo} required />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Teléfono</label>
+              <label className="clini-label">Teléfono</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                 <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.telefono} />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Documento de Identidad</label>
+              <label className="clini-label">Documento de Identidad</label>
               <div className="flex gap-2">
                 <select name="tipoDocumento" className="input-field w-1/3" defaultValue={selectedUsuario?.tipoDocumento || 'DNI'}>
                   <option value="DNI">DNI</option>
@@ -362,7 +362,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="px-6 py-2.5 rounded-xl text-slate-600 font-semibold hover:bg-slate-100 transition-all">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">
