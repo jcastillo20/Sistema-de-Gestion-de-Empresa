@@ -95,37 +95,37 @@ export default function Login({ onLogin }: LoginProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="p-8 text-center space-y-6">
-            {/* Logo Section */}
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-2xl flex items-center justify-center">
+    <> {/* Added fragment for safety */}
+      <div className="clini-login-page">
+        <div className="clini-login-card">
+          <div className="clini-login-content">
+          {/* Logo Section */}
+          <div className="clini-login-logo-section">
+            <div className="clini-login-logo-container">
                 {logo ? (
-                  <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
+                  <img src={logo} alt="Logo" className="clini-login-logo-image" />
                 ) : (
-                  <LogIn className="w-10 h-10 text-primary" />
+                  <LogIn className="clini-login-logo-icon" />
                 )}
-              </div>
-              <div>
-                <h1 className="clini-title-main">{clinicName}</h1>
-                <p className="text-slate-500 text-sm">Sistema de Gestión Clínica</p>
-              </div>
             </div>
+            <div className="clini-login-title-group">
+              <h1 className="clini-title-main">{clinicName}</h1>
+              <p className="clini-login-subtitle">Sistema de Gestión Clínica</p>
+            </div>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 text-left">
+            <form onSubmit={handleSubmit} className="clini-login-form">
               {error && (
-                <div className="bg-rose-50 border border-rose-100 text-rose-600 p-3 rounded-xl flex items-center gap-2 text-sm">
+                <div className="clini-alert-error">
                   <AlertCircle size={18} />
                   {error}
                 </div>
               )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 ml-1">Usuario</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+              <div className="clini-form-group">
+                <label className="clini-label-form">Usuario</label>
+                <div className="clini-input-group">
+                  <div className="clini-input-icon">
                     <User size={18} />
                   </div>
                   <input
@@ -133,16 +133,16 @@ export default function Login({ onLogin }: LoginProps) {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="input-field input-with-icon"
+                    className="clini-input-field-icon-left"
                     placeholder="Ingrese su usuario"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 ml-1">Contraseña</label>
-                <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+              <div className="clini-form-group">
+                <label className="clini-label-form">Contraseña</label>
+                <div className="clini-input-group">
+                  <div className="clini-input-icon">
                     <Lock size={18} />
                   </div>
                   <input
@@ -150,13 +150,13 @@ export default function Login({ onLogin }: LoginProps) {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input-field input-with-icon pr-11"
+                    className="clini-input-field-icon-left-right-action"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    className="clini-input-action"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -166,10 +166,10 @@ export default function Login({ onLogin }: LoginProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="btn-primary w-full flex items-center justify-center gap-2 mt-2"
+                className="clini-login-submit-button"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="clini-loading-spinner" />
                 ) : (
                   <>
                     <span>Ingresar al Sistema</span>
@@ -179,14 +179,18 @@ export default function Login({ onLogin }: LoginProps) {
               </button>
             </form>
 
-            <div className="pt-4 border-t border-slate-50">
-              <p className="text-xs text-slate-400">
+            <div className="clini-login-footer">
+              <p className="clini-login-copyright">
                 © 2024 ST Clínica - Todos los derechos reservados
               </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </> 
+
+
+
+
   );
 }

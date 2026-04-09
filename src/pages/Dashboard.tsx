@@ -208,11 +208,10 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
                       {isLoading ? (
                         <div className="h-5 w-20 bg-slate-200 rounded-full"></div>
                       ) : (
-                        <span className={cn(
-                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                          apt.status === 'COMPLETADA' ? 'bg-success/10 text-success' : 
-                          apt.status === 'CONFIRMADA' ? 'bg-info/10 text-info' : 
-                          'bg-warning/10 text-warning'
+                        <span className={cn("clini-badge clini-badge-status",
+                          apt.status === 'COMPLETADA' ? 'clini-badge-appointment-completed' : 
+                          apt.status === 'CONFIRMADA' ? 'clini-badge-appointment-confirmed' : 
+                          'clini-badge-appointment-pending'
                         )}>
                           {apt.status}
                         </span>

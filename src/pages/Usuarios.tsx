@@ -28,12 +28,12 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
 
   if (!permissions.acceso) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+      <div className="clini-denied-container">
+        <div className="clini-denied-icon">
           <ShieldCheck size={32} />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Acceso Denegado</h3>
-        <p className="text-slate-500 max-w-md">
+        <h3 className="clini-denied-title">Acceso Denegado</h3>
+        <p className="clini-denied-text">
           No tienes los permisos necesarios para acceder al módulo de usuarios. 
           Por favor, contacta con el administrador si crees que esto es un error.
         </p>
@@ -156,8 +156,8 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     { 
       header: 'Usuario', 
       accessor: (u: Usuario) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+        <div className="clini-flex-center-gap-3">
+          <div className="clini-avatar-user">
             {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div>
@@ -207,10 +207,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (u: Usuario) => (
-      <span className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-        u.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-      )}>
+      <span className={cn("clini-badge", u.estado ? "clini-badge-success" : "clini-badge-neutral")}>
         {u.estado ? 'Activo' : 'Inactivo'}
       </span>
     ),
@@ -223,7 +220,7 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="clini-title-main">Gestión de Usuarios</h2>
-          <p className="text-slate-500">Administra los accesos y perfiles del personal del sistema.</p>
+          <p className="clini-subtitle">Administra los accesos y perfiles del personal del sistema.</p>
         </div>
       </div>
 
@@ -262,43 +259,43 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
         title={selectedUsuario ? 'Editar Usuario' : 'Nuevo Usuario'}
       >
         <form onSubmit={handleSave} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="clini-form-grid">
             <div className="space-y-2">
               <label className="clini-label">Nombres *</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.nombres} required />
+                <User className="clini-input-icon" size={18} />
+                <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombres} required />
               </div>
             </div>
             <div className="space-y-2">
               <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoPaterno} required />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2"> 
               <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoMaterno} />
             </div>
             <div className="space-y-2">
               <label className="clini-label">Nombre de Usuario *</label>
               <div className="relative">
-                <UserCheck className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="nombreUsuario" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.nombreUsuario} required />
+                <UserCheck className="clini-input-icon" size={18} />
+                <input name="nombreUsuario" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombreUsuario} required />
               </div>
             </div>
             <div className="space-y-2">
               <label className="clini-label">Contraseña *</label>
               <div className="relative">
-                <input name="contrasena" type={showPassword ? "text" : "password"} className="input-field pr-10" defaultValue={selectedUsuario?.contrasena} required />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                <input name="contrasena" type={showPassword ? "text" : "password"} className="clini-input-field-right-action" defaultValue={selectedUsuario?.contrasena} required />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="clini-input-action">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2"> 
               <label className="clini-label">Perfil *</label>
               <select 
                 name="perfil" 
-                className="input-field" 
+                className="input-field"
                 defaultValue={selectedUsuario?.perfil || 'RECEPCIONISTA'}
                 onChange={(e) => {
                   // This onChange is primarily for re-evaluating the 'required' attribute of the sede field
@@ -313,11 +310,11 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
             <div className="space-y-2">
               <label className="clini-label">Sede *</label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Building2 className="clini-input-icon" size={18} />
                 {permissions.verTodo ? (
                   <select 
                     name="sede" 
-                    className="input-field input-with-icon" 
+                    className="clini-input-field-icon-left"
                     defaultValue={selectedUsuario?.sede || (PROFILES_WITH_SEDE_ACCESS.includes(selectedUsuario?.perfil || 'RECEPCIONISTA') ? 'ALL' : currentUser.sede)}
                     required={!PROFILES_WITH_SEDE_ACCESS.includes(selectedUsuario?.perfil || 'RECEPCIONISTA')}
                   >
@@ -327,27 +324,27 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
                     {sedes.map(s => (
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}
-                  </select>
+                  </select> 
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
+                  <div className="clini-input-field-icon-left bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
                     {selectedUsuario?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedUsuario?.sede || currentUser.sede} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2"> 
               <label className="clini-label">Correo Electrónico *</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedUsuario?.correo} required />
+                <Mail className="clini-input-icon" size={18} />
+                <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.correo} required />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2"> 
               <label className="clini-label">Teléfono</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedUsuario?.telefono} />
+                <Phone className="clini-input-icon" size={18} />
+                <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.telefono} />
               </div>
             </div>
             <div className="space-y-2">

@@ -126,12 +126,9 @@ export default function App() {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Sidebar Lateral */}
-      <aside className={cn(
-        "bg-white border-r border-slate-100 flex flex-col shrink-0 transition-all duration-300 ease-in-out",
-        isSidebarCollapsed ? "w-20" : "w-64"
-      )}>
-        <div className="p-6 border-b border-slate-50 flex items-center gap-3 h-16 shrink-0">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/20 bg-primary">
+      <aside className={cn("clini-sidebar", isSidebarCollapsed ? "clini-sidebar-collapsed" : "clini-sidebar-expanded")}>
+        <div className="clini-sidebar-logo-container">
+          <div className="clini-sidebar-logo-icon-wrapper">
             {clinicLogo ? (
               <img src={clinicLogo} alt="Logo" className="w-6 h-6 object-contain" />
             ) : (
@@ -139,11 +136,11 @@ export default function App() {
             )}
           </div>
           {!isSidebarCollapsed && (
-            <h1 className="clini-title-main text-base truncate animate-in fade-in duration-300">{clinicName}</h1>
+            <h1 className="clini-sidebar-logo-text">{clinicName}</h1>
           )}
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
+        <nav className="clini-sidebar-nav">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const hasAccess = user.permisos?.[item.id]?.acceso !== false;
@@ -154,11 +151,11 @@ export default function App() {
                 key={item.id}
                 onClick={() => setActivePage(item.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group",
+                  "clini-sidebar-item",
                   activePage === item.id 
-                    ? "bg-primary/10 text-primary shadow-sm" 
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
-                  isSidebarCollapsed && "justify-center px-0"
+                    ? "clini-sidebar-item-active" 
+                    : "clini-sidebar-item-inactive",
+                  isSidebarCollapsed && "clini-sidebar-item-collapsed"
                 )}
                 title={isSidebarCollapsed ? item.label : ""}
               >
@@ -171,13 +168,10 @@ export default function App() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-50">
+        <div className="clini-sidebar-footer">
           <button 
             onClick={handleLogout}
-            className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-rose-500 hover:bg-rose-50 transition-all",
-              isSidebarCollapsed && "justify-center px-0"
-            )}
+            className={cn("clini-sidebar-logout", isSidebarCollapsed && "clini-sidebar-item-collapsed")}
             title="Cerrar Sesión"
           >
             <LogOut size={20} className="shrink-0" />
@@ -189,8 +183,8 @@ export default function App() {
       {/* Contenido Principal */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header Superior */}
-        <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-4">
+        <header className="clini-header">
+          <div className="clini-header-left">
             <button 
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
               className="p-2 rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-all"
@@ -198,7 +192,7 @@ export default function App() {
               {isSidebarCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}
             </button>
             
-            <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-2xl border border-primary/10">
+            <div className="clini-header-sede-badge">
               <Building2 size={16} />
               <span className="text-xs font-bold uppercase tracking-wider">
                 {displayNameInfo.sede || 'Cargando...'}
@@ -212,9 +206,9 @@ export default function App() {
           >
             <button 
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center gap-3 p-1 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100"
+              className="clini-header-user-btn"
             >
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-bold text-white shadow-md shadow-primary/20">
+              <div className="clini-user-avatar-header">
                 {user.nombres.charAt(0)}
               </div>
               <ChevronDown size={16} className={cn("text-slate-400 transition-transform", isUserMenuOpen && "rotate-180")} />
@@ -234,7 +228,7 @@ export default function App() {
                       <UserIcon size={32} />
                     </div>
                     <div>
-                      <p className="clini-title-main text-lg">{user.nombres} {user.apellidoPaterno}</p>
+                      <p className="clini-title-main text-lg">{user.nombres} {user.apellidoPaterno}</p> 
                       <span className="inline-block mt-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
                         {displayNameInfo.perfil}
                       </span>

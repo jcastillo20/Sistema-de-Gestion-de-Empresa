@@ -307,7 +307,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="clini-title-main">Horarios de Terapeutas</h2>
-          <p className="text-slate-500 text-sm">Gestiona los turnos rotativos y pausas mensuales.</p>
+          <p className="clini-subtitle text-sm">Gestiona los turnos rotativos y pausas mensuales.</p>
         </div>
         {permissions.puedeCrear && (
           <button onClick={() => handleOpenModal()} className="btn-primary flex items-center gap-2">
@@ -492,7 +492,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
               header: 'Terapeuta', 
               accessor: (h: Horario) => (
                 <div className="flex items-center gap-3"> {/* Uses bg-primary/10 */}
-                  <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
+                  <div className="clini-avatar w-8 h-8 bg-primary/10 text-primary text-xs">
                     {h.nombreTerapeuta.charAt(0)}
                   </div>
                   <span className="font-medium text-slate-900">{h.nombreTerapeuta}</span>
@@ -519,10 +519,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Estado', 
               accessor: (h: Horario) => (
-                <span className={cn(
-                  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-                  h.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-                )}>
+                <span className={cn("clini-badge clini-badge-status", h.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>
                   {h.estado ? 'Activo' : 'Inactivo'}
                 </span>
               )
@@ -710,7 +707,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button onClick={() => setIsModalOpen(false)} className="btn-secondary px-4 py-2 text-xs"> {/* Uses btn-secondary */}
+            <button onClick={() => setIsModalOpen(false)} className="btn-secondary text-xs"> {/* Uses btn-secondary */}
               Cancelar
             </button>
             <button onClick={handleSave} className="btn-primary flex items-center gap-2">

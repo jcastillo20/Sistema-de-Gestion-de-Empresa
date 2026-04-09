@@ -26,12 +26,12 @@ export default function Pacientes({ currentUser }: PacientesProps) {
 
   if (!permissions.acceso) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+      <div className="clini-denied-container">
+        <div className="clini-denied-icon">
           <ShieldCheck size={32} />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Acceso Denegado</h3>
-        <p className="text-slate-500 max-w-md">
+        <h3 className="clini-denied-title">Acceso Denegado</h3>
+        <p className="clini-denied-text">
           No tienes los permisos necesarios para acceder al módulo de pacientes. 
           Por favor, contacta con el administrador si crees que esto es un error.
         </p>
@@ -142,8 +142,8 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     { 
       header: 'Paciente', 
       accessor: (p: Paciente) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+        <div className="clini-flex-center-gap-3">
+          <div className="clini-avatar-patient">
             {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div>
@@ -181,10 +181,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (p: Paciente) => (
-      <span className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-        p.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-      )}>
+      <span className={cn("clini-badge", p.estado ? "clini-badge-success" : "clini-badge-neutral")}>
         {p.estado ? 'Activo' : 'Inactivo'}
       </span>
     ),
@@ -197,7 +194,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="clini-title-main">Gestión de Pacientes</h2>
-          <p className="text-slate-500">Administra la información y expedientes de tus pacientes.</p>
+          <p className="clini-subtitle">Administra la información y expedientes de tus pacientes.</p>
         </div>
       </div>
 
@@ -224,12 +221,12 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         title={selectedPaciente ? 'Editar Paciente' : 'Nuevo Paciente'}
       >
         <form onSubmit={handleSave} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="clini-form-grid">
             <div className="space-y-2">
               <label className="clini-label">Nombres *</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.nombres} required />
+                <User className="clini-input-icon" size={18} />
+                <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.nombres} required />
               </div>
             </div>
             <div className="space-y-2">
@@ -255,10 +252,10 @@ export default function Pacientes({ currentUser }: PacientesProps) {
             <div className="space-y-2">
               <label className="clini-label">Sede *</label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Building2 className="clini-input-icon" size={18} />
                 {permissions.verTodo ? (
                   <select name="sede" className="input-field input-with-icon" defaultValue={selectedPaciente?.sede || currentUser.sede}>
-                    {sedes.map(s => (
+                    {sedes.map(s => ( 
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}
                   </select>
@@ -273,15 +270,15 @@ export default function Pacientes({ currentUser }: PacientesProps) {
             <div className="space-y-2">
               <label className="clini-label">Teléfono</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedPaciente?.telefono} />
+                <Phone className="clini-input-icon" size={18} />
+                <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.telefono} />
               </div>
             </div>
             <div className="space-y-2">
               <label className="clini-label">Correo Electrónico</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedPaciente?.correo} />
+                <Mail className="clini-input-icon" size={18} />
+                <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.correo} />
               </div>
             </div>
             <div className="space-y-2 md:col-span-2">

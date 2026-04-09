@@ -69,14 +69,19 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
 
   const permissions = usePermissions(currentUser, 'terapeutas');
 
+  // Protección del componente: Si no hay usuario, no renderiza nada (redirigido por App.tsx o Layout)
+  if (!currentUser) {
+    return null; 
+  }
+
   if (!permissions.acceso) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+      <div className="clini-denied-container">
+        <div className="clini-denied-icon">
           <ShieldCheck size={32} />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Acceso Denegado</h3>
-        <p className="text-slate-500 max-w-md">
+        <h3 className="clini-denied-title">Acceso Denegado</h3>
+        <p className="clini-denied-text">
           No tienes los permisos necesarios para acceder al módulo de terapeutas. 
           Por favor, contacta con el administrador si crees que esto es un error.
         </p>
@@ -85,10 +90,14 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
   }
 
   useEffect(() => {
-    loadData();
-  }, [currentUser.sede]);
+    // Solo carga datos si hay una sesión válida y el usuario tiene acceso al módulo
+    if (currentUser && permissions.acceso) {
+      loadData();
+    }
+  }, [currentUser?.sede, permissions.acceso]);
 
   const loadData = async () => {
+    if (!currentUser) return;
     setIsLoading(true);
     try {
       const sedeFilter = permissions.verTodo ? undefined : currentUser.sede;
@@ -488,7 +497,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       header: 'Terapeuta', 
       accessor: (t: Terapeuta) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+          <div className="clini-avatar bg-indigo-100 text-indigo-700 shrink-0">
             {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -505,15 +514,15 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       accessor: (t: Terapeuta) => (
         <div className="flex flex-wrap gap-1 max-w-[200px]">
           {(t.especialidades || []).slice(0, 2).map((esp: string, idx: number) => (
-            <span key={idx} className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 font-bold border border-indigo-100 whitespace-nowrap">
+            <span key={idx} className="clini-badge clini-badge-primary whitespace-nowrap">
               {esp}
             </span>
           ))}
           {(t.especialidades || []).length > 2 && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-bold border border-slate-200">
-              +{(t.especialidades || []).length - 2}
-            </span>
-          )}
+              <span className="clini-badge clini-badge-neutral">
+                +{(t.especialidades || []).length - 2}
+              </span>
+            )}
         </div>
       ),
     },
@@ -543,10 +552,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (t: Terapeuta) => (
-      <span className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-        t.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
-      )}>
+      <span className={cn("clini-badge", t.estado ? "clini-badge-success" : "clini-badge-neutral")}>
         {t.estado ? 'Activo' : 'Inactivo'}
       </span>
     ),
@@ -559,7 +565,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="clini-title-main">Gestión de Terapeutas</h2>
-          <p className="text-slate-500">Administra el personal médico y sus especialidades.</p>
+          <p className="clini-subtitle">Administra el personal médico y sus especialidades.</p>
         </div>
       </div>
 
@@ -581,10 +587,8 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
         customActions={(t) => (
           <button 
             onClick={() => handleOpenHorario(t)}
-            className="p-2 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors active:scale-95"
-            title="Gestionar Horario"
+            className="clini-action-btn-emerald"
           >
-            <Calendar size={16} />
           </button>
         )}
       />
@@ -595,14 +599,14 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
         title={selectedTerapeuta ? 'Editar Terapeuta' : 'Nuevo Terapeuta'}
       >
         <form onSubmit={handleSave} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="clini-form-grid gap-5">
             <div className="space-y-1.5">
               <label className="clini-label ml-1">Nombres *</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                <div className="clini-input-icon">
                   <User size={18} />
                 </div>
-                <input name="nombres" type="text" className="input-field input-with-icon" defaultValue={selectedTerapeuta?.nombres} required />
+                <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.nombres} required />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -615,65 +619,65 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
             </div>
             <div className="space-y-1.5 md:col-span-2">
               <label className="clini-label ml-1">Especialidades *</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="clini-checkbox-group">
                 {especialidades.map(e => (
-                  <label key={e.id} className="flex items-center gap-3 cursor-pointer group p-2 rounded-xl hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-100">
+                  <label key={e.id} className="clini-checkbox-item group">
                     <input 
                       type="checkbox" 
                       name={`spec_${e.id}`}
-                      className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-accent/50 transition-all"
+                      className="clini-checkbox-input"
                       defaultChecked={selectedTerapeuta?.especialidades?.includes(e.nombre) || false}
                     />
-                    <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors uppercase tracking-tight">{e.nombre}</span>
+                    <span className="clini-checkbox-label">{e.nombre}</span>
                   </label>
                 ))}
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="clini-label ml-1">Nro. Colegiatura</label>
+              <label className="clini-label ml-1">Colegiatura</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                <div className="clini-input-icon">
                   <Award size={18} />
                 </div>
-                <input name="colegiatura" type="text" className="input-field input-with-icon" placeholder="Ej: CPP 1234" defaultValue={selectedTerapeuta?.colegiatura} />
+                <input name="colegiatura" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.colegiatura} />
               </div>
             </div>
             <div className="space-y-1.5">
               <label className="clini-label ml-1">Sede Principal *</label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+              <div className="relative group"> 
+                <div className="clini-input-icon">
                   <Building2 size={18} />
                 </div>
                 {permissions.verTodo ? (
-                  <select name="sede" className="input-field input-with-icon" defaultValue={selectedTerapeuta?.sede || currentUser.sede}>
+                  <select name="sede" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.sede || currentUser.sede}>
                     {sedes.map(s => (
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}
-                  </select>
+                  </select> 
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
+                  <div className="clini-input-field-icon-left bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
                     {selectedTerapeuta?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedTerapeuta?.sede || currentUser.sede} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5"> 
               <label className="clini-label ml-1">Teléfono</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                <div className="clini-input-icon">
                   <Phone size={18} />
                 </div>
-                <input name="telefono" type="text" className="input-field input-with-icon" defaultValue={selectedTerapeuta?.telefono} />
+                <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.telefono} />
               </div>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5"> 
               <label className="clini-label ml-1">Correo</label>
               <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
+                <div className="clini-input-icon">
                   <Mail size={18} />
                 </div>
-                <input name="correo" type="email" className="input-field input-with-icon" defaultValue={selectedTerapeuta?.correo} />
+                <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.correo} />
               </div>
             </div>
           </div>
@@ -1282,7 +1286,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button onClick={() => setIsHorarioModalOpen(false)} className="px-6 py-2.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition-all">
+            <button onClick={() => setIsHorarioModalOpen(false)} className="btn-secondary">
               Cerrar
             </button>
             {(isAddingHorario || selectedHorario) && activeTab === 'listado' && (

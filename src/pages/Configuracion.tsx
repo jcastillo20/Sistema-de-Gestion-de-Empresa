@@ -80,12 +80,12 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
   if (!permissions.acceso) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+      <div className="clini-denied-container">
+        <div className="clini-denied-icon">
           <Shield size={32} />
         </div>
-        <h3 className="text-xl font-bold text-slate-900 mb-2">Acceso Denegado</h3>
-        <p className="text-slate-500 max-w-md">
+        <h3 className="clini-denied-title">Acceso Denegado</h3>
+        <p className="clini-denied-text">
           No tienes los permisos necesarios para acceder al módulo de configuración. 
           Por favor, contacta con el administrador si crees que esto es un error.
         </p>
@@ -592,7 +592,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     <div className="space-y-8">
       <div>
         <h2 className="clini-title-main">Configuración del Sistema</h2>
-        <p className="text-slate-500">Administra los parámetros globales de forma dinámica.</p>
+        <p className="clini-subtitle">Administra los parámetros globales de forma dinámica.</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
@@ -669,10 +669,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                   <DataTable 
                     title=""
                     data={permissions.verTodo ? sedes : sedes.filter(s => s.idSede === currentUser.sede)}
-                    columns={[
+                    columns={[ 
                       { header: 'Nombre', accessor: 'nombreSede', sortable: true, sortKey: 'nombreSede' },
                       { header: 'Dirección', accessor: 'direccion' },
-                      { header: 'Estado', accessor: (s: Sede) => <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", s.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600")}>{s.estado ? 'Activo' : 'Inactivo'}</span> }
+                      { header: 'Estado', accessor: (s: Sede) => <span className={cn("clini-badge clini-badge-status-small", s.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>{s.estado ? 'Activo' : 'Inactivo'}</span> }
                     ]}
                     onAdd={() => { setSelectedSede(null); setIsSedeModalOpen(true); }}
                     onEdit={(s) => { setSelectedSede(s); setIsSedeModalOpen(true); }}
@@ -690,10 +690,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                   <DataTable 
                     title=""
                     data={especialidades}
-                    columns={[
+                    columns={[ 
                       { header: 'Especialidad', accessor: 'nombre', sortable: true, sortKey: 'nombre' },
                       { header: 'Duración', accessor: (e: Especialidad) => <span className="font-bold text-primary">{e.duracionSesion} min</span> },
-                      { header: 'Estado', accessor: (e: Especialidad) => <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold uppercase", e.estado ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600")}>{e.estado ? 'Activo' : 'Inactivo'}</span> }
+                      { header: 'Estado', accessor: (e: Especialidad) => <span className={cn("clini-badge clini-badge-status-small", e.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>{e.estado ? 'Activo' : 'Inactivo'}</span> }
                     ]}
                     onAdd={() => { setSelectedEspecialidad(null); setIsEspecialidadModalOpen(true); }}
                     onEdit={(e) => { setSelectedEspecialidad(e); setIsEspecialidadModalOpen(true); }}
@@ -714,7 +714,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                            <input 
+                            <input
                               type="text" 
                               placeholder="Buscar perfil o módulo..." 
                               className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-accent outline-none w-64"
@@ -766,7 +766,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                       </div>
                     </div>
                     <div className="pt-8 border-t border-slate-100">
-                      <DataTable title="Registro de Auditoría" data={auditoria} columns={[{ header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px]">{new Date(a.fecha).toLocaleString()}</span> }, { header: 'Usuario', accessor: 'nombreUsuario' }, { header: 'Acción', accessor: (a: Auditoria) => <span className={cn("px-2 py-0.5 rounded text-[10px] font-black uppercase", a.accion === 'INSERT' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700")}>{a.accion}</span> }, { header: 'Tabla', accessor: 'tabla' }]} searchPlaceholder="Buscar logs..." searchFields={['nombreUsuario', 'tabla', 'accion']} />
+                      <DataTable title="Registro de Auditoría" data={auditoria} columns={[{ header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px]">{new Date(a.fecha).toLocaleString()}</span> }, { header: 'Usuario', accessor: 'nombreUsuario' }, { header: 'Acción', accessor: (a: Auditoria) => <span className={cn("clini-badge clini-badge-audit", a.accion === 'INSERT' ? "clini-badge-audit-insert" : "clini-badge-audit-update")}>{a.accion}</span> }, { header: 'Tabla', accessor: 'tabla' }]} searchPlaceholder="Buscar logs..." searchFields={['nombreUsuario', 'tabla', 'accion']} />
                     </div>
                   </div>
                 )}
@@ -977,7 +977,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
+            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -1008,7 +1008,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             )}
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
+            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -1057,7 +1057,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             ))}
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
+            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Crear</button>
           </div>
         </form>
@@ -1085,7 +1085,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             />
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsDictModalOpen(false)} className="btn-secondary px-4 py-2 text-xs">Cancelar</button>
+            <button type="button" onClick={() => setIsDictModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar Registro</button>
           </div>
         </form>
