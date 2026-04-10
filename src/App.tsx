@@ -150,8 +150,8 @@ export default function App() {
               <button
                 key={item.id}
                 onClick={() => setActivePage(item.id)}
-                className={cn(
-                  "clini-sidebar-item",
+                className={cn( // Added 'group' class to clini-sidebar-item
+                  "clini-sidebar-item group",
                   activePage === item.id 
                     ? "clini-sidebar-item-active" 
                     : "clini-sidebar-item-inactive",

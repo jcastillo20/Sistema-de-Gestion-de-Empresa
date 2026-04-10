@@ -114,6 +114,12 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
       setPermisosEditados(JSON.parse(JSON.stringify(permisosData)));
       setAuditoria(auditoriaData);
       setEspecialidades(especialidadesData);
+
+      // Aplicar el tamaño de fuente base inicial si está disponible
+      const baseFontSize = configData.find(c => c.clave === 'BASE_FONT_SIZE')?.valor;
+      if (baseFontSize) {
+        document.documentElement.style.setProperty('--clini-font-size-base', baseFontSize);
+      }
     } catch (error) {
       console.error('Error loading config data:', error);
     } finally {
@@ -212,6 +218,12 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         if (accentRgb) document.documentElement.style.setProperty('--accent-rgb', accentRgb);
       }
       
+      // Actualizar el tamaño de fuente base global si ha cambiado
+      const baseFontSize = config.find(c => c.clave === 'BASE_FONT_SIZE')?.valor;
+      if (baseFontSize) {
+        document.documentElement.style.setProperty('--clini-font-size-base', baseFontSize);
+      }
+
       setAlertConfig({
         title: 'Configuración Guardada',
         message: 'Todos los cambios (incluyendo permisos y catálogos) se han aplicado correctamente.',
@@ -486,7 +498,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             type="text" 
             value={item.valor}
             onChange={(e) => handleConfigChange(item.clave, e.target.value)}
-            className="input-field"
+            className="clini-input-field-icon-left" // Ahora usa la clase estandarizada
           />
         );
       case 'NUMBER':
@@ -495,47 +507,41 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             type="number" 
             value={item.valor}
             onChange={(e) => handleConfigChange(item.clave, Number(e.target.value))}
-            className="input-field"
+            className="input-field" 
           />
         );
       case 'COLOR':
         return (
-          <div className="flex items-center gap-3">
+          <div className="clini-color-picker-wrapper">
             <input 
               type="color" 
               value={item.valor}
               onChange={(e) => handleConfigChange(item.clave, e.target.value)}
-              className="w-12 h-12 rounded-lg cursor-pointer border-none p-0 bg-transparent"
+              className="clini-color-input-swatch"
             />
             <input 
               type="text" 
               value={item.valor}
               onChange={(e) => handleConfigChange(item.clave, e.target.value)}
-              className="input-field w-32 font-mono uppercase"
+              className="clini-color-input-text"
             />
           </div>
         );
       case 'CHECKBOX':
         return (
           <button 
-            onClick={() => handleConfigChange(item.clave, !item.valor)}
-            className={cn(
-              "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-              item.valor ? "bg-primary" : "bg-slate-200"
-            )}
+            onClick={() => handleConfigChange(item.clave, !item.valor)} // Toggle logic
+            className={cn("clini-switch-track", item.valor ? "clini-switch-track-active" : "clini-switch-track-inactive")}
           >
-            <span className={cn(
-              "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-              item.valor ? "translate-x-5" : "translate-x-0"
-            )} />
+            <span className={cn("clini-switch-thumb", item.valor ? "clini-switch-thumb-active" : "clini-switch-thumb-inactive")} />
           </button>
         );
       case 'LIST':
         return (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
+          <div className="clini-list-editor-container">
+            <div className="clini-tag-list">
               {(item.valor || []).map((val: string, i: number) => (
-                <span key={i} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-200 uppercase">
+                <span key={i} className="clini-tag-item group">
                   {val}
                   <button type="button" onClick={() => handleConfigChange(item.clave, item.valor.filter((_: any, idx: number) => idx !== i))} className="hover:text-rose-500 transition-colors">
                     <X size={12} />
@@ -543,7 +549,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                 </span>
               ))}
             </div>
-            <input type="text" className="input-field py-1.5 text-xs" placeholder="Presiona Enter para añadir..." onKeyDown={(e) => {
+            <input type="text" className="input-field-xs" placeholder="Presiona Enter para añadir..." onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
                 const val = e.currentTarget.value.trim().toUpperCase();
@@ -557,15 +563,15 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         );
       case 'IMAGE':
         return (
-          <div className="space-y-3">
-            <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden">
+          <div className="clini-image-upload-group">
+            <div className="clini-image-preview-container">
               {item.valor ? (
-                <img src={item.valor} alt="Preview" className="w-full h-full object-contain" />
+                <img src={item.valor} alt="Preview" className="clini-image-fit" />
               ) : (
-                <ImageIcon className="text-slate-300" size={32} />
+                <ImageIcon className="clini-image-placeholder-icon" size={32} />
               )}
             </div>
-            <label className="text-xs font-semibold text-primary hover:underline cursor-pointer">
+            <label className="clini-image-upload-label">
               Cambiar Imagen
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(item.clave, e)} />
             </label>
@@ -589,27 +595,22 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
   };
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="clini-config-container">
+      <div className="clini-config-header-group">
         <h2 className="clini-title-main">Configuración del Sistema</h2>
         <p className="clini-subtitle">Administra los parámetros globales de forma dinámica.</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="w-full lg:w-64 shrink-0">
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-2 sticky top-24">
+      <div className="clini-config-grid">
+        <div className="clini-config-sidebar">
+          <div className="clini-config-nav-container">
             {sections.map((section) => {
               const Icon = section.icon;
               return (
                 <button
                   key={section.id}
                   onClick={() => handleSectionChange(section.id as any)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all text-sm font-medium",
-                    activeSection === section.id 
-                      ? "bg-primary text-white shadow-md shadow-primary/20" 
-                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                  )}
+                  className={cn("clini-config-nav-item", activeSection === section.id ? "clini-config-nav-item-active" : "clini-config-nav-item-inactive")}
                 >
                   <Icon size={18} />
                   {section.label.split(' ').slice(1).join(' ')}
@@ -619,14 +620,14 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
           </div>
         </div>
 
-        <div className="flex-1 clini-card min-h-[600px]">
+        <div className="clini-config-card-content">
           {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="clini-loading-overlay">
+              <div className="clini-spinner-lg" />
             </div>
           ) : (
-            <div className="animate-in fade-in duration-300">
-              <div className={cn("flex items-center justify-end mb-6", !['SEDES', 'ESPECIALIDADES', 'DICCIONARIOS'].includes(activeSection) ? "block" : "hidden")}>
+            <div className="clini-animate-fade">
+              <div className={cn("clini-config-section-header", !['SEDES', 'ESPECIALIDADES', 'DICCIONARIOS'].includes(activeSection) ? "block" : "hidden")}>
                 {permissions.puedeEditar && currentUser.perfil !== 'ADMINISTRADOR_SEDE' && !['SEDES', 'ESPECIALIDADES', 'DICCIONARIOS'].includes(activeSection) && (
                   <button onClick={() => handleSaveConfig(activeSection)} className="btn-primary flex items-center gap-2">
                     <Save size={18} />
@@ -635,18 +636,18 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                 )}
               </div>
 
-              <div className="flex flex-col gap-0">
+              <div className="clini-config-content-body">
                 {/* 1. CAMPOS DINÁMICOS (Solo si no es Diccionarios y hay items) */}
                 {activeSection !== 'DICCIONARIOS' && activeSection !== 'ESPECIALIDADES' && activeSection !== 'SEGURIDAD' && config.some(c => c.categoria === activeSection) && (
-                  <div className="grid grid-cols-1 gap-8 mb-12">
-                    {config.filter(c => c.categoria === activeSection).map((item) => (
-                      <div key={item.id} className="max-w-2xl space-y-2">
+                  <div className="clini-config-field-group">
+                    {config.filter(c => c.categoria === activeSection).map((item, index) => (
+                      <div key={item.id} className="clini-config-field-item">
                         <label className="clini-label">{item.etiqueta}</label>
                         {currentUser.perfil === 'ADMINISTRADOR_SEDE' && item.tipoControl !== 'CHECKBOX' ? (
-                          <div className="p-3 bg-slate-50 rounded-xl text-slate-600 text-sm border border-slate-100 font-medium italic">
+                          <div className="clini-read-only-field">
                             {item.tipoControl === 'COLOR' ? (
-                              <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: item.valor }} />
+                              <div className="clini-flex-center-gap-2">
+                                <div className="clini-read-only-color-swatch" style={{ backgroundColor: item.valor }} />
                                 <span>{item.valor}</span>
                               </div>
                             ) : item.valor}
@@ -661,10 +662,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
                 {/* 2. SECCIONES DE ENTIDAD (Sedes / Especialidades) */}
                 {activeSection === 'SEDES' && (
-                  <div className="mb-12 space-y-6">
+                  <div className="clini-config-section-wrapper">
                     <div>
                       <h4 className="clini-title-section">Sedes Físicas</h4>
-                      <p className="text-xs text-slate-500">Administra las ubicaciones y horarios de atención de tus centros.</p>
+                      <p className="clini-form-input-info-large">Administra las ubicaciones y horarios de atención de tus centros.</p>
                     </div>
                   <DataTable 
                     title=""
@@ -682,10 +683,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                 )}
 
                 {activeSection === 'ESPECIALIDADES' && (
-                  <div className="mb-12 space-y-6">
+                  <div className="clini-config-section-wrapper">
                     <div>
                       <h4 className="clini-title-section">Servicios Médicos</h4>
-                      <p className="text-xs text-slate-500">Configura las especialidades y la duración estimada de las sesiones.</p>
+                      <p className="clini-form-input-info-large">Configura las especialidades y la duración estimada de las sesiones.</p>
                     </div>
                   <DataTable 
                     title=""
@@ -704,57 +705,57 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
                 {/* 3. SEGURIDAD (Matriz + Auditoría) */}
                 {activeSection === 'SEGURIDAD' && (
-                  <div className="space-y-12 mb-12">
-                    <div className="pt-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                  <div className="clini-security-matrix-wrapper">
+                    <div className="clini-matrix-header">
+                      <div className="clini-security-toolbar">
                         <div>
                           <h4 className="clini-title-section">Matriz de Roles y Accesos</h4>
                           <p className="text-xs text-slate-500">Define los permisos granulares por perfil y módulo.</p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                        <div className="clini-security-search-group clini-flex-center-gap-3">
+                          <div className="clini-input-group">
+                            <Search className="clini-input-icon" size={14} />
                             <input
                               type="text" 
                               placeholder="Buscar perfil o módulo..." 
-                              className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:ring-2 focus:ring-accent outline-none w-64"
+                              className="clini-security-search-input"
                               value={searchMatriz}
                               onChange={(e) => setSearchMatriz(e.target.value)}
                             />
                           </div>
-                        <button 
+                          <button 
                           onClick={() => setIsPermisoModalOpen(true)} 
-                          className="btn-primary py-2 px-4 text-xs flex items-center gap-2"
+                          className="btn-primary-sm"
                         >
                           <Plus size={14} /> Nuevo Permiso
                         </button>
                         </div>
                       </div>
-                      <div className="overflow-x-auto border border-slate-100 rounded-2xl">
-                        <table className="w-full text-left text-xs">
-                          <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                      <div className="clini-table-dense-wrapper">
+                        <table className="clini-table-dense">
+                          <thead className="clini-table-dense-thead">
                             <tr>
-                              <th className="px-4 py-3">Módulo</th><th className="px-4 py-3">Perfil</th>
+                              <th className="clini-table-dense-th">Módulo</th><th className="clini-table-dense-th">Perfil</th>
                               {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'filtrarPersonas'].map(f => (
-                                <th key={f} className="px-4 py-3 text-center capitalize">{f.replace(/([A-Z])/g, ' $1')}</th>
+                                <th key={f} className="clini-table-dense-th-center">{f.replace(/([A-Z])/g, ' $1')}</th>
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-50">
+                          <tbody className="clini-table-body-divide">
                             {permisosEditados
                               .filter(p => p.perfil !== 'SUPER_ADMIN')
                               .filter(p => 
                                 p.perfil.toLowerCase().includes(searchMatriz.toLowerCase()) || 
                                 p.modulo.toLowerCase().includes(searchMatriz.toLowerCase())
                               ).map((p, i) => (
-                              <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="px-4 py-3 font-bold text-slate-900 uppercase">{p.modulo}</td>
-                                <td className="px-4 py-3 text-slate-600">{p.perfil}</td>
+                              <tr key={i} className="clini-table-row-hover">
+                                <td className="clini-table-dense-td-bold">{p.modulo}</td>
+                                <td className="clini-table-dense-td">{p.perfil}</td>
                                 {['acceso', 'verTodo', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'filtrarPersonas'].map(f => (
-                                  <td key={f} className="px-4 py-3 text-center">
+                                  <td key={f} className="clini-table-dense-td-center">
                                     <button 
                                       onClick={() => handleTogglePermiso(p.perfil, p.modulo, f as any)} 
-                                      className={cn("p-1.5 rounded-lg transition-all", p[f as keyof Permiso] ? "text-primary bg-primary/10 shadow-sm" : "text-slate-300 hover:bg-slate-50")} 
+                                      className={cn("clini-toggle-btn", p[f as keyof Permiso] ? "clini-toggle-btn-active" : "clini-toggle-btn-inactive")} 
                                       disabled={currentUser.perfil === 'ADMINISTRADOR_SEDE'}
                                     >{p[f as keyof Permiso] ? <Check size={14} /> : <X size={14} />}</button>
                                   </td>
@@ -765,7 +766,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                         </table>
                       </div>
                     </div>
-                    <div className="pt-8 border-t border-slate-100">
+                    <div className="clini-footer-divider">
                       <DataTable title="Registro de Auditoría" data={auditoria} columns={[{ header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px]">{new Date(a.fecha).toLocaleString()}</span> }, { header: 'Usuario', accessor: 'nombreUsuario' }, { header: 'Acción', accessor: (a: Auditoria) => <span className={cn("clini-badge clini-badge-audit", a.accion === 'INSERT' ? "clini-badge-audit-insert" : "clini-badge-audit-update")}>{a.accion}</span> }, { header: 'Tabla', accessor: 'tabla' }]} searchPlaceholder="Buscar logs..." searchFields={['nombreUsuario', 'tabla', 'accion']} />
                     </div>
                   </div>
@@ -773,10 +774,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
                 {/* 4. DICCIONARIOS (Submenú Dinámico) */}
                 {activeSection === 'DICCIONARIOS' && (
-                  <div className="flex flex-col md:flex-row gap-8 bg-slate-50/30 rounded-3xl p-2 border border-slate-100 min-h-[500px]">
+                  <div className="clini-dict-wrapper">
                     {/* Sidebar de Grupos de Diccionarios */}
-                    <div className="w-full md:w-64 space-y-1 p-2 bg-white rounded-2xl shadow-sm">
-                      <p className="clini-label px-4 py-2">Maestros del Sistema</p>
+                    <div className="clini-dict-sidebar-container">
+                      <p className="clini-dict-sidebar-title">Maestros del Sistema</p>
                       {Array.from(new Set(config.filter(c => c.categoria === 'DICCIONARIOS').map(c => c.id.split('-')[0]))).sort().map(prefix => {
                         const groupTitle = {
                           'DOC': 'Tipos de Documento',
@@ -785,14 +786,11 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                           'MOD': 'Modalidades de Atención'
                         }[prefix as string] || `Grupo ${prefix}`;
 
-                        return (
+                        return ( // Added 'group' class to clini-dict-nav-item
                           <button 
                             key={prefix} 
                             onClick={() => setSelectedDictionaryKey(prefix)} 
-                            className={cn(
-                              "w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between group", 
-                              selectedDictionaryKey === prefix ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-slate-50"
-                            )}
+                            className={cn("clini-dict-nav-item group", selectedDictionaryKey === prefix ? "clini-config-nav-item-active" : "text-slate-500 hover:bg-slate-50")}
                           >
                             {groupTitle} 
                             <ChevronRight size={14} className={cn("transition-transform", selectedDictionaryKey === prefix ? "translate-x-0" : "-translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0")} />
@@ -802,10 +800,10 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                     </div>
 
                     {/* Contenido del Grupo Seleccionado */}
-                    <div className="flex-1 p-6">
+                    <div className="clini-dict-content-area">
                       {selectedDictionaryKey ? (
-                        <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-                          <div className="flex items-center justify-between border-b border-slate-100 pb-4 gap-4">
+                        <div className="space-y-4 clini-animate-slide">
+                          <div className="clini-dict-header-row">
                             <div>
                               <h4 className="clini-title-section uppercase tracking-tight">
                                 {{
@@ -816,7 +814,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                                 }[selectedDictionaryKey as string] || 'Gestión de Diccionario'}
                               </h4>
                               <p className="text-xs text-slate-500">Administra los valores de los catálogos maestros.</p>
-                            </div>
+                            </div> 
                             <button 
                               onClick={() => { setEditingDictItem(null); setIsDictModalOpen(true); }} 
                               className="btn-primary py-2 px-4 text-xs flex items-center gap-2"
@@ -830,9 +828,9 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                             {config
                               .filter(c => c.categoria === 'DICCIONARIOS' && c.id.startsWith(selectedDictionaryKey))
                               .map(dicItem => (
-                                <div key={dicItem.id} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 hover:border-primary/20 transition-all group/item">
+                                <div key={dicItem.id} className="clini-dict-item-card group">
                                   <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/item:text-primary transition-colors">
+                                    <div className="clini-dict-icon-box group-hover:text-primary">
                                       <LayoutGrid size={20} />
                                     </div>
                                     <div>
@@ -842,15 +840,15 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                                   </div>
                                   <div className="flex items-center gap-3">
                                     <button 
-                                      onClick={() => handleDeleteDictionaryItem(dicItem)}
-                                      className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                      onClick={() => handleDeleteDictionaryItem(dicItem)} // Added 'clini-action-btn-icon' and 'clini-action-btn-icon-rose'
+                                      className={cn("clini-action-btn-icon", "clini-action-btn-icon-rose")}
                                       title="Eliminar registro"
                                     >
                                       <Trash2 size={14} />
                                     </button>
                                     <button 
-                                      onClick={() => { setEditingDictItem(dicItem); setIsDictModalOpen(true); }}
-                                      className="p-2 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-lg transition-all"
+                                      onClick={() => { setEditingDictItem(dicItem); setIsDictModalOpen(true); }} // Added 'clini-action-btn-icon' and 'clini-action-btn-icon-slate'
+                                      className={cn("clini-action-btn-icon", "clini-action-btn-icon-slate")}
                                       title="Editar registro"
                                     >
                                       <Edit2 size={14} />
@@ -863,8 +861,8 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
                         </div>
                       ) : (
-                        <div className="h-full flex flex-col items-center justify-center opacity-30 text-center">
-                          <div className="w-20 h-20 rounded-3xl bg-slate-100 flex items-center justify-center mb-4">
+                        <div className="clini-dict-empty-state">
+                          <div className="clini-dict-empty-icon-box">
                             <LayoutGrid size={40} />
                           </div>
                           <p className="text-sm font-bold text-slate-600">Gestión de Catálogos</p>
@@ -886,34 +884,33 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         onClose={() => setIsSedeModalOpen(false)}
         title={selectedSede ? "Editar Sede" : "Nueva Sede"}
       >
-        <form onSubmit={handleSedeSave} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+        <form onSubmit={handleSedeSave} className="space-y-6">
+          <div className="clini-form-grid">
+            <div className="clini-form-group">
               <label className="clini-label">Nombre de Sede</label>
               <input name="nombreSede" type="text" className="input-field" defaultValue={selectedSede?.nombreSede} required />
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Dirección</label>
               <input name="direccion" type="text" className="input-field" defaultValue={selectedSede?.direccion} required />
             </div>
           </div>
-
-          <div className="space-y-3">
-            <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <div className="space-y-4">
+            <label className="clini-label-with-icon">
               <Clock size={16} />
               Horario de Atención por Día
             </label>
-            <div className="border border-slate-100 rounded-2xl overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-slate-50 text-slate-500 font-bold uppercase">
+            <div className="clini-table-dense-wrapper">
+              <table className="clini-table-dense">
+                <thead className="clini-table-dense-thead">
                   <tr>
-                    <th className="px-3 py-2 text-left">Día</th>
-                    <th className="px-3 py-2 text-center">Activo</th>
-                    <th className="px-3 py-2 text-center">Inicio</th>
-                    <th className="px-3 py-2 text-center">Fin</th>
+                    <th className="clini-table-dense-th-left">Día</th>
+                    <th className="clini-table-dense-th-uppercase">Activo</th>
+                    <th className="clini-table-dense-th-uppercase">Inicio</th>
+                    <th className="clini-table-th-uppercase">Fin</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="clini-table-body-divide">
                   {(selectedSede?.horarioAtencion || [
                     { dia: 'Lunes', activo: true, horaInicio: '08:00', horaFin: '20:00' },
                     { dia: 'Martes', activo: true, horaInicio: '08:00', horaFin: '20:00' },
@@ -924,12 +921,12 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                     { dia: 'Domingo', activo: false, horaInicio: '00:00', horaFin: '00:00' },
                   ]).map((h, idx) => (
                     <tr key={h.dia}>
-                      <td className="px-3 py-2 font-medium">{h.dia}</td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="clini-table-dense-td-medium">{h.dia}</td>
+                      <td className="clini-table-dense-td-center-checkbox">
                         <input 
                           type="checkbox" 
                           defaultChecked={h.activo} 
-                          className="rounded border-slate-300 text-primary"
+                          className="clini-checkbox-base-focus"
                           onChange={(e) => {
                             if (selectedSede) {
                               const newHorario = [...(selectedSede.horarioAtencion || [])];
@@ -944,7 +941,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                           type="time" 
                           defaultValue={h.horaInicio} 
                           disabled={!h.activo}
-                          className="w-full bg-transparent border-none text-xs focus:ring-0 disabled:opacity-30"
+                          className="clini-time-input-inline"
                           onChange={(e) => {
                             if (selectedSede) {
                               const newHorario = [...(selectedSede.horarioAtencion || [])];
@@ -959,7 +956,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                           type="time" 
                           defaultValue={h.horaFin} 
                           disabled={!h.activo}
-                          className="w-full bg-transparent border-none text-xs focus:ring-0 disabled:opacity-30"
+                          className="clini-time-input-inline"
                           onChange={(e) => {
                             if (selectedSede) {
                               const newHorario = [...(selectedSede.horarioAtencion || [])];
@@ -976,8 +973,8 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
+          <div className="clini-form-actions">
+            <button type="button" onClick={() => setIsSedeModalOpen(false)} className="clini-btn-secondary-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -989,26 +986,26 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         title={selectedEspecialidad ? "Editar Especialidad" : "Nueva Especialidad"}
       >
         <form onSubmit={handleEspecialidadSave} className="space-y-4">
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Nombre de Especialidad</label>
             <input name="nombre" type="text" className="input-field" defaultValue={selectedEspecialidad?.nombre} required />
           </div>
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Duración de Sesión (minutos)</label>
             <input 
               name="duracionSesion" 
               type="number" 
-              className="input-field disabled:bg-slate-50 disabled:text-slate-400" 
+              className="input-field disabled:bg-slate-100 disabled:text-slate-400" 
               defaultValue={selectedEspecialidad?.duracionSesion || config.find(c => c.clave === 'DURACION_SESION_GLOBAL')?.valor || 45} 
               required 
               disabled={config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor === 'GLOBAL'}
             />
             {config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor === 'GLOBAL' && (
-              <p className="text-[10px] text-slate-400 italic">La duración se gestiona desde la configuración global de Agenda.</p>
+              <p className="clini-form-input-disabled-info">La duración se gestiona desde la configuración global de Agenda.</p>
             )}
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
+          <div className="clini-form-actions">
+            <button type="button" onClick={() => setIsEspecialidadModalOpen(false)} className="clini-btn-secondary-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar</button>
           </div>
         </form>
@@ -1020,7 +1017,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         title="Nuevo Permiso"
       >
         <form onSubmit={handlePermisoSave} className="space-y-4">
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Perfil / Rol</label>
             <select name="perfil" className="input-field" required>
               {config
@@ -1031,7 +1028,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
               }
             </select>
           </div>
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Módulo del Sistema</label>
             <select name="modulo" className="input-field" required>
               {config
@@ -1042,7 +1039,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
               }
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 pt-2">
+          <div className="clini-permiso-grid">
             {[
               { id: 'acceso', label: 'Acceso' },
               { id: 'verTodo', label: 'Ver Todo' },
@@ -1051,13 +1048,13 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
               { id: 'puedeEliminar', label: 'Eliminar' },
               { id: 'filtrarPersonas', label: 'Filtrar' }
             ].map(f => (
-              <label key={f.id} className="flex items-center gap-2 text-sm font-bold text-slate-500 uppercase cursor-pointer hover:text-slate-700 transition-colors">
-                <input type="checkbox" name={f.id} className="rounded border-slate-300 text-primary focus:ring-primary/20" /> {f.label}
+              <label key={f.id} className="clini-permiso-label">
+                <input type="checkbox" name={f.id} className="clini-checkbox-base-focus" /> {f.label}
               </label>
             ))}
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
+          <div className="clini-form-actions">
+            <button type="button" onClick={() => setIsPermisoModalOpen(false)} className="clini-btn-secondary-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Crear</button>
           </div>
         </form>
@@ -1069,23 +1066,23 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         title={editingDictItem ? "Editar Elemento" : "Nuevo Elemento de Catálogo"}
       >
         <form onSubmit={handleSaveDictionaryItem} className="space-y-4">
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Etiqueta Visible</label>
             <input name="etiqueta" type="text" className="input-field" defaultValue={editingDictItem?.etiqueta} placeholder="Ej: Pago con Cripto" required />
           </div>
-          <div className="space-y-2">
+          <div className="clini-form-group">
             <label className="clini-label">Valor Interno / Código</label>
             <input 
               name="valor" 
               type="text" 
-              className="input-field font-mono" 
+              className="clini-input-field-mono" 
               defaultValue={editingDictItem?.valor} 
               placeholder="Ej: CRIPTO" 
               required 
             />
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsDictModalOpen(false)} className="btn-secondary text-xs">Cancelar</button>
+          <div className="clini-form-actions">
+            <button type="button" onClick={() => setIsDictModalOpen(false)} className="clini-btn-secondary-xs">Cancelar</button>
             <button type="submit" className="btn-primary">Guardar Registro</button>
           </div>
         </form>
@@ -1097,21 +1094,21 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
         onClose={() => setIsNavigationModalOpen(false)}
         title="Cambios sin guardar"
       >
-        <div className="space-y-4 text-center py-2 w-[85%] max-w-[280px] mx-auto"> {/* Ajustado para ser más compacto */}
-          <div className="w-10 h-10 bg-accent/10 text-accent rounded-xl flex items-center justify-center mx-auto shadow-sm">
+        <div className="clini-navigation-modal-content">
+          <div className="clini-navigation-modal-icon">
             <History size={20} /> {/* Icono de historial para indicar cambios */}
           </div>
-          <div className="space-y-2">
-            <p className="text-sm font-bold text-slate-900 leading-tight">¿Deseas salir de la sección?</p> {/* Título más directo */}
-            <p className="text-[11px] text-slate-500 leading-relaxed"> {/* Texto más conciso */}
+          <div className="clini-form-group">
+            <p className="clini-navigation-modal-title">¿Deseas salir de la sección?</p>
+            <p className="clini-navigation-modal-text">
               Tienes modificaciones pendientes. Si sales ahora, los cambios se perderán definitivamente.
             </p>
           </div>
-          <div className="flex flex-col gap-2 pt-2">
-            <button onClick={() => setIsNavigationModalOpen(false)} className="btn-primary w-full py-2.5 text-xs">
+          <div className="clini-navigation-modal-buttons">
+            <button onClick={() => setIsNavigationModalOpen(false)} className="clini-navigation-modal-btn-primary">
               Seguir Editando
             </button>
-            <button onClick={handleDiscardChanges} className="w-full py-2 text-[10px] font-bold text-slate-500 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+            <button onClick={handleDiscardChanges} className="clini-navigation-modal-btn-secondary">
               Descartar y Salir
             </button>
           </div>
@@ -1120,14 +1117,14 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
       {/* Overlay de Procesamiento (Transition Popup) */}
       {isProcessing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/10 backdrop-blur-[1px] animate-in fade-in duration-300">
+        <div className="clini-processing-overlay clini-animate-fade">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white p-6 rounded-3xl shadow-2xl border border-slate-100 flex flex-col items-center gap-4 min-w-[200px]"
+            className="clini-processing-card"
           >
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] animate-pulse">Procesando</p>
+            <Loader2 className="clini-processing-spinner" />
+            <p className="clini-processing-text">Procesando</p>
           </motion.div>
         </div>
       )}
