@@ -142,13 +142,13 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     { 
       header: 'Paciente', 
       accessor: (p: Paciente) => (
-        <div className="clini-flex-center-gap-3">
+        <div className="clini-table-entity-cell clini-flex-center-gap-3">
           <div className="clini-avatar-patient">
             {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <p className="font-bold text-slate-900">{p.nombres} {p.apellidoPaterno}</p>
-            <p className="text-xs text-slate-500">{p.tipoDocumento}: {p.documentoIdentidad}</p>
+          <div className="clini-table-entity-info">
+            <p className="clini-table-entity-name">{p.nombres} {p.apellidoPaterno}</p>
+            <p className="clini-table-entity-detail">{p.tipoDocumento}: {p.documentoIdentidad}</p>
           </div>
         </div>
       ),
@@ -158,14 +158,14 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     { 
       header: 'Contacto', 
       accessor: (p: Paciente) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Mail size={14} className="text-slate-400" />
-            {p.correo}
+        <div className="clini-table-contact-stack clini-space-y-ui-c">
+          <div className="clini-table-contact-item clini-flex-center-gap-2">
+            <Mail size={14} className="clini-table-contact-icon" />
+            <span className="truncate max-w-[180px]">{p.correo}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Phone size={14} className="text-slate-400" />
-            {p.telefono}
+          <div className="clini-table-contact-item clini-flex-center-gap-2">
+            <Phone size={14} className="clini-table-contact-icon" />
+            <span>{p.telefono}</span>
           </div>
         </div>
       ),
@@ -175,13 +175,23 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   ];
 
   if (permissions.verTodo) {
-    columns.push({ header: 'Sede', accessor: 'sede', sortable: true, sortKey: 'sede' });
+    columns.push({ 
+      header: 'Sede', 
+      accessor: (p: Paciente) => (
+        <div className="clini-table-sede-badge clini-flex-center-gap-2">
+          <Building2 size={12} className="shrink-0" />
+          <span>{p.sede}</span>
+        </div>
+      ), 
+      sortable: true, 
+      sortKey: 'sede' 
+    });
   }
 
   columns.push({ 
     header: 'Estado', 
     accessor: (p: Paciente) => (
-      <span className={cn("clini-badge", p.estado ? "clini-badge-success" : "clini-badge-neutral")}>
+      <span className={cn("clini-badge", p.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>
         {p.estado ? 'Activo' : 'Inactivo'}
       </span>
     ),
@@ -190,8 +200,8 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   });
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="clini-page-container clini-space-y-ui-g">
+      <div className="clini-page-header clini-flex-between-center">
         <div>
           <h2 className="clini-title-main">Gestión de Pacientes</h2>
           <p className="clini-subtitle">Administra la información y expedientes de tus pacientes.</p>
@@ -220,24 +230,24 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         onClose={() => setIsModalOpen(false)}
         title={selectedPaciente ? 'Editar Paciente' : 'Nuevo Paciente'}
       >
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="clini-form-stack clini-space-y-ui-g">
           <div className="clini-form-grid">
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Nombres *</label>
-              <div className="relative">
+              <div className="clini-input-group clini-relative">
                 <User className="clini-input-icon" size={18} />
                 <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.nombres} required />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoPaterno} required />
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoMaterno} />
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Tipo de Documento *</label>
               <select name="tipoDocumento" className="input-field" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
                 <option value="DNI">DNI</option>
@@ -245,53 +255,53 @@ export default function Pacientes({ currentUser }: PacientesProps) {
                 <option value="PASAPORTE">Pasaporte</option>
               </select>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Nro. Documento *</label>
               <input name="documentoIdentidad" type="text" className="input-field" placeholder="12345678" defaultValue={selectedPaciente?.documentoIdentidad} required />
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Sede *</label>
-              <div className="relative">
+              <div className="clini-input-group clini-relative">
                 <Building2 className="clini-input-icon" size={18} />
                 {permissions.verTodo ? (
-                  <select name="sede" className="input-field input-with-icon" defaultValue={selectedPaciente?.sede || currentUser.sede}>
+                  <select name="sede" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.sede || currentUser.sede}>
                     {sedes.map(s => ( 
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}
                   </select>
                 ) : (
-                  <div className="input-field input-with-icon bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
+                  <div className="clini-field-disabled-display">
                     {selectedPaciente?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedPaciente?.sede || currentUser.sede} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Teléfono</label>
-              <div className="relative">
+              <div className="clini-input-group clini-relative">
                 <Phone className="clini-input-icon" size={18} />
                 <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.telefono} />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Correo Electrónico</label>
-              <div className="relative">
+              <div className="clini-input-group clini-relative">
                 <Mail className="clini-input-icon" size={18} />
                 <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.correo} />
               </div>
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="clini-form-field clini-field-full clini-space-y-ui-c">
               <label className="clini-label">Responsable / Familiar</label>
               <input name="responsable" type="text" className="input-field" placeholder="Nombre del responsable" defaultValue={selectedPaciente?.responsable} />
             </div>
-            <div className="space-y-2 md:col-span-2">
+            <div className="clini-form-field clini-field-full clini-space-y-ui-c">
               <label className="clini-label">Motivo de Consulta</label>
-              <textarea name="motivo" className="input-field min-h-[100px]" placeholder="Breve descripción..." defaultValue={selectedPaciente?.motivo} />
+              <textarea name="motivo" className="clini-textarea" placeholder="Breve descripción..." defaultValue={selectedPaciente?.motivo} />
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
+          <div className="clini-form-footer clini-flex-end-gap-3 clini-pt-ui-g clini-border-t-slate-100">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">
