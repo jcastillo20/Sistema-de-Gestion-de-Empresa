@@ -3,7 +3,7 @@ import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
 import { Paciente, Sede } from '../types';
-import { UserPlus, Mail, Phone, CreditCard, User, Building2, ShieldCheck } from 'lucide-react';
+import { UserPlus, Mail, Phone, User, Building2, ShieldCheck } from 'lucide-react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '@/src/lib/utils';
@@ -142,13 +142,20 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     { 
       header: 'Paciente', 
       accessor: (p: Paciente) => (
-        <div className="clini-table-entity-cell clini-flex-center-gap-3">
-          <div className="clini-avatar-patient">
-            {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
+        <div className="pg-cell-person">
+          <div className="pg-avatar">
+            {p.nombres.charAt(0)}{p.apellidoPaterno.charAt(0)}
           </div>
-          <div className="clini-table-entity-info">
-            <p className="clini-table-entity-name">{p.nombres} {p.apellidoPaterno}</p>
-            <p className="clini-table-entity-detail">{p.tipoDocumento}: {p.documentoIdentidad}</p>
+          <div className="pg-cell-person-info">
+            <div className="flex items-center gap-2">
+              <User size={14} className="text-primary/60 shrink-0" />
+              <p className="pg-cell-name">
+                {p.nombres} {p.apellidoPaterno}
+              </p>
+            </div>
+            <p className="pg-cell-doc">
+              {p.tipoDocumento}: {p.documentoIdentidad}
+            </p>
           </div>
         </div>
       ),
@@ -158,14 +165,14 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     { 
       header: 'Contacto', 
       accessor: (p: Paciente) => (
-        <div className="clini-table-contact-stack clini-space-y-ui-c">
-          <div className="clini-table-contact-item clini-flex-center-gap-2">
-            <Mail size={14} className="clini-table-contact-icon" />
-            <span className="truncate max-w-[180px]">{p.correo}</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Mail size={14} className="text-slate-400 shrink-0" />
+            <span className="truncate max-w-[180px]">{p.correo || 'Sin correo'}</span>
           </div>
-          <div className="clini-table-contact-item clini-flex-center-gap-2">
-            <Phone size={14} className="clini-table-contact-icon" />
-            <span>{p.telefono}</span>
+          <div className="flex items-center gap-2 text-xs text-slate-600">
+            <Phone size={14} className="text-slate-400 shrink-0" />
+            <span>{p.telefono || 'Sin teléfono'}</span>
           </div>
         </div>
       ),
@@ -178,10 +185,10 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     columns.push({ 
       header: 'Sede', 
       accessor: (p: Paciente) => (
-        <div className="clini-table-sede-badge clini-flex-center-gap-2">
+        <span className="clini-badge badge-primary">
           <Building2 size={12} className="shrink-0" />
-          <span>{p.sede}</span>
-        </div>
+          <span className="truncate">{p.sede}</span>
+        </span>
       ), 
       sortable: true, 
       sortKey: 'sede' 
@@ -191,7 +198,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (p: Paciente) => (
-      <span className={cn("clini-badge", p.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>
+      <span className={cn("clini-badge", p.estado ? "badge-success" : "badge-danger")}>
         {p.estado ? 'Activo' : 'Inactivo'}
       </span>
     ),

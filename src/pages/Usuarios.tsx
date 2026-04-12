@@ -155,27 +155,36 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   const columns: any[] = [
     { 
       header: 'Usuario', 
-      accessor: (u: Usuario) => (
-        <div className="clini-flex-center-gap-3">
-          <div className="clini-avatar-user">
-            {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
+      accessor: (u: Usuario) => {
+        // Determinamos la clase del avatar de forma consistente
+        const avatarClass = u.nombreUsuario.charCodeAt(0) % 2 === 0 ? "pg-avatar--primary" : "pg-avatar--info";
+        return (
+          <div className="pg-cell-person">
+            <div className={cn("pg-avatar", avatarClass)}>
+              {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
+            </div>
+            <div className="pg-cell-person-info">
+              <div className="flex items-center gap-2">
+                <User size={16} className="text-primary shrink-0" />
+                <span className="pg-cell-name">{u.nombreUsuario}</span>
+              </div>
+              <span className="pg-cell-sub">
+                {u.nombres} {u.apellidoPaterno}
+              </span>
+            </div>
           </div>
-          <div>
-            <p className="font-bold text-slate-900">{u.nombreUsuario}</p>
-            <p className="text-xs text-slate-500">{u.nombres} {u.apellidoPaterno}</p>
-          </div>
-        </div>
-      ),
+        );
+      },
       sortable: true,
       sortKey: 'nombreUsuario'
     },
     { 
       header: 'Perfil', 
       accessor: (u: Usuario) => (
-        <div className="flex items-center gap-2">
-          <Shield size={14} className="text-slate-400" />
-          <span className="text-sm font-medium text-slate-700">{u.perfil}</span>
-        </div>
+        <span className="pg-chip pg-chip--slate">
+          <Shield size={12} className="shrink-0" />
+          {u.perfil}
+        </span>
       ),
       sortable: true,
       sortKey: 'perfil'
@@ -183,14 +192,14 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     { 
       header: 'Contacto', 
       accessor: (u: Usuario) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Mail size={14} className="text-slate-400" />
-            {u.correo}
+        <div className="pg-cell-contact">
+          <div className="pg-contact-row">
+            <Mail size={14} className="pg-contact-icon" />
+            <span className="truncate max-w-[150px]">{u.correo}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Phone size={14} className="text-slate-400" />
-            {u.telefono}
+          <div className="pg-contact-row">
+            <Phone size={14} className="pg-contact-icon" />
+            <span>{u.telefono}</span>
           </div>
         </div>
       ),
@@ -201,15 +210,32 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
 
   // Solo mostrar columna SEDE si el perfil tiene acceso
   if (permissions.verTodo) {
-    columns.push({ header: 'Sede', accessor: 'sede', sortable: true, sortKey: 'sede' });
+    columns.push({ 
+      header: 'Sede', 
+      accessor: (u: Usuario) => (
+        <span className={cn(
+          "pg-chip", 
+          u.sede === 'ALL' ? "pg-chip--primary" : "pg-chip--info"
+        )}>
+          <Building2 size={12} className="shrink-0" />
+          {u.sede}
+        </span>
+      ), 
+      sortable: true, 
+      sortKey: 'sede' 
+    });
   }
 
   columns.push({ 
     header: 'Estado', 
     accessor: (u: Usuario) => (
-      <span className={cn("clini-badge", u.estado ? "clini-badge-success" : "clini-badge-neutral")}>
+      <div className={cn(
+        "pg-status-pill", 
+        u.estado ? "pg-status--active" : "pg-status--danger"
+      )}>
+        <span className={cn("pg-status-dot", u.estado ? "pg-dot--active" : "pg-dot--danger")} />
         {u.estado ? 'Activo' : 'Inactivo'}
-      </span>
+      </div>
     ),
     sortable: true,
     sortKey: 'estado'
