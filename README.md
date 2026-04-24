@@ -1,87 +1,123 @@
-# CliniGest Pro - Sistema de Gestión Clínica Integral
+# 🏥 CliniGest Pro — Enterprise Clinical Management System
 
-## 📖 Introducción
-**CliniGest Pro** es una plataforma Enterprise-Grade diseñada para la gestión operativa y administrativa de clínicas médicas y centros de terapia. El sistema destaca por su flexibilidad, permitiendo una personalización profunda de la identidad visual y las reglas de negocio sin necesidad de cambios en el código.
+<div align="center">
 
----
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?style=for-the-badge&logo=react)](https://reactjs.org/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-v4.0-38B2AC.svg?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-Private-red.svg?style=for-the-badge)](LICENSE)
 
-## 🚀 Alcance Funcional Detallado
+**Plataforma integral de grado empresarial para la gestión clínica multisede con motor dinámico.**
 
-### 1. Dashboard de Inteligencia
-*   **KPIs en Tiempo Real**: Visualización de Pacientes Totales, Citas Hoy, Ingresos Mensuales y Tasa de Asistencia.
-*   **Sedes y Operatividad**: Estado de sedes operativas y horas de terapia acumuladas.
-*   **Gestión de Citas Recientes**: Listado con estados dinámicos (Pendiente, Confirmada, Completada).
-
-*   **Optimización de Pantalla**: Interfaz diseñada para maximizar el área visible (Fit-to-Screen), reduciendo el scroll vertical excesivo mediante componentes compactos y modulares.
-
-### 2. Módulo de Pacientes
-*   **Registro Maestro**: Gestión de datos demográficos y de contacto.
-*   **Identidad Visual**: Sistema de avatares con iniciales dinámicas, peso de fuente ultra-negro y centrado perfecto mediante Flexbox.
-*   **Consistencia de Iconos**: Unificación de la simbología en todos los formularios (Nombres, Apellidos, Documentos) para una experiencia de usuario Coherente.
-
-### 3. Gestión de Terapeutas y Especialidades
-*   **Perfiles Profesionales**: Administración de colegiaturas y estados operativos.
-*   **Búsqueda Avanzada**: Implementación de `SearchableSelect` (Combos con buscador integrado) para facilitar la selección en listas extensas de profesionales.
-*   **Catálogo de Especialidades**: Definición de servicios médicos con duraciones personalizables.
-*   **Configuración de Duración Flexible**: 
-    *   **Global**: Todas las sesiones duran un tiempo estándar (definido en Sección Agenda).
-    *   **Por Especialidad**: Cada tipo de servicio tiene su propio tiempo de atención.
-    *   **Bulk Update**: Capacidad de aplicar una duración global a todos los servicios existentes con un solo clic.
-
-### 4. Sistema de Horarios y Planificación (Core)
-*   **Planificador Mensual**: Motor para definir turnos rotativos y bloques de atención.
-*   **Filtros Unificados**: Búsqueda global por Terapeuta, Especialidad, Mes, Año y término de búsqueda (Sede/Nombre).
-*   **Calendario Visual Interactivo**:
-    *   **Vista Semanal**: Indicador de rango de fechas (ej: "20 de Abril al 26 de Abril") incluyendo el número de semana.
-    *   **Cabeceras Dinámicas**: Los días de la semana (Lunes, Martes, etc.) muestran explícitamente el número de día del mes.
-    *   **Bloques de Tiempo**: Visualización de horarios ocupados y disponibles con códigos de color configurables.
-
-### 5. Control de Usuarios y Seguridad (RBAC)
-*   **Roles Jerárquicos**: Super Admin, Administrador de Sede, Recepcionista y Terapeuta.
-*   **Matriz de Permisos**: Control granular sobre qué módulos puede ver, crear, editar o eliminar cada perfil.
-*   **Auditoría Total**: Registro de quién hizo qué, cuándo y en qué registro (incluye comparación de datos anteriores y nuevos).
+</div>
 
 ---
 
-## ⚙️ Configuraciones y Personalización
+## 1. Información General
+**CliniGest Pro** es una solución diseñada para centros de salud que requieren flexibilidad total. Su arquitectura permite que el 90% de las reglas de negocio e identidad visual se definan mediante datos, permitiendo ajustes de marca, duraciones de sesión y permisos en tiempo real sin tocar el código fuente.
 
-El sistema es altamente configurable a través del módulo de **Configuración**:
-
-### Identidad Visual (Branding)
-*   **Nombre de la Clínica**: Personalizable para el header y títulos.
-*   **Logotipo**: Carga dinámica mediante formato Base64.
-*   **Colores de Sistema**: Configuración de colores Primario, Secundario, Acento, Éxito, Info y Advertencia en formato RGB/HEX.
-
-### Reglas de Agenda
-*   **Método de Duración**: Selección entre duración 'GLOBAL' o 'POR_ESPECIALIDAD'.
-*   **Colores de Ocupación**: Personalización de los colores para bloques ocupados y de refrigerio.
-
-### Parámetros de Sistema
-*   **Moneda**: Configuración del símbolo monetario local.
-*   **Zonas Horarias**: Ajuste según la ubicación geográfica de la clínica.
+### El Problema que Resuelve
+La rigidez de los sistemas tradicionales. CliniGest Pro permite una personalización profunda (Branding dinámico) y una gestión operativa basada en el consumo inteligente de paquetes terapéuticos.
 
 ---
 
-## 📊 Especificaciones Técnicas de UI
+## 🗺️ 2. Roadmap Estratégico (Alcance vs. Implementación)
 
-*   **Paginación**: El sistema utiliza un componente de tabla reutilizable que muestra la cantidad de registros filtrados vs totales.
-*   **Validaciones**:
-    *   **Formularios**: Validación de campos obligatorios y tipos de datos (Email, Teléfono, Documentos).
-    *   **Duplicidad**: Control de ID de documentos y nombres de usuario únicos.
-    *   **Constraint de Horarios**: Validación para evitar el solape de bloques de tiempo en un mismo terapeuta.
-*   **Visualización**:
-    *   **Avatares**: Círculos de 32px con fondo traslúcido y borde del color primario.
-    *   **Badges/Pills**: Uso de indicadores visuales (Dots) para estados Activo/Inactivo.
+Este roadmap detalla el cumplimiento de los requerimientos técnicos y funcionales solicitados.
+
+### 🟢 1. Gestión de Personas y Perfiles
+* **Estado:** Completado (95%)
+* **Tiene:** CRUD Terapeutas, Pacientes y Usuarios. Asociación de roles (RBAC) y estados. Relación múltiple Terapeuta ↔ Especialidad.
+* **Validaciones:** DNI (8 dígitos), Email formato, Nombres (solo texto), Teléfono.
+* **Filtros:** Por Sede, Perfil y Estado.
+* **Pendiente:** Implementar lógica para que terapeutas solo vean pacientes asignados si no tienen permiso `verTodo`.
+
+### 🟡 2. Especialidades & Paquetes Terapéuticos
+* **Estado:** En Desarrollo (40%)
+* **Tiene:** Catálogo maestro de especialidades con duraciones dinámicas.
+* **Pendiente:** Restricción por paquete: Validar que la cantidad de especialidades a elegir no supere el límite del tamaño del paquete.
+* **Pendiente:** Motor de generación automática de citas según frecuencia (Semanal/Quincenal/Mensual).
+
+### 🟢 3. Gestión Avanzada de Horarios (Agenda)
+* **Estado:** Completado (100%)
+* **Tiene:** Horarios por terapeuta, bloques múltiples por día, disponibilidad real.
+* **Validaciones:** No solapamientos de bloques, respeto estricto de horario de apertura de sede.
+* **Regla Especial:** Restricción automática de media jornada para sábados.
+
+### 🟡 4. Gestión de Citas & Reprogramaciones
+* **Estado:** En Desarrollo (60%)
+* **Tiene:** Creación manual, estados con colores configurables, duración variable.
+* **Validaciones:** No solapamientos de citas, integración con pagos previos.
+* **Pendiente:** Flujo de 1 reprogramación estándar vs. excepcional con carga obligatoria de evidencia (Archivo/Motivo).
+
+### 🔴 5. Gestión Financiera: Pagos y Transacciones
+* **Estado:** Pendiente (10%)
+* **Tiene:** Diccionarios de medios de pago.
+* **Pendiente:** Registro de pagos parciales y múltiples transacciones para una sola deuda.
+* **Validación:** Sumatoria de transacciones <= Monto total. Cambio automático de estado a "Pagado" al completar saldo.
+
+### 🔴 6. Atención Automatizada (WhatsApp)
+* **Estado:** Roadmap Estratégico
+* **Pendiente:** Bot para consulta de citas y compra de paquetes. Registro de conversaciones en los logs de auditoría del paciente.
 
 ---
 
-## 🛠️ Cómo Funciona (Arquitectura Flujo)
+## 🗄️ 3. Arquitectura de Datos (Diccionario de Tablas)
 
-1.  **Arranque**: El sistema carga la configuración dinámica desde el `ApiService` (preferente `localStorage` -> `mockDb`).
-2.  **Autenticación**: El usuario ingresa y recibe un token de sesión con su perfil (RBAC).
-3.  **Filtrado de Sede**: Dependiendo del rol, el usuario ve datos globales o solo los pertenecientes a su sede asignada.
-4.  **Operatividad**: Al crear un horario, el sistema valida la disponibilidad. Al cambiar una configuración, el `index.css` regenera las variables del sistema (`--sys-color-primary`, etc.) logrando el cambio de marca instantáneo.
-5.  **Persistencia**: Cada acción genera un log de auditoría automático antes de salvar en el almacenamiento del navegador.
+Estructura requerida para garantizar la trazabilidad e inmutabilidad del sistema.
+
+### ⚙️ Sección: Configuración y Maestros
+| Tabla | Datos a Mostrar | Filtros | Validaciones |
+| :--- | :--- | :--- | :--- |
+| **sys_config** | Clave, Valor, Etiqueta, Categoría | Categoría | Tipo de control (RGB, Base64, Check) |
+| **sys_dict** | Prefijo, Valor, Etiqueta | Prefijo | Valor único por prefijo |
+| **sys_sedes** | Nombre, Dirección, Horarios L-D | Estado | Horas fin > inicio |
+| **sys_permisos**| Módulo, Perfil, Capacidades | Perfil | Matriz única Perfil/Módulo |
+
+### 👥 Sección: Personas y Operaciones
+| Tabla | Datos a Mostrar | Filtros | Validaciones |
+| :--- | :--- | :--- | :--- |
+| **users** | Username, Perfil, Sede, Contacto | Sede, Perfil | Username único, Password hash |
+| **patients** | Nombres, DNI, Sede, Responsable | Sede, Nombre | DNI 8 dígitos, Correo format |
+| **therapists** | Nombres, Especialidades, Colegiatura | Especialidad | Mínimo 1 especialidad vinculada |
+| **especialid** | Nombre, Duración (min), Costo | Estado | Duración > 0, Nombre único |
+
+### 📅 Sección: Operatividad y Finanzas (Fase Actual)
+| Tabla | Propósito | Reglas Críticas |
+| :--- | :--- | :--- |
+| **appointments**| Agenda diaria de atención | No solapamientos, Vincular a disponibilidad |
+| **packages** | Control de sesiones prepagadas | Cantidad fija, Frecuencia obligatoria, Consumo progresivo |
+| **payments** | Cabecera financiera | Sumatoria transacciones <= Total del paquete |
+| **transactions**| Registro granular de dinero | Medio de pago obligatorio (Yape, Tarjeta, etc) |
+| **repro_logs** | Historial de excepciones | Motivo obligatorio, Adjunto de evidencia |
+
+### 📝 Sección: Auditoría
+| Tabla | Campos Principales | Regla |
+| :--- | :--- | :--- |
+| **audit_logs** | Tabla, Acción, Data_Anterior, Data_Nueva, Usuario | **Inmutable:** No permite edición ni borrado manual |
 
 ---
-*Desarrollado para CliniGest Pro - Gestión Clínica de Próxima Generación.*
+
+## 🛠️ 4. Stack Tecnológico
+* **Frontend:** React 18 + Vite (SPA)
+* **Estilos:** Tailwind CSS v4.0 (Arquitectura SST - Single Source of Truth)
+* **Iconografía:** Lucide React
+* **Persistencia:** LocalStorage (Capa de servicio lista para integración REST API)
+
+---
+
+## 🛡️ 5. Seguridad y RBAC
+El sistema implementa un modelo de acceso granular:
+* **Aislamiento de Sede:** Los usuarios solo ven datos de su sede asignada.
+* **verTodo:** Capacidad especial para administradores globales.
+* **Protección de UI:** Botones de acción (Crear/Editar/Borrar) se renderizan condicionalmente según los permisos del usuario.
+
+---
+
+## 📬 6. Soporte y Contacto
+* **Lead Developer:** Juan Castillo
+* **Email:** [juancrcastillo20@gmail.com](mailto:juancrcastillo20@gmail.com)
+* **Mantenimiento:** CliniGest Pro Core Team.
+
+---
+*© 2026 CliniGest Pro — Transformando la gestión clínica con tecnología inteligente.*
