@@ -52,6 +52,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
   const [calendarDate, setCalendarDate] = useState(new Date());
 
   // Filters State
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterTerapeuta, setFilterTerapeuta] = useState('');
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
@@ -277,9 +278,48 @@ export default function Horarios({ currentUser }: HorariosProps) {
       const terapeuta = terapeutas.find(t => t.id === h.idTerapeuta);
       matchEspecialidad = terapeuta?.especialidades?.includes(filterEspecialidad) || false;
     }
+
+    const matchSearch = !searchTerm || 
+      h.nombreTerapeuta.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      h.sede.toLowerCase().includes(searchTerm.toLowerCase());
     
-    return matchTerapeuta && matchMes && matchAño && matchEspecialidad;
+    return matchTerapeuta && matchMes && matchAño && matchEspecialidad && matchSearch;
   });
+
+  const getWeekRange = (date: Date) => {
+    const curr = new Date(date);
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
+    const first = new Date(curr.setDate(diff));
+    const last = new Date(curr.setDate(diff + 6));
+
+    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+    const monthOptions: Intl.DateTimeFormatOptions = { month: 'long' };
+
+    // Get week number
+    const startOfYear = new Date(first.getFullYear(), 0, 1);
+    const pastDaysOfYear = (first.getTime() - startOfYear.getTime()) / 86400000;
+    const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+
+    if (first.getMonth() === last.getMonth()) {
+      return `${first.getDate()} al ${last.getDate()} de ${first.toLocaleDateString('es-ES', { month: 'long' })}, Semana ${weekNum}`;
+    } else {
+      return `${first.toLocaleDateString('es-ES', options)} al ${last.toLocaleDateString('es-ES', options)}, Semana ${weekNum}`;
+    }
+  };
+
+  const getWeekDates = (date: Date) => {
+    const curr = new Date(date);
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(curr.setDate(diff));
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  };
 
   const handleNavigateCalendar = (direction: 'prev' | 'next') => {
     const newDate = new Date(calendarDate);
@@ -318,10 +358,22 @@ export default function Horarios({ currentUser }: HorariosProps) {
       </div>
 
       {/* Filtros Avanzados */}
-      <div className="clini-card clini-form-stack">
-        <div className="clini-label-with-icon">
-          <Filter size={16} className="text-primary" />
-          <span className="text-sm font-bold uppercase tracking-wider">Filtros de Búsqueda</span>
+      <div className="clini-card clini-form-stack mb-6">
+        <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+          <div className="clini-label-with-icon">
+            <Filter size={16} className="text-primary" />
+            <span className="text-sm font-bold uppercase tracking-wider">Filtros de Búsqueda</span>
+          </div>
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+            <input 
+              type="text"
+              placeholder="Buscar terapeuta o sede..."
+              className="input-field-xs pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
         <div className="clini-form-grid md:grid-cols-4 gap-4">
           <div className="clini-form-group">
@@ -410,9 +462,9 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 <button onClick={() => handleNavigateCalendar('prev')} className="p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-all">
                   <ChevronLeft size={18} />
                 </button>
-                <div className="px-4 text-[10px] font-black text-text-secondary uppercase min-w-[150px] text-center tracking-widest">
+                <div className="px-4 text-[10px] font-black text-text-secondary uppercase min-w-[280px] text-center tracking-widest leading-relaxed">
                   {calendarView === 'month' ? calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
-                   calendarView === 'week' ? `Semana ${Math.ceil(calendarDate.getDate() / 7)} - ${calendarDate.toLocaleDateString('es-ES', { month: 'short' })}` :
+                   calendarView === 'week' ? getWeekRange(calendarDate) :
                    calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                 </div>
                 <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-all">
@@ -441,8 +493,20 @@ export default function Horarios({ currentUser }: HorariosProps) {
               <div className="min-w-[800px]">
                 <div className={cn("grid border-b border-border bg-muted-bg", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
                   <div className="p-4 border-r border-border"></div>
-                  {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(d => ( 
-                    <div key={d} className="p-4 text-center font-black text-[10px] text-text-muted uppercase tracking-widest">{d}</div>
+                  {(calendarView === 'week' 
+                    ? getWeekDates(calendarDate).map(d => ({ 
+                        label: d.toLocaleDateString('es-ES', { weekday: 'long' }), 
+                        num: d.getDate() 
+                      })) 
+                    : [{ 
+                        label: calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }), 
+                        num: calendarDate.getDate() 
+                      }]
+                  ).map((d, i) => ( 
+                    <div key={i} className="p-4 text-center font-black text-[10px] text-text-muted uppercase tracking-widest">
+                      <span className="text-slate-400">{d.label}</span>
+                      <span className="block text-primary text-sm mt-1">{d.num}</span>
+                    </div>
                   ))}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
@@ -451,9 +515,13 @@ export default function Horarios({ currentUser }: HorariosProps) {
                       <div className="p-3 text-right pr-4 border-r border-border bg-bg/50">
                         <span className="text-[10px] font-bold text-text-muted">{time}</span>
                       </div>
-                      {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(day => {
+                      {(calendarView === 'week' 
+                        ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] 
+                        : [calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }).charAt(0).toUpperCase() + calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }).slice(1)]
+                      ).map(day => {
+                        const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1);
                         const slotBlocks = filteredHorariosData.flatMap(h => h.bloques.filter(b => {
-                          if (!b.diasSemana.includes(day)) return false;
+                          if (!b.diasSemana.includes(capitalizedDay)) return false;
                           return time >= b.horaInicio && time < b.horaFin;
                         }));
 
@@ -487,15 +555,21 @@ export default function Horarios({ currentUser }: HorariosProps) {
         <DataTable 
           title="Planificación Mensual"
           data={filteredHorariosData}
+          showSearch={false}
+          showFilters={false}
           columns={[
             { 
               header: 'Terapeuta', 
               accessor: (h: Horario) => (
                 <div className="pg-cell-person">
-                  <div className="pg-avatar pg-avatar--primary">
-                    {h.nombreTerapeuta.charAt(0)}
+                  <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary shadow-sm">
+                    <span className="text-primary font-black text-[10px] tracking-tighter">
+                      {h.nombreTerapeuta.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                  <span className="pg-cell-name">{h.nombreTerapeuta}</span>
+                  <div className="pg-cell-person-info">
+                    <span className="pg-cell-name font-black text-slate-900 leading-tight">{h.nombreTerapeuta}</span>
+                  </div>
                 </div> 
               )
             },

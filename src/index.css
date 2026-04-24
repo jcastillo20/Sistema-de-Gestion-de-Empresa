@@ -1961,24 +1961,61 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--sys-text-sm); /* Un poco más grande para legibilidad */
-    font-weight: var(--sys-font-black); /* Letra ultra-gruesa para que resalte */
+    font-size: var(--sys-text-sm);
+    font-weight: var(--sys-font-black);
     color: rgb(var(--sys-color-primary-raw));
-    background-color: rgb(var(--sys-color-primary-raw) / 0.15); /* Fondo más definido, ya no parece blanco */
+    background-color: rgb(var(--sys-color-primary-raw) / 0.1);
     flex-shrink: 0;
     text-transform: uppercase;
-    border: var(--sys-border-width-2) solid rgb(var(--sys-color-primary-raw) / 0.3); /* Borde mucho más marcado */
+    border: 1px solid rgb(var(--sys-color-primary-raw));
     box-shadow: var(--sys-shadow-sm);
     letter-spacing: -0.02em;
+    transition: all var(--sys-transition-fast);
+  }
+
+  .pg-avatar:hover {
+    transform: scale(1.05);
+    border-color: rgb(var(--sys-color-primary-raw) / 0.5);
+    box-shadow: var(--sys-shadow-md);
   }
 
   /* Paleta de avatares dinámicos — Heredan colores del panel de configuración */
-  .pg-avatar--primary { background: linear-gradient(135deg, rgb(var(--sys-color-primary-raw)), rgb(var(--sys-color-primary-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
-  .pg-avatar--success { background: linear-gradient(135deg, rgb(var(--sys-color-success-raw)), rgb(var(--sys-color-success-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
-  .pg-avatar--info    { background: linear-gradient(135deg, rgb(var(--sys-color-info-raw)), rgb(var(--sys-color-info-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
-  .pg-avatar--warning { background: linear-gradient(135deg, rgb(var(--sys-color-warning-raw)), rgb(var(--sys-color-warning-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
-  .pg-avatar--danger  { background: linear-gradient(135deg, rgb(var(--sys-color-danger-raw)), rgb(var(--sys-color-danger-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
-  .pg-avatar--accent  { background: linear-gradient(135deg, rgb(var(--sys-color-accent-raw)), rgb(var(--sys-color-accent-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--primary { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-primary-raw)), rgb(var(--sys-color-primary-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
+  .pg-avatar--success { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-success-raw)), rgb(var(--sys-color-success-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
+  .pg-avatar--info    { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-info-raw)), rgb(var(--sys-color-info-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
+  .pg-avatar--warning { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-warning-raw)), rgb(var(--sys-color-warning-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
+  .pg-avatar--danger  { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-danger-raw)), rgb(var(--sys-color-danger-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
+  .pg-avatar--accent  { 
+    background: linear-gradient(135deg, rgb(var(--sys-color-accent-raw)), rgb(var(--sys-color-accent-raw) / 0.8)); 
+    color: white; 
+    border: 2px solid rgb(255 255 255 / 0.8) !important; 
+    box-shadow: var(--sys-shadow-md); 
+  }
 
   /* ── Cell layout helpers ── */
   .pg-cell-person { display: flex; align-items: center; gap: var(--layout-element-gap); line-height: 1.2; }

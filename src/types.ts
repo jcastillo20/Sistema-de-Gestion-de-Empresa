@@ -177,7 +177,7 @@ export interface Sede {
   estado: boolean;
 }
 
-export type ControlType = 'TEXT' | 'NUMBER' | 'COLOR' | 'CHECKBOX' | 'SELECT' | 'IMAGE' | 'MODULE_LINK';
+export type ControlType = 'TEXT' | 'NUMBER' | 'COLOR' | 'CHECKBOX' | 'SELECT' | 'IMAGE' | 'MODULE_LINK' | 'LIST';
 
 export interface ConfiguracionDinamica {
   id: string;

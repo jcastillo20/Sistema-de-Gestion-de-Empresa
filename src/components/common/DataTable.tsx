@@ -32,6 +32,8 @@ interface DataTableProps<T> {
   isLoading?: boolean;
   searchPlaceholder?: string;
   searchFields?: (keyof T)[];
+  showSearch?: boolean;
+  showFilters?: boolean;
 }
 
 export function DataTable<T>({ 
@@ -44,7 +46,9 @@ export function DataTable<T>({
   customActions,
   isLoading,
   searchPlaceholder = "Buscar...",
-  searchFields
+  searchFields,
+  showSearch = true,
+  showFilters = true
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
@@ -137,26 +141,32 @@ export function DataTable<T>({
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder={searchPlaceholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full transition-all"
-            />
+        {(showSearch || showFilters) && (
+          <div className="flex flex-col sm:flex-row gap-4">
+            {showSearch && (
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full transition-all"
+                />
+              </div>
+            )}
+            {showFilters && (
+              <div className="flex items-center gap-2">
+                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                  <Filter size={18} />
+                </button>
+                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                  <Download size={18} />
+                </button>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2">
-            <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
-              <Filter size={18} />
-            </button>
-            <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
-              <Download size={18} />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="overflow-x-auto">

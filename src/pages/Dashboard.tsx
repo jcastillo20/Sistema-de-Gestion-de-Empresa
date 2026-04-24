@@ -200,21 +200,44 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
                 {(isLoading ? defaultRecentAppointments : recentAppointments).map((apt) => (
                   <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-slate-900">{isLoading ? <div className="h-4 w-24 bg-slate-200 rounded"></div> : apt.patient}</span>
+                      <div className="flex items-center gap-3">
+                        {!isLoading && (
+                          <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary w-8 h-8">
+                            <span className="text-primary font-black text-[10px] tracking-tighter">
+                              {apt.patient.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <span className="font-semibold text-slate-900">{isLoading ? <div className="h-4 w-24 bg-slate-200 rounded"></div> : apt.patient}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">{isLoading ? <div className="h-4 w-20 bg-slate-200 rounded"></div> : apt.therapist}</td>
-                    <td className="px-6 py-4 text-slate-600">{isLoading ? <div className="h-4 w-12 bg-slate-200 rounded"></div> : apt.time}</td>
+                    <td className="px-6 py-4 text-slate-600">
+                      <div className="flex items-center gap-2">
+                        {isLoading ? <div className="h-4 w-20 bg-slate-200 rounded"></div> : (
+                          <>
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                            {apt.therapist}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-600 font-medium">{isLoading ? <div className="h-4 w-12 bg-slate-200 rounded"></div> : apt.time}</td>
                     <td className="px-6 py-4">
                       {isLoading ? (
                         <div className="h-5 w-20 bg-slate-200 rounded-full"></div>
                       ) : (
-                        <span className={cn("clini-badge clini-badge-status",
-                          apt.status === 'COMPLETADA' ? 'clini-badge-appointment-completed' : 
-                          apt.status === 'CONFIRMADA' ? 'clini-badge-appointment-confirmed' : 
-                          'clini-badge-appointment-pending'
+                        <div className={cn("pg-status-pill",
+                          apt.status === 'COMPLETADA' ? 'pg-status--active' : 
+                          apt.status === 'CONFIRMADA' ? 'pg-status--info' : 
+                          'pg-status--warning'
                         )}>
+                           <span className={cn("pg-status-dot", 
+                            apt.status === 'COMPLETADA' ? 'pg-dot--active' : 
+                            apt.status === 'CONFIRMADA' ? 'bg-info' : 
+                            'bg-warning'
+                          )} />
                           {apt.status}
-                        </span>
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">

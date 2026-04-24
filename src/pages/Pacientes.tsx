@@ -143,19 +143,18 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       header: 'Paciente', 
       accessor: (p: Paciente) => (
         <div className="pg-cell-person">
-          <div className="pg-avatar flex items-center justify-center bg-[rgb(var(--sys-color-primary-raw))]">
-            <span className="text-white font-black text-[10px]">
+          <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary shadow-sm hover:shadow-md transition-all">
+            <span className="text-primary font-black text-[10px] tracking-tighter">
               {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="pg-cell-person-info">
             <div className="flex items-center gap-2">
-              <User size={14} className="text-primary/60 shrink-0" />
-              <p className="pg-cell-name font-black">
+              <p className="pg-cell-name font-black text-slate-900 leading-tight">
                 {p.nombres} {p.apellidoPaterno}
               </p>
             </div>
-            <p className="pg-cell-doc text-slate-400">
+            <p className="pg-cell-doc text-[11px] font-medium text-slate-400">
               {p.tipoDocumento}: {p.documentoIdentidad}
             </p>
           </div>
@@ -203,8 +202,8 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (p: Paciente) => (
-      <div className={cn("pg-status-pill", p.estado ? "pg-status--active" : "pg-status--danger")}>
-        <span className={cn("pg-status-dot", p.estado ? "pg-dot--active" : "pg-dot--danger")} />
+      <div className={cn("pg-status-pill", p.estado ? "pg-status--active" : "pg-status--inactive")}>
+        <span className={cn("pg-status-dot", p.estado ? "pg-dot--active" : "pg-dot--inactive")} />
         {p.estado ? 'Activo' : 'Inactivo'}
       </div>
     ),

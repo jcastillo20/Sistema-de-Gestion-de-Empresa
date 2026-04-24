@@ -156,19 +156,18 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     { 
       header: 'Usuario', 
       accessor: (u: Usuario) => {
-        // Determinamos la clase del avatar de forma consistente
-        const avatarClass = u.nombreUsuario.charCodeAt(0) % 2 === 0 ? "pg-avatar--primary" : "pg-avatar--info";
         return (
           <div className="pg-cell-person">
-            <div className={cn("pg-avatar", avatarClass)}>
-              {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
+            <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary shadow-sm">
+              <span className="text-primary font-black text-[10px] tracking-tighter">
+                {u.nombres.charAt(0).toUpperCase()}{u.apellidoPaterno.charAt(0).toUpperCase()}
+              </span>
             </div>
             <div className="pg-cell-person-info">
               <div className="flex items-center gap-2">
-                <User size={16} className="text-primary shrink-0" />
-                <span className="pg-cell-name">{u.nombreUsuario}</span>
+                <span className="pg-cell-name font-black text-slate-900 leading-tight">{u.nombreUsuario}</span>
               </div>
-              <span className="pg-cell-sub">
+              <span className="pg-cell-doc text-[11px] font-medium text-slate-400">
                 {u.nombres} {u.apellidoPaterno}
               </span>
             </div>
@@ -231,9 +230,9 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
     accessor: (u: Usuario) => (
       <div className={cn(
         "pg-status-pill", 
-        u.estado ? "pg-status--active" : "pg-status--danger"
+        u.estado ? "pg-status--active" : "pg-status--inactive"
       )}>
-        <span className={cn("pg-status-dot", u.estado ? "pg-dot--active" : "pg-dot--danger")} />
+        <span className={cn("pg-status-dot", u.estado ? "pg-dot--active" : "pg-dot--inactive")} />
         {u.estado ? 'Activo' : 'Inactivo'}
       </div>
     ),

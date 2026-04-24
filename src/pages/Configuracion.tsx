@@ -640,8 +640,11 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                 {/* 1. CAMPOS DINÁMICOS (Solo si no es Diccionarios y hay items) */}
                 {activeSection !== 'DICCIONARIOS' && activeSection !== 'ESPECIALIDADES' && activeSection !== 'SEGURIDAD' && config.some(c => c.categoria === activeSection) && (
                   <div className="clini-config-field-group">
-                    {config.filter(c => c.categoria === activeSection).map((item, index) => (
-                      <div key={item.id} className="clini-config-field-item">
+                    {config
+                      .filter(c => c.categoria === activeSection)
+                      .filter(c => !['DURACION_SESION_GLOBAL', 'TIPO_DURACION_SESION'].includes(c.clave))
+                      .map((item, index) => (
+                        <div key={item.id} className="clini-config-field-item">
                         <label className="clini-label">{item.etiqueta}</label>
                         {currentUser.perfil === 'ADMINISTRADOR_SEDE' && item.tipoControl !== 'CHECKBOX' ? (
                           <div className="clini-read-only-field">
@@ -673,7 +676,15 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                     columns={[ 
                       { header: 'Nombre', accessor: 'nombreSede', sortable: true, sortKey: 'nombreSede' },
                       { header: 'Dirección', accessor: 'direccion' },
-                      { header: 'Estado', accessor: (s: Sede) => <span className={cn("clini-badge clini-badge-status-small", s.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>{s.estado ? 'Activo' : 'Inactivo'}</span> }
+                      { 
+                        header: 'Estado', 
+                        accessor: (s: Sede) => (
+                          <div className={cn("pg-status-pill", s.estado ? "pg-status--active" : "pg-status--inactive")}>
+                            <span className={cn("pg-status-dot", s.estado ? "pg-dot--active" : "pg-dot--inactive")} />
+                            {s.estado ? 'Activo' : 'Inactivo'}
+                          </div>
+                        )
+                      }
                     ]}
                     onAdd={() => { setSelectedSede(null); setIsSedeModalOpen(true); }}
                     onEdit={(s) => { setSelectedSede(s); setIsSedeModalOpen(true); }}
@@ -684,6 +695,48 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
 
                 {activeSection === 'ESPECIALIDADES' && (
                   <div className="clini-config-section-wrapper">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                      <div>
+                        <h4 className="text-sm font-bold text-primary flex items-center gap-2">
+                          <Clock size={16} />
+                          Configuración de Duración
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1">Define si la duración es global o específica por especialidad.</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="clini-form-group mb-0">
+                          <select 
+                            className="input-field-xs min-w-[180px]"
+                            value={config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor || 'POR_ESPECIALIDAD'}
+                            onChange={(e) => handleConfigChange('TIPO_DURACION_SESION', e.target.value)}
+                          >
+                            <option value="POR_ESPECIALIDAD">Por Especialidad</option>
+                            <option value="GLOBAL">Duración Global</option>
+                          </select>
+                        </div>
+                        {config.find(c => c.clave === 'TIPO_DURACION_SESION')?.valor === 'GLOBAL' && (
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number" 
+                              className="input-field-xs w-20"
+                              placeholder="Minutos"
+                              value={config.find(c => c.clave === 'DURACION_SESION_GLOBAL')?.valor || 45}
+                              onChange={(e) => handleConfigChange('DURACION_SESION_GLOBAL', Number(e.target.value))}
+                            />
+                            <span className="text-xs font-bold text-slate-500">min</span>
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => handleSaveConfig('AGENDA')}
+                          className="btn-primary-xs py-2 px-4 shadow-sm"
+                          disabled={isProcessing}
+                        >
+                          {isProcessing ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                          Aplicar
+                        </button>
+                      </div>
+                    </div>
+                    
                     <div>
                       <h4 className="clini-title-section">Servicios Médicos</h4>
                       <p className="clini-form-input-info-large">Configura las especialidades y la duración estimada de las sesiones.</p>
@@ -694,7 +747,15 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                     columns={[ 
                       { header: 'Especialidad', accessor: 'nombre', sortable: true, sortKey: 'nombre' },
                       { header: 'Duración', accessor: (e: Especialidad) => <span className="font-bold text-primary">{e.duracionSesion} min</span> },
-                      { header: 'Estado', accessor: (e: Especialidad) => <span className={cn("clini-badge clini-badge-status-small", e.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>{e.estado ? 'Activo' : 'Inactivo'}</span> }
+                      { 
+                        header: 'Estado', 
+                        accessor: (e: Especialidad) => (
+                          <div className={cn("pg-status-pill", e.estado ? "pg-status--active" : "pg-status--inactive")}>
+                            <span className={cn("pg-status-dot", e.estado === false ? "pg-dot--inactive" : "pg-dot--active")} />
+                            {e.estado ? 'Activo' : 'Inactivo'}
+                          </div>
+                        )
+                      }
                     ]}
                     onAdd={() => { setSelectedEspecialidad(null); setIsEspecialidadModalOpen(true); }}
                     onEdit={(e) => { setSelectedEspecialidad(e); setIsEspecialidadModalOpen(true); }}

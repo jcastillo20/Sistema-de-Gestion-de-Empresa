@@ -497,15 +497,16 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       header: 'Terapeuta', 
       accessor: (t: Terapeuta) => (
         <div className="pg-cell-person">
-          <div className="pg-avatar pg-avatar--primary">
-            {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
+          <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary shadow-sm">
+            <span className="text-primary font-black text-[10px] tracking-tighter">
+              {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
+            </span>
           </div>
           <div className="pg-cell-person-info">
             <div className="flex items-center gap-2">
-              <Stethoscope size={14} className="text-primary shrink-0" />
-              <p className="pg-cell-name">{t.nombres} {t.apellidoPaterno}</p>
+              <p className="pg-cell-name font-black text-slate-900 leading-tight">{t.nombres} {t.apellidoPaterno}</p>
             </div>
-            <p className="pg-cell-doc">{t.colegiatura || 'Sin Colegiatura'}</p>
+            <p className="pg-cell-doc text-[11px] font-medium text-slate-400">{t.colegiatura || 'Sin Colegiatura'}</p>
           </div>
         </div>
       ),
