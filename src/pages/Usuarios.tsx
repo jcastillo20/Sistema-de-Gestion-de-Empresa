@@ -242,8 +242,8 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   });
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="clini-page-container">
+      <div className="clini-page-header">
         <div>
           <h2 className="clini-title-main">Gestión de Usuarios</h2>
           <p className="clini-subtitle">Administra los accesos y perfiles del personal del sistema.</p>
@@ -284,59 +284,55 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
         onClose={() => setIsModalOpen(false)}
         title={selectedUsuario ? 'Editar Usuario' : 'Nuevo Usuario'}
       >
-        <form onSubmit={handleSave} className="space-y-6">
+        <form onSubmit={handleSave} className="clini-form-stack">
           <div className="clini-form-grid">
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Nombres *</label>
-              <div className="relative">
-                <User className="clini-input-icon" size={18} />
+              <div className="clini-input-group">
+                <div className="clini-input-icon"><User size={18} /></div>
                 <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombres} required />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoPaterno} required />
             </div>
-            <div className="space-y-2"> 
+            <div className="clini-form-group"> 
               <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoMaterno} />
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Nombre de Usuario *</label>
-              <div className="relative">
-                <UserCheck className="clini-input-icon" size={18} />
+              <div className="clini-input-group">
+                <div className="clini-input-icon"><UserCheck size={18} /></div>
                 <input name="nombreUsuario" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombreUsuario} required />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Contraseña *</label>
-              <div className="relative">
+              <div className="clini-input-group">
                 <input name="contrasena" type={showPassword ? "text" : "password"} className="clini-input-field-right-action" defaultValue={selectedUsuario?.contrasena} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="clini-input-action">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
             </div>
-            <div className="space-y-2"> 
+            <div className="clini-form-group"> 
               <label className="clini-label">Perfil *</label>
               <select 
                 name="perfil" 
                 className="input-field"
                 defaultValue={selectedUsuario?.perfil || 'RECEPCIONISTA'}
-                onChange={(e) => {
-                  // This onChange is primarily for re-evaluating the 'required' attribute of the sede field
-                  // The actual value is read from formData in handleSave
-                }}
               >
                 {allProfilesConfig.map(p => (
                   <option key={p.id} value={p.valor}>{p.etiqueta.replace('Perfil: ', '')}</option>
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Sede *</label>
-              <div className="relative">
-                <Building2 className="clini-input-icon" size={18} />
+              <div className="clini-input-group">
+                <div className="clini-input-icon"><Building2 size={18} /></div>
                 {permissions.verTodo ? (
                   <select 
                     name="sede" 
@@ -352,31 +348,31 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
                     ))}
                   </select> 
                 ) : (
-                  <div className="clini-input-field-icon-left bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
+                  <div className="clini-read-only-field">
                     {selectedUsuario?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedUsuario?.sede || currentUser.sede} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-2"> 
+            <div className="clini-form-group"> 
               <label className="clini-label">Correo Electrónico *</label>
-              <div className="relative">
-                <Mail className="clini-input-icon" size={18} />
+              <div className="clini-input-group">
+                <div className="clini-input-icon"><Mail size={18} /></div>
                 <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.correo} required />
               </div>
             </div>
-            <div className="space-y-2"> 
+            <div className="clini-form-group"> 
               <label className="clini-label">Teléfono</label>
-              <div className="relative">
-                <Phone className="clini-input-icon" size={18} />
+              <div className="clini-input-group">
+                <div className="clini-input-icon"><Phone size={18} /></div>
                 <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.telefono} />
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="clini-form-group">
               <label className="clini-label">Documento de Identidad</label>
               <div className="flex gap-2">
-                <select name="tipoDocumento" className="input-field w-1/3" defaultValue={selectedUsuario?.tipoDocumento || 'DNI'}>
+                <select name="tipoDocumento" className="input-field-xs w-1/3" defaultValue={selectedUsuario?.tipoDocumento || 'DNI'}>
                   <option value="DNI">DNI</option>
                   <option value="CE">CE</option>
                 </select>
@@ -384,8 +380,8 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
+          <div className="clini-form-actions">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">

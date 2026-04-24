@@ -496,13 +496,13 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
     { 
       header: 'Terapeuta', 
       accessor: (t: Terapeuta) => (
-        <div className="flex items-center gap-3">
-          <div className="clini-avatar bg-indigo-100 text-indigo-700 shrink-0">
+        <div className="pg-cell-person">
+          <div className="pg-avatar pg-avatar--primary">
             {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
-            <p className="font-bold text-slate-900 truncate">{t.nombres} {t.apellidoPaterno}</p>
-            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{t.colegiatura || 'Sin Colegiatura'}</p>
+          <div className="pg-cell-person-info">
+            <p className="pg-cell-name">{t.nombres} {t.apellidoPaterno}</p>
+            <p className="pg-cell-doc">{t.colegiatura || 'Sin Colegiatura'}</p>
           </div>
         </div>
       ),
@@ -529,13 +529,13 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
     { 
       header: 'Contacto', 
       accessor: (t: Terapeuta) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Mail size={14} className="text-slate-400 shrink-0" />
+        <div className="pg-cell-contact">
+          <div className="pg-contact-row">
+            <Mail size={14} className="pg-contact-icon" />
             <span className="truncate max-w-[150px]">{t.correo}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Phone size={14} className="text-slate-400 shrink-0" />
+          <div className="pg-contact-row">
+            <Phone size={14} className="pg-contact-icon" />
             <span>{t.telefono}</span>
           </div>
         </div>
@@ -546,15 +546,26 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
   ];
 
   if (permissions.verTodo) {
-    columns.push({ header: 'Sede', accessor: 'sede', sortable: true, sortKey: 'sede' });
+    columns.push({ 
+      header: 'Sede', 
+      accessor: (t: Terapeuta) => (
+        <span className="pg-chip pg-chip--slate">
+          <Building2 size={12} className="shrink-0" />
+          {t.sede}
+        </span>
+      ), 
+      sortable: true, 
+      sortKey: 'sede' 
+    });
   }
 
   columns.push({ 
     header: 'Estado', 
     accessor: (t: Terapeuta) => (
-      <span className={cn("clini-badge", t.estado ? "clini-badge-success" : "clini-badge-neutral")}>
+      <div className={cn("pg-status-pill", t.estado ? "pg-status--active" : "pg-status--inactive")}>
+        <span className={cn("pg-status-dot", t.estado ? "pg-dot--active" : "pg-dot--inactive")} />
         {t.estado ? 'Activo' : 'Inactivo'}
-      </span>
+      </div>
     ),
     sortable: true,
     sortKey: 'estado'
@@ -598,27 +609,27 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
         onClose={() => setIsModalOpen(false)}
         title={selectedTerapeuta ? 'Editar Terapeuta' : 'Nuevo Terapeuta'}
       >
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="clini-form-grid gap-5">
-            <div className="space-y-1.5">
-              <label className="clini-label ml-1">Nombres *</label>
-              <div className="relative group">
+        <form onSubmit={handleSave} className="clini-form-stack clini-space-y-ui-g">
+          <div className="clini-form-grid">
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label">Nombres *</label>
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon">
                   <User size={18} />
                 </div>
                 <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.nombres} required />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="clini-label ml-1">Apellido Paterno *</label>
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label">Apellido Paterno *</label>
               <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoPaterno} required />
             </div>
-            <div className="space-y-1.5">
-              <label className="clini-label ml-1">Apellido Materno</label>
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label">Apellido Materno</label>
               <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoMaterno} />
             </div>
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="clini-label ml-1">Especialidades *</label>
+            <div className="clini-form-group md:col-span-2">
+              <label className="clini-label">Servicios y Especialidades *</label>
               <div className="clini-checkbox-group">
                 {especialidades.map(e => (
                   <label key={e.id} className="clini-checkbox-item group">
@@ -633,47 +644,47 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                 ))}
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="clini-label ml-1">Colegiatura</label>
-              <div className="relative group">
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label">Colegiatura</label>
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon">
                   <Award size={18} />
                 </div>
                 <input name="colegiatura" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.colegiatura} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="clini-label ml-1">Sede Principal *</label>
-              <div className="relative group"> 
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label">Sede Principal *</label>
+              <div className="clini-input-group clini-relative"> 
                 <div className="clini-input-icon">
                   <Building2 size={18} />
                 </div>
                 {permissions.verTodo ? (
-                  <select name="sede" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.sede || currentUser.sede}>
+                  <select name="sede" className="clini-input-field-icon-left input-field" defaultValue={selectedTerapeuta?.sede || currentUser.sede}>
                     {sedes.map(s => (
                       <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
                     ))}
                   </select> 
                 ) : (
-                  <div className="clini-input-field-icon-left bg-slate-100 flex items-center text-slate-600 cursor-not-allowed">
+                  <div className="clini-field-disabled-display">
                     {selectedTerapeuta?.sede || currentUser.sede}
                     <input type="hidden" name="sede" value={selectedTerapeuta?.sede || currentUser.sede} />
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-1.5"> 
-              <label className="clini-label ml-1">Teléfono</label>
-              <div className="relative group">
+            <div className="clini-form-group clini-space-y-ui-c"> 
+              <label className="clini-label">Teléfono</label>
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon">
                   <Phone size={18} />
                 </div>
                 <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.telefono} />
               </div>
             </div>
-            <div className="space-y-1.5"> 
-              <label className="clini-label ml-1">Correo</label>
-              <div className="relative group">
+            <div className="clini-form-group clini-space-y-ui-c"> 
+              <label className="clini-label">Correo</label>
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon">
                   <Mail size={18} />
                 </div>
@@ -681,12 +692,12 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4">
-            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary px-6 py-2.5 text-xs">
+          <div className="clini-form-footer clini-flex-end-gap-3 clini-pt-ui-g clini-border-t-slate-100">
+            <button type="button" onClick={() => setIsModalOpen(false)} className="btn-secondary">
               Cancelar
             </button>
             <button type="submit" className="btn-primary">
-              {selectedTerapeuta ? 'Guardar Cambios' : 'Registrar Terapeuta'}
+              {selectedTerapeuta ? 'Guardar Cambios' : 'Crear Terapeuta'}
             </button>
           </div>
         </form>
@@ -709,16 +720,16 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
       >
         <div className="space-y-6">
           {/* Header Info & Filters */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-5 rounded-3xl border border-slate-100">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-5 rounded-card border border-border">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xl shadow-inner">
+              <div className="clini-avatar-patient w-14 h-14 rounded-2xl text-xl shadow-inner flex items-center justify-center font-bold">
                 {selectedTerapeuta?.nombres.charAt(0)}
               </div>
               <div>
-                <p className="font-bold text-slate-900 text-lg">{selectedTerapeuta?.nombres} {selectedTerapeuta?.apellidoPaterno}</p>
+                <p className="clini-title-section">{selectedTerapeuta?.nombres} {selectedTerapeuta?.apellidoPaterno}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{selectedTerapeuta?.sede}</span>
-                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span className="w-1 h-1 rounded-full bg-border-medium"></span>
                   <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
                     {configAgenda.TIPO_DURACION_SESION === 'GLOBAL' ? `Duración Global: ${configAgenda.DURACION_SESION_GLOBAL}m` : 'Duración por Especialidad'}
                   </span>
@@ -726,7 +737,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               </div>
             </div>
             
-            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sys-sm border border-border">
               <select 
                 className="bg-transparent border-none text-sm font-bold text-slate-700 focus:ring-0 cursor-pointer"
                 value={filterMonth}
@@ -754,7 +765,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               onClick={() => setActiveTab('listado')}
               className={cn(
                 "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-                activeTab === 'listado' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                activeTab === 'listado' ? "bg-white text-primary shadow-sys-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
               <Clock size={16} />
@@ -764,7 +775,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               onClick={() => setActiveTab('calendario')}
               className={cn(
                 "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-                activeTab === 'calendario' ? "bg-white text-primary shadow-sm" : "text-slate-500 hover:text-slate-700"
+                activeTab === 'calendario' ? "bg-white text-primary shadow-sys-sm" : "text-slate-500 hover:text-slate-700"
               )}
             >
               <Calendar size={16} />
@@ -791,7 +802,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                       onClick={() => setIsBulkAdding(!isBulkAdding)}
                       className={cn(
                         "btn-secondary py-2 px-4 text-xs flex items-center gap-2",
-                        isBulkAdding && "bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700"
+                        isBulkAdding && "bg-indigo-600 text-white border-indigo-600"
                       )}
                     >
                       <Plus size={14} />
@@ -810,14 +821,14 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                 </div>
 
                 {isBulkAdding && (
-                  <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-6 space-y-4 animate-in fade-in slide-in-from-top-4">
+                  <div className="clini-config-section-wrapper bg-indigo-50/50 border-indigo-100 rounded-3xl p-6">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-bold text-indigo-900">Configuración de Horario por Días de la Semana</h4>
-                      <p className="text-[10px] text-indigo-500 font-medium">Selecciona los días y el rango de tiempo para generar los bloques automáticamente.</p>
+                      <p className="text-[10px] text-indigo-500 font-medium uppercase tracking-wider">Genera bloques de forma masiva</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Días de la Semana</label>
+                        <label className="clini-label ml-1">Días de la Semana</label>
                         <div className="flex flex-wrap gap-1">
                           {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
                             const hasConflict = horarioFormData.bloques?.some(b => {
@@ -842,10 +853,10 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                   }));
                                 }}
                                 className={cn(
-                                  "px-2 py-1 rounded-lg text-[10px] font-bold transition-all border relative",
+                                  "px-2 py-1 rounded-xl text-[10px] font-bold transition-all border relative",
                                   isSelected && !hasConflict && "bg-indigo-600 border-indigo-600 text-white shadow-sm",
-                                  isSelected && hasConflict && "bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-200",
-                                  !isSelected && !hasConflict && "bg-white border-indigo-200 text-indigo-400 hover:border-indigo-400",
+                                  isSelected && hasConflict && "bg-rose-500 border-rose-500 text-white",
+                                  !isSelected && !hasConflict && "bg-white border-indigo-100 text-indigo-400 hover:border-indigo-400",
                                   !isSelected && hasConflict && "bg-amber-50 border-amber-300 text-amber-600"
                                 )}
                                 title={hasConflict ? "Conflicto de horario detectado" : ""}
@@ -853,7 +864,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                 {d.substring(0, 3)}
                                 {hasConflict && (
                                   <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                    <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                                   </span>
                                 )}
@@ -869,19 +880,19 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Tipo de Registro</label>
+                        <label className="clini-label ml-1">Tipo de Registro</label>
                         <select 
                           className="input-field py-1.5 text-xs bg-white"
                           value={bulkFormData.tipo}
                           onChange={(e) => setBulkFormData(prev => ({ ...prev, tipo: e.target.value as any, estado: e.target.value === 'PAUSA' ? 'REFRIGERIO' : 'DISPONIBLE' }))}
                         >
-                          <option value="TRABAJO">Trabajo / Atención</option>
-                          <option value="PAUSA">Pausa / Almuerzo</option>
+                          <option value="TRABAJO">TRABAJO / ATENCIÓN</option>
+                          <option value="PAUSA">PAUSA / RECESO</option>
                         </select>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Hora Inicio</label>
+                          <label className="clini-label ml-1">Hora Inicio</label>
                           <input 
                             type="time" 
                             className="input-field py-1.5 text-xs bg-white"
@@ -890,7 +901,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Hora Fin</label>
+                          <label className="clini-label ml-1">Hora Fin</label>
                           <input 
                             type="time" 
                             className="input-field py-1.5 text-xs bg-white"
@@ -900,7 +911,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                         </div>
                       </div>
                       <div className="flex items-end">
-                        <button onClick={handleBulkAdd} className="btn-primary w-full py-2 text-xs flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 border-indigo-600">
+                        <button onClick={handleBulkAdd} className="btn-primary w-full py-2 text-xs flex items-center justify-center gap-2">
                           <Plus size={14} />
                           Aplicar a Días Seleccionados
                         </button>
@@ -910,60 +921,60 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                 )}
 
                 {(isAddingHorario || selectedHorario) ? (
-                  <div className="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-sm">
+                  <div className="clini-table-dense-wrapper">
                     <div className="max-h-[40vh] overflow-y-auto custom-scrollbar">
-                      <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 sticky top-0 z-10">
+                      <table className="clini-table-dense">
+                        <thead className="clini-table-dense-thead sticky top-0 z-10">
                           <tr>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Día</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tipo</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inicio</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fin</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estado</th>
-                            <th className="px-4 py-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center">Acciones</th>
+                            <th className="clini-table-dense-th">Día de Semana</th>
+                            <th className="clini-table-dense-th">Tipo Registro</th>
+                            <th className="clini-table-dense-th">H. Inicio</th>
+                            <th className="clini-table-dense-th">H. Fin</th>
+                            <th className="clini-table-dense-th">Estado Inicial</th>
+                            <th className="clini-table-dense-th-center">Gestión</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50">
+                        <tbody className="divide-y divide-slate-100">
                           {horarioFormData.bloques?.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)).map((bloque) => (
-                            <tr key={bloque.id} className="hover:bg-slate-50/50 transition-colors group">
-                              <td className="px-4 py-2">
+                            <tr key={bloque.id} className="clini-table-row-hover">
+                              <td className="clini-table-dense-td">
                                 <div className="flex flex-col">
-                                  <span className="text-xs font-bold text-slate-900">{bloque.diasSemana.join(', ')}</span>
+                                  <span className="font-bold text-text-primary">{bloque.diasSemana.join(', ')}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-2">
+                              <td className="clini-table-dense-td">
                                 <select 
-                                  className="bg-transparent border-none p-0 text-xs font-medium text-slate-600 focus:ring-0 cursor-pointer"
+                                  className="clini-time-input-inline"
                                   value={bloque.tipo}
                                   onChange={(e) => handleUpdateBloque(bloque.id, 'tipo', e.target.value)}
                                 >
-                                  <option value="TRABAJO">Trabajo</option>
-                                  <option value="PAUSA">Pausa</option>
+                                  <option value="TRABAJO">TRABAJO</option>
+                                  <option value="PAUSA">PAUSA</option>
                                 </select>
                               </td>
-                              <td className="px-4 py-2">
+                              <td className="clini-table-dense-td">
                                 <input 
                                   type="time" 
-                                  className="bg-transparent border-none p-0 text-xs font-medium text-slate-600 focus:ring-0 cursor-pointer"
+                                  className="clini-time-input-inline"
                                   value={bloque.horaInicio}
                                   onChange={(e) => handleUpdateBloque(bloque.id, 'horaInicio', e.target.value)}
                                 />
                               </td>
-                              <td className="px-4 py-2">
+                              <td className="clini-table-dense-td">
                                 <input 
                                   type="time" 
-                                  className="bg-transparent border-none p-0 text-xs font-medium text-slate-600 focus:ring-0 cursor-pointer"
+                                  className="clini-time-input-inline"
                                   value={bloque.horaFin}
                                   onChange={(e) => handleUpdateBloque(bloque.id, 'horaFin', e.target.value)}
                                 />
                               </td>
-                              <td className="px-4 py-2">
-                                <div className="flex items-center gap-2">
+                              <td className="clini-table-dense-td">
+                                <div className="clini-flex-center-gap-2">
                                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: configAgenda[`COLOR_${bloque.estado}`] }}></div>
-                                  <span className="text-[10px] font-bold text-slate-600 uppercase">{bloque.estado}</span>
+                                  <span className="text-[10px] font-bold text-slate-500 uppercase">{bloque.estado}</span>
                                 </div>
                               </td>
-                              <td className="px-4 py-2 text-center">
+                              <td className="clini-table-dense-td-center">
                                 <div className="flex items-center justify-center gap-1">
                                   <button 
                                     onClick={() => {
@@ -977,14 +988,14 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                       setIsBulkAdding(true);
                                       handleRemoveBloque(bloque.id);
                                     }}
-                                    className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                    className="clini-action-btn-icon clini-action-btn-icon-slate"
                                     title="Editar registro"
                                   >
                                     <Edit size={14} />
                                   </button>
                                   <button 
                                     onClick={() => handleRemoveBloque(bloque.id)}
-                                    className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                                    className="clini-action-btn-icon clini-action-btn-icon-rose"
                                     title="Eliminar registro"
                                   >
                                     <Trash2 size={14} />
@@ -1005,11 +1016,11 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-3xl border border-slate-100 text-center">
-                    <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-slate-300 mb-4">
+                  <div className="flex flex-col items-center justify-center p-12 bg-slate-50 rounded-card border border-slate-100 text-center">
+                    <div className="clini-dict-empty-icon-box">
                       <Calendar size={32} />
                     </div>
-                    <p className="text-slate-500 font-medium">No hay horarios registrados para este mes.</p>
+                    <p className="text-slate-500 font-medium">No hay planificación registrada para este mes.</p>
                     <button 
                       onClick={() => {
                         setIsAddingHorario(true);
@@ -1028,7 +1039,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-primary" />
-                      <span className="text-sm font-bold text-slate-700">Agenda Semanal</span>
+                      <span className="text-sm font-bold text-slate-900">Agenda Semanal</span>
                     </div>
                     <div className="flex items-center gap-1 bg-white rounded-xl border border-slate-100 p-1">
                       <button 
@@ -1108,7 +1119,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                       return (
                         <div key={day} className={cn(
                           "aspect-square p-2 rounded-2xl border transition-all relative group overflow-hidden",
-                          isSedeOpen ? "bg-white border-slate-100 hover:shadow-md" : "bg-slate-50 border-transparent opacity-50"
+                          isSedeOpen ? "bg-white border-slate-100 hover:shadow-sys-md" : "bg-slate-50 border-transparent opacity-50"
                         )}>
                           <span className={cn("text-xs font-bold", isSedeOpen ? "text-slate-900" : "text-slate-400")}>{day}</span>
                           {!isSedeOpen && (
@@ -1151,7 +1162,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                             })
                           ) : (
                             <div className="p-4 text-center">
-                              <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                              <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">
                                 {calendarDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                               </span>
                             </div>
@@ -1219,11 +1230,11 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                     <div key={dayName} className={cn(
                                       "p-1 border-r border-slate-50 last:border-r-0 min-h-[40px] relative",
                                       !isWithinCenterHours && "bg-slate-50/50",
-                                      isNoDisponible && "bg-slate-700/10"
+                                      isNoDisponible && "bg-slate-700/5"
                                     )}>
                                       {isNoDisponible && (
-                                        <div className="absolute inset-x-1 inset-y-0.5 rounded-lg bg-slate-200/50 flex items-center justify-center border border-slate-300/50">
-                                          <span className="text-[7px] font-black text-slate-400 uppercase">No Disp.</span>
+                                        <div className="absolute inset-x-1 inset-y-0.5 rounded-lg bg-slate-200/50 flex items-center justify-center border border-slate-300/30">
+                                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter">No Disp.</span>
                                         </div>
                                       )}
                                       {dayBloques.map(b => (
@@ -1237,7 +1248,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                             zIndex: 1
                                           }}
                                         >
-                                          <span className="text-[8px] font-black text-white uppercase leading-none truncate">{b.estado}</span>
+                                          <span className="text-[7px] font-black text-white uppercase leading-none truncate">{b.estado}</span>
                                         </div>
                                       ))}
                                       {isWithinCenterHours && dayBloques.length === 0 && (
@@ -1259,7 +1270,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
 
                 {/* Legend */}
                 <div className="flex flex-wrap items-center gap-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Leyenda:</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Leyenda de Disponibilidad:</p>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: configAgenda.COLOR_DISPONIBLE }}></div>
                     <span className="text-[10px] font-bold text-slate-600 uppercase">Disponible</span>
@@ -1290,7 +1301,7 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
               Cerrar
             </button>
             {(isAddingHorario || selectedHorario) && activeTab === 'listado' && (
-              <button onClick={handleSaveHorario} className="btn-primary flex items-center gap-2 px-8">
+              <button onClick={handleSaveHorario} className="btn-primary py-2 px-8 text-sm flex items-center gap-2">
                 <Save size={18} />
                 Guardar Planificación
               </button>

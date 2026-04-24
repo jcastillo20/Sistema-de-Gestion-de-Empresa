@@ -303,11 +303,11 @@ export default function Horarios({ currentUser }: HorariosProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="clini-page-container">
+      <div className="clini-page-header">
         <div>
           <h2 className="clini-title-main">Horarios de Terapeutas</h2>
-          <p className="clini-subtitle text-sm">Gestiona los turnos rotativos y pausas mensuales.</p>
+          <p className="clini-subtitle">Gestiona los turnos rotativos y pausas mensuales.</p>
         </div>
         {permissions.puedeCrear && (
           <button onClick={() => handleOpenModal()} className="btn-primary flex items-center gap-2">
@@ -318,16 +318,16 @@ export default function Horarios({ currentUser }: HorariosProps) {
       </div>
 
       {/* Filtros Avanzados */}
-      <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-slate-900 font-bold text-sm uppercase tracking-wider">
-          <Filter size={16} className="text-primary" /> {/* Uses text-primary */}
-          Filtros de Búsqueda
+      <div className="clini-card clini-form-stack">
+        <div className="clini-label-with-icon">
+          <Filter size={16} className="text-primary" />
+          <span className="text-sm font-bold uppercase tracking-wider">Filtros de Búsqueda</span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Terapeuta</label>
+        <div className="clini-form-grid md:grid-cols-4 gap-4">
+          <div className="clini-form-group">
+            <label className="clini-label">Terapeuta</label>
             <select 
-              className="input-field py-2 text-xs"
+              className="input-field-xs"
               value={filterTerapeuta}
               onChange={(e) => setFilterTerapeuta(e.target.value)}
             >
@@ -337,10 +337,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Especialidad</label>
+          <div className="clini-form-group">
+            <label className="clini-label">Especialidad</label>
             <select 
-              className="input-field py-2 text-xs"
+              className="input-field-xs"
               value={filterEspecialidad}
               onChange={(e) => setFilterEspecialidad(e.target.value)}
             >
@@ -350,10 +350,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Mes</label>
+          <div className="clini-form-group">
+            <label className="clini-label">Mes</label>
             <select 
-              className="input-field py-2 text-xs"
+              className="input-field-xs"
               value={filterMonth}
               onChange={(e) => setFilterMonth(Number(e.target.value))}
             >
@@ -362,10 +362,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
               ))}
             </select>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase">Año</label>
+          <div className="clini-form-group">
+            <label className="clini-label">Año</label>
             <select 
-              className="input-field py-2 text-xs"
+              className="input-field-xs"
               value={filterYear}
               onChange={(e) => setFilterYear(Number(e.target.value))}
             >
@@ -378,13 +378,13 @@ export default function Horarios({ currentUser }: HorariosProps) {
       </div>
 
       {/* Selector de Vista */}
-      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-2xl w-fit">
+      <div className="clini-segmented-control">
         <button 
           onClick={() => setActiveTab('listado')}
           className={cn(
-            "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-            activeTab === 'listado' ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-700"
-          )}
+            "clini-segmented-item",
+            activeTab === 'listado' && "clini-segmented-item--active"
+          )} 
         >
           <LayoutGrid size={16} />
           Vista Lista
@@ -392,64 +392,64 @@ export default function Horarios({ currentUser }: HorariosProps) {
         <button 
           onClick={() => setActiveTab('calendario')}
           className={cn(
-            "px-6 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
-            activeTab === 'calendario' ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-700"
+            "clini-segmented-item",
+            activeTab === 'calendario' && "clini-segmented-item--active"
           )}
         >
           <Calendar size={16} />
-          Vista Calendario
+          Calendario
         </button>
       </div>
 
       <>
         {activeTab === 'calendario' ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+        <div className="clini-page-container">
+          <div className="clini-calendar-header">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-100 p-1"> {/* Uses bg-slate-50 */}
-                <button onClick={() => handleNavigateCalendar('prev')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all"> {/* Uses text-primary */}
+              <div className="flex items-center gap-1 bg-border rounded-xl p-1 shadow-inner">
+                <button onClick={() => handleNavigateCalendar('prev')} className="p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-all">
                   <ChevronLeft size={18} />
                 </button>
-                <div className="px-4 text-xs font-bold text-slate-700 uppercase min-w-[150px] text-center">
+                <div className="px-4 text-[10px] font-black text-text-secondary uppercase min-w-[150px] text-center tracking-widest">
                   {calendarView === 'month' ? calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
                    calendarView === 'week' ? `Semana ${Math.ceil(calendarDate.getDate() / 7)} - ${calendarDate.toLocaleDateString('es-ES', { month: 'short' })}` :
                    calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
                 </div>
-                <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white hover:shadow-sm rounded-lg transition-all"> {/* Uses text-primary */}
+                <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-all">
                   <ChevronRight size={18} />
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-1 p-1 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="clini-segmented-control">
               {(['day', 'week', 'month'] as const).map(view => (
                 <button
                   key={view}
                   onClick={() => setCalendarView(view)}
                   className={cn(
-                    "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all",
-                    calendarView === view ? "bg-white text-primary shadow-sm" : "text-secondary hover:text-slate-600"
+                    "clini-segmented-item px-3 py-1",
+                    calendarView === view && "clini-segmented-item--active"
                   )}
                 >
-                  {view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}
+                  <span className="text-[10px] uppercase">{view === 'day' ? 'Día' : view === 'week' ? 'Semana' : 'Mes'}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+          <div className="dt-root">
             <div className="overflow-x-auto">
               <div className="min-w-[800px]">
-                <div className={cn("grid border-b border-slate-100 bg-slate-50/50", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
-                  <div className="p-4 border-r border-slate-100"></div> {/* Uses border-slate-100 */}
-                  {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(d => (
-                    <div key={d} className="p-4 text-center font-bold text-[10px] text-slate-400 uppercase tracking-widest">{d}</div>
+                <div className={cn("grid border-b border-border bg-muted-bg", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
+                  <div className="p-4 border-r border-border"></div>
+                  {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(d => ( 
+                    <div key={d} className="p-4 text-center font-black text-[10px] text-text-muted uppercase tracking-widest">{d}</div>
                   ))}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                   {generateTimeSlots().map(time => (
                     <div key={time} className={cn("grid border-b border-slate-50 last:border-b-0", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
-                      <div className="p-3 text-right pr-4 border-r border-slate-100 bg-slate-50/30"> {/* Uses bg-slate-50/30 */}
-                        <span className="text-[10px] font-bold text-slate-400">{time}</span>
+                      <div className="p-3 text-right pr-4 border-r border-border bg-bg/50">
+                        <span className="text-[10px] font-bold text-text-muted">{time}</span>
                       </div>
                       {(calendarView === 'week' ? ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'] : [['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][calendarDate.getDay()]]).map(day => {
                         const slotBlocks = filteredHorariosData.flatMap(h => h.bloques.filter(b => {
@@ -491,12 +491,12 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Terapeuta', 
               accessor: (h: Horario) => (
-                <div className="flex items-center gap-3"> {/* Uses bg-primary/10 */}
-                  <div className="clini-avatar w-8 h-8 bg-primary/10 text-primary text-xs">
+                <div className="pg-cell-person">
+                  <div className="pg-avatar pg-avatar--primary">
                     {h.nombreTerapeuta.charAt(0)}
                   </div>
-                  <span className="font-medium text-slate-900">{h.nombreTerapeuta}</span>
-                </div>
+                  <span className="pg-cell-name">{h.nombreTerapeuta}</span>
+                </div> 
               )
             },
             { header: 'Mes/Año', accessor: (h: Horario) => `${meses[h.mes - 1]} ${h.año}` },
@@ -504,13 +504,13 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Bloques', 
               accessor: (h: Horario) => (
-                <div className="flex flex-wrap gap-1"> {/* Uses bg-primary/10 */}
+                <div className="pg-esp-list">
                   {h.bloques.map((b, i) => (
-                    <span key={i} className="px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm border border-black/5" style={{ 
-                      backgroundColor: configAgenda[`COLOR_${b.estado}`] || '#e2e8f0',
-                      color: '#fff'
+                    <span key={i} className="pg-block-chip" style={{ 
+                      backgroundColor: configAgenda[`COLOR_${b.estado}`] || 'var(--sys-color-border-medium)',
+                      boxShadow: 'var(--sys-shadow-xs)'
                     }}>
-                      {b.diasSemana.join(',')}: {b.horaInicio}-{b.horaFin}
+                      {b.horaInicio} - {b.horaFin}
                     </span>
                   ))}
                 </div>
@@ -519,9 +519,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
             { 
               header: 'Estado', 
               accessor: (h: Horario) => (
-                <span className={cn("clini-badge clini-badge-status", h.estado ? "clini-badge-status-success" : "clini-badge-status-neutral")}>
+                <div className={cn("pg-status-pill", h.estado ? "pg-status--active" : "pg-status--inactive")}>
+                  <span className={cn("pg-status-dot", h.estado ? "pg-dot--active" : "pg-dot--inactive")} />
                   {h.estado ? 'Activo' : 'Inactivo'}
-                </span>
+                </div>
               )
             }
           ]}
@@ -540,11 +541,11 @@ export default function Horarios({ currentUser }: HorariosProps) {
         size="lg"
       >
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
-                <Building2 size={14} className="text-slate-400" />
-                Sede
+          <div className="clini-form-grid">
+            <div className="clini-form-group clini-space-y-ui-c">
+              <label className="clini-label-form flex items-center gap-2">
+                <Building2 size={14} className="text-text-muted" />
+                Sede de Atención *
               </label>
               <select 
                 className="input-field"
@@ -558,9 +559,9 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
-                <User size={14} className="text-slate-400" />
+            <div className="clini-form-group">
+              <label className="clini-label-with-icon">
+                <User size={16} />
                 Terapeuta
               </label>
               <select 
@@ -577,10 +578,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
-                <Calendar size={14} className="text-slate-400" />
-                Mes
+            <div className="clini-form-group">
+              <label className="clini-label-with-icon">
+                <Calendar size={16} />
+                Mes de Aplicación
               </label>
               <select 
                 className="input-field"
@@ -593,9 +594,9 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <label className="clini-label flex items-center gap-2"> {/* Uses clini-label */}
-                <Calendar size={14} className="text-slate-400" />
+            <div className="clini-form-group">
+              <label className="clini-label-with-icon">
+                <Calendar size={16} />
                 Año
               </label>
               <input 
@@ -608,106 +609,96 @@ export default function Horarios({ currentUser }: HorariosProps) {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="clini-title-section text-sm flex items-center gap-2 uppercase tracking-wider"> {/* Uses clini-title-section */}
-                <Clock size={16} />
-                Bloques de Horario
+          <div className="clini-form-stack">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <h3 className="clini-label-with-icon text-sm uppercase tracking-tight">
+                <Clock size={18} />
+                Planificación de Bloques
               </h3>
-              <button onClick={handleAddBloque} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+              <button onClick={handleAddBloque} className="btn-primary-sm">
                 <Plus size={14} />
                 Agregar Bloque
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="clini-table-dense-wrapper">
               {formData.bloques?.length === 0 ? (
-                <div className="p-8 border-2 border-dashed border-slate-100 rounded-3xl text-center"> {/* Uses border-slate-100 */}
-                  <p className="text-slate-400 text-sm">No hay bloques definidos para este horario.</p>
+                <div className="p-12 text-center bg-muted-bg/50">
+                  <p className="text-text-muted text-sm italic">No hay bloques definidos para este horario.</p>
                 </div>
               ) : (
-                formData.bloques?.map((bloque) => (
-                  <div key={bloque.id} className="flex flex-col md:flex-row items-end gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-3 w-full">
-                      <div className="space-y-1 md:col-span-2">
-                        <label className="clini-label">Días</label> {/* Uses clini-label */}
-                        <div className="flex flex-wrap gap-1">
-                          {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
-                            const isSelected = bloque.diasSemana.includes(d);
-                            return (
-                              <button
-                                key={d}
-                                type="button"
-                                onClick={() => {
-                                  const newDays = isSelected 
-                                    ? bloque.diasSemana.filter(day => day !== d)
-                                    : [...bloque.diasSemana, d];
-                                  handleUpdateBloque(bloque.id, 'diasSemana', newDays);
-                                }}
-                                className={cn(
-                                  "w-7 h-7 rounded-lg text-[10px] font-bold transition-all border",
-                                  isSelected 
-                                    ? "bg-primary border-primary text-white shadow-sm" /* Uses bg-primary */
-                                    : "bg-white border-slate-200 text-slate-400 hover:border-primary/50"
-                                )}
-                              >
-                                {d.substring(0, 1)}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      <div className="space-y-1"> {/* Uses clini-label */}
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Tipo</label>
-                        <select 
-                          className="input-field py-1 text-xs"
-                          value={bloque.tipo}
-                          onChange={(e) => handleUpdateBloque(bloque.id, 'tipo', e.target.value)}
-                        >
-                          <option value="TRABAJO">Trabajo</option>
-                          <option value="PAUSA">Pausa</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1"> {/* Uses clini-label */}
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Inicio</label>
-                        <input 
-                          type="time" 
-                          className="input-field py-1 text-xs"
-                          value={bloque.horaInicio}
-                          onChange={(e) => handleUpdateBloque(bloque.id, 'horaInicio', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1"> {/* Uses clini-label */}
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Fin</label>
-                        <input 
-                          type="time" 
-                          className="input-field py-1 text-xs"
-                          value={bloque.horaFin}
-                          onChange={(e) => handleUpdateBloque(bloque.id, 'horaFin', e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1"> {/* Uses clini-label */}
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Estado</label>
-                        <div className="flex items-center gap-2 h-9 px-3 bg-white rounded-xl border border-slate-200">
-                          <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: configAgenda[`COLOR_${bloque.estado}`] }}></div>
-                          <span className="text-[10px] font-bold text-slate-600">{bloque.estado}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => handleRemoveBloque(bloque.id)}
-                      className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors shrink-0"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                ))
+                <table className="clini-table-dense">
+                  <thead className="clini-table-dense-thead">
+                    <tr>
+                      <th className="clini-table-dense-th">Días</th>
+                      <th className="clini-table-dense-th">Tipo</th>
+                      <th className="clini-table-dense-th">Inicio</th>
+                      <th className="clini-table-dense-th">Fin</th>
+                      <th className="clini-table-dense-th">Estado</th>
+                      <th className="clini-table-dense-th-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="clini-table-body-divide">
+                    {formData.bloques?.map((bloque) => (
+                      <tr key={bloque.id} className="clini-table-row-hover">
+                        <td className="clini-table-dense-td">
+                          <div className="flex flex-wrap gap-1 min-w-[150px]">
+                            {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => {
+                              const isSelected = bloque.diasSemana.includes(d);
+                              return (
+                                <button
+                                  key={d}
+                                  type="button"
+                                  onClick={() => {
+                                    const newDays = isSelected 
+                                      ? bloque.diasSemana.filter(day => day !== d)
+                                      : [...bloque.diasSemana, d];
+                                    handleUpdateBloque(bloque.id, 'diasSemana', newDays);
+                                  }}
+                                  className={cn(
+                                    "w-6 h-6 rounded-md text-[9px] font-bold transition-all border",
+                                    isSelected ? "bg-primary border-primary text-white" : "bg-white border-border text-text-muted hover:border-primary/40"
+                                  )}
+                                >
+                                  {d.substring(0, 1)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="clini-table-dense-td">
+                          <select className="clini-time-input-inline font-bold" value={bloque.tipo} onChange={(e) => handleUpdateBloque(bloque.id, 'tipo', e.target.value)}>
+                            <option value="TRABAJO">Trabajo</option>
+                            <option value="PAUSA">Pausa</option>
+                          </select>
+                        </td>
+                        <td className="clini-table-dense-td">
+                          <input type="time" className="clini-time-input-inline" value={bloque.horaInicio} onChange={(e) => handleUpdateBloque(bloque.id, 'horaInicio', e.target.value)} />
+                        </td>
+                        <td className="clini-table-dense-td">
+                          <input type="time" className="clini-time-input-inline" value={bloque.horaFin} onChange={(e) => handleUpdateBloque(bloque.id, 'horaFin', e.target.value)} />
+                        </td>
+                        <td className="clini-table-dense-td">
+                          <div className="clini-flex-center-gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: configAgenda[`COLOR_${bloque.estado}`] }}></div>
+                            <span className="clini-badge-status-small uppercase">{bloque.estado}</span>
+                          </div>
+                        </td>
+                        <td className="clini-table-dense-td-center">
+                          <button onClick={() => handleRemoveBloque(bloque.id)} className="clini-action-btn-icon clini-action-btn-icon-rose">
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <button onClick={() => setIsModalOpen(false)} className="btn-secondary text-xs"> {/* Uses btn-secondary */}
+          <div className="clini-form-actions">
+            <button onClick={() => setIsModalOpen(false)} className="btn-secondary">
               Cancelar
             </button>
             <button onClick={handleSave} className="btn-primary flex items-center gap-2">

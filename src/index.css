@@ -745,6 +745,81 @@
   .clini-flex-center-gap-3 { display: flex; align-items: center; gap: var(--layout-element-gap-sm); }
   .clini-flex-center-gap-2 { display: flex; align-items: center; gap: var(--layout-element-gap-xs); }
 
+  /* Layout de página */
+  .clini-page-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--layout-section-gap);
+  }
+
+  .clini-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--layout-element-gap);
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  @media (min-width: 768px) {
+    .clini-page-header {
+      flex-direction: row;
+      align-items: center;
+    }
+  }
+
+  .clini-form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--system-spacing-relaxed);
+  }
+
+  /* Segmented control (tabs / switchers) */
+  .clini-segmented-control {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: var(--sys-color-border);
+    border-radius: var(--sys-radius-xl);
+    width: fit-content;
+  }
+
+  .clini-segmented-item {
+    display: flex;
+    align-items: center;
+    gap: var(--layout-element-gap-xs);
+    padding-inline: var(--layout-btn-px);
+    padding-block: 0.5rem;
+    border-radius: var(--sys-radius-lg);
+    font-size: var(--sys-text-sm);
+    font-weight: var(--sys-font-bold);
+    transition: all var(--sys-transition-base);
+    color: var(--sys-color-text-secondary);
+    cursor: pointer;
+  }
+
+  .clini-segmented-item--active {
+    background-color: var(--sys-color-surface);
+    color: rgb(var(--sys-color-primary-raw));
+    box-shadow: var(--sys-shadow-sm);
+  }
+
+  .clini-segmented-item:hover:not(.clini-segmented-item--active) {
+    color: var(--sys-color-text-primary);
+  }
+
+  /* Calendar specific components */
+  .clini-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--layout-element-gap);
+    background-color: var(--sys-color-surface);
+    border-radius: var(--sys-radius-card);
+    border: var(--sys-border-width) solid var(--sys-color-border);
+    box-shadow: var(--sys-shadow-sm);
+    flex-wrap: wrap;
+    gap: var(--layout-element-gap);
+  }
 
   /* ===========================================================================
      § H. AVATARES Y BADGES
