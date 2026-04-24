@@ -122,7 +122,7 @@ export function DataTable<T>({
         type="warning"
         onConfirm={confirmDelete}
       />
-      <div className="p-6 border-b border-slate-50 space-y-4">
+      <div className="p-6 border-b border-slate-50 space-y-4 sticky top-0 z-20 bg-white/95 backdrop-blur-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-slate-900">{title}</h3>
@@ -132,10 +132,10 @@ export function DataTable<T>({
             {onAdd && (
               <button 
                 onClick={onAdd}
-                className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md shadow-primary/20"
+                className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Plus size={18} />
-                <span className="hidden sm:inline">Nuevo</span>
+                <span className="hidden sm:inline">Nuevo Registro</span>
               </button>
             )}
           </div>
@@ -151,16 +151,16 @@ export function DataTable<T>({
                   placeholder={searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 w-full transition-all"
+                  className="pl-10 pr-4 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 w-full transition-all"
                 />
               </div>
             )}
             {showFilters && (
               <div className="flex items-center gap-2">
-                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all" title="Filtrar">
                   <Filter size={18} />
                 </button>
-                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all">
+                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all" title="Exportar">
                   <Download size={18} />
                 </button>
               </div>
@@ -169,10 +169,10 @@ export function DataTable<T>({
         )}
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin">
         <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50 text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-slate-50/95 backdrop-blur-md text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider border-b border-slate-200 shadow-sm">
               {columns.map((column, idx) => (
                 <th 
                   key={idx} 
@@ -186,18 +186,22 @@ export function DataTable<T>({
                   <div className="flex items-center gap-2">
                     {column.header}
                     {column.sortable && (
-                      <span className="text-slate-300">
+                      <span className="text-slate-400">
                         {sortConfig.key === column.sortKey ? (
-                          sortConfig.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+                          sortConfig.direction === 'asc' ? <ChevronUp size={14} className="text-primary" /> : <ChevronDown size={14} className="text-primary" />
                         ) : (
-                          <ChevronsUpDown size={14} />
+                          <ChevronsUpDown size={14} className="opacity-40" />
                         )}
                       </span>
                     )}
                   </div>
                 </th>
               ))}
-              {(onEdit || onDelete || customActions) && <th className="px-4 sm:px-6 py-4 text-right min-w-[100px] sm:min-w-[120px]">Acciones</th>}
+              {(onEdit || onDelete || customActions) && (
+                <th className="px-4 sm:px-6 py-4 text-right min-w-[100px] sm:min-w-[120px] bg-slate-50/95">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">

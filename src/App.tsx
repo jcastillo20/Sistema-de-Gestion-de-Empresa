@@ -265,7 +265,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-7 relative transition-all duration-300">
+        <main className="flex-1 overflow-y-auto px-5 py-5 md:px-7 md:py-7 lg:px-8 lg:py-8 bg-slate-50/20 relative transition-all duration-300">
           {activePage === 'dashboard' && <Dashboard currentUser={user} />}
           {activePage === 'pacientes' && <Pacientes currentUser={user} />}
           {activePage === 'terapeutas' && <Terapeutas currentUser={user} />}
