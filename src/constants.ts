@@ -56,23 +56,23 @@ export const VALIDATION_RULES = {
   TEXT_ONLY: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/,
 };
 
-export const DOCUMENT_TYPES = [
-  { value: 'DNI', label: 'DNI' },
-  { value: 'CE', label: 'Carnet de Extranjería' },
-  { value: 'PASAPORTE', label: 'Pasaporte' },
-];
+// export const DOCUMENT_TYPES = [
+//   { value: 'DNI', label: 'DNI' },
+//   { value: 'CE', label: 'Carnet de Extranjería' },
+//   { value: 'PASAPORTE', label: 'Pasaporte' },
+// ];
 
-export const APPOINTMENT_STATUS = {
+/* export const APPOINTMENT_STATUS = {
   PENDIENTE: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
   CONFIRMADA: { label: 'Confirmada', color: 'bg-blue-100 text-blue-700' },
   CANCELADA: { label: 'Cancelada', color: 'bg-rose-100 text-rose-700' },
   COMPLETADA: { label: 'Completada', color: 'bg-emerald-100 text-emerald-700' },
   REPROGRAMADA: { label: 'Reprogramada', color: 'bg-indigo-100 text-indigo-700' },
 };
-
-export const PAYMENT_STATUS = {
+ */
+/* export const PAYMENT_STATUS = {
   PENDIENTE: { label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
   PAGADO: { label: 'Pagado', color: 'bg-emerald-100 text-emerald-700' },
   PARCIAL: { label: 'Parcial', color: 'bg-blue-100 text-blue-700' },
   ANULADO: { label: 'Anulado', color: 'bg-slate-100 text-slate-600' },
-};
+}; */
