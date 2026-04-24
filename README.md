@@ -30,6 +30,7 @@ La mayoría de los sistemas de salud son rígidos. CliniGest Pro resuelve la des
 
 ---
 
+<<<<<<< HEAD
 ## 2. Tabla de Contenido
 1. Características Principales
 2. Arquitectura & Stack
@@ -38,6 +39,43 @@ La mayoría de los sistemas de salud son rígidos. CliniGest Pro resuelve la des
 5. Motor de Configuración
 6. Diseño e Identidad
 7. Roadmap & Futuro
+=======
+## 🚀 Alcance Funcional Detallado
+
+### 1. Dashboard de Inteligencia
+*   **KPIs en Tiempo Real**: Visualización de Pacientes Totales, Citas Hoy, Ingresos Mensuales y Tasa de Asistencia.
+*   **Sedes y Operatividad**: Estado de sedes operativas y horas de terapia acumuladas.
+*   **Gestión de Citas Recientes**: Listado con estados dinámicos (Pendiente, Confirmada, Completada).
+
+*   **Optimización de Pantalla**: Interfaz diseñada para maximizar el área visible (Fit-to-Screen), reduciendo el scroll vertical excesivo mediante componentes compactos y modulares.
+
+### 2. Módulo de Pacientes
+*   **Registro Maestro**: Gestión de datos demográficos y de contacto.
+*   **Identidad Visual**: Sistema de avatares con iniciales dinámicas, peso de fuente ultra-negro y centrado perfecto mediante Flexbox.
+*   **Consistencia de Iconos**: Unificación de la simbología en todos los formularios (Nombres, Apellidos, Documentos) para una experiencia de usuario Coherente.
+
+### 3. Gestión de Terapeutas y Especialidades
+*   **Perfiles Profesionales**: Administración de colegiaturas y estados operativos.
+*   **Búsqueda Avanzada**: Implementación de `SearchableSelect` (Combos con buscador integrado) para facilitar la selección en listas extensas de profesionales.
+*   **Catálogo de Especialidades**: Definición de servicios médicos con duraciones personalizables.
+*   **Configuración de Duración Flexible**: 
+    *   **Global**: Todas las sesiones duran un tiempo estándar (definido en Sección Agenda).
+    *   **Por Especialidad**: Cada tipo de servicio tiene su propio tiempo de atención.
+    *   **Bulk Update**: Capacidad de aplicar una duración global a todos los servicios existentes con un solo clic.
+
+### 4. Sistema de Horarios y Planificación (Core)
+*   **Planificador Mensual**: Motor para definir turnos rotativos y bloques de atención.
+*   **Filtros Unificados**: Búsqueda global por Terapeuta, Especialidad, Mes, Año y término de búsqueda (Sede/Nombre).
+*   **Calendario Visual Interactivo**:
+    *   **Vista Semanal**: Indicador de rango de fechas (ej: "20 de Abril al 26 de Abril") incluyendo el número de semana.
+    *   **Cabeceras Dinámicas**: Los días de la semana (Lunes, Martes, etc.) muestran explícitamente el número de día del mes.
+    *   **Bloques de Tiempo**: Visualización de horarios ocupados y disponibles con códigos de color configurables.
+
+### 5. Control de Usuarios y Seguridad (RBAC)
+*   **Roles Jerárquicos**: Super Admin, Administrador de Sede, Recepcionista y Terapeuta.
+*   **Matriz de Permisos**: Control granular sobre qué módulos puede ver, crear, editar o eliminar cada perfil.
+*   **Auditoría Total**: Registro de quién hizo qué, cuándo y en qué registro (incluye comparación de datos anteriores y nuevos).
+>>>>>>> 37ec0a036792486f735e18eabd556bdd8c13987d
 
 ---
 
@@ -52,10 +90,16 @@ La mayoría de los sistemas de salud son rígidos. CliniGest Pro resuelve la des
 *   **Catálogo Maestro:** Definición de servicios médicos con duraciones personalizadas.
 *   **Lógica de Paquetes:** (In Development) Restricciones de especialidad según el tamaño del paquete contratado.
 
+<<<<<<< HEAD
 ### 📅 Gestión Avanzada de Horarios (Scheduling Core)
 *   **Validación de Solapamiento:** Algoritmo que impide el registro de bloques cruzados para el mismo profesional.
 *   **Restricciones de Sede:** Los horarios de los terapeutas respetan los días laborables y horas de apertura de la sede física.
 *   **Sábados Media Jornada:** Soporte para restricciones horarias diferenciadas por fin de semana.
+=======
+### Reglas de Agenda
+*   **Método de Duración**: Selección entre duración 'GLOBAL' o 'POR_ESPECIALIDAD'.
+*   **Colores de Ocupación**: Personalización de los colores para bloques ocupados y de refrigerio.
+>>>>>>> 37ec0a036792486f735e18eabd556bdd8c13987d
 
 ### 📊 Inteligencia de Negocio
 *   **KPIs con Tendencias:** Visualización de métricas clave (Pacientes, Citas, Ingresos) con indicadores de crecimiento porcentual.

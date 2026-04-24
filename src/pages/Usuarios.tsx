@@ -287,29 +287,35 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
           <div className="clini-form-grid">
             <div className="clini-form-group">
               <label className="clini-label">Nombres *</label>
-              <div className="clini-input-group">
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon"><User size={18} /></div>
                 <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombres} required />
               </div>
             </div>
             <div className="clini-form-group">
               <label className="clini-label">Apellido Paterno *</label>
-              <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoPaterno} required />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon"><User size={18} /></div>
+                <input name="apellidoPaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.apellidoPaterno} required />
+              </div>
             </div>
             <div className="clini-form-group"> 
               <label className="clini-label">Apellido Materno</label>
-              <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedUsuario?.apellidoMaterno} />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon"><User size={18} /></div>
+                <input name="apellidoMaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.apellidoMaterno} />
+              </div>
             </div>
             <div className="clini-form-group">
               <label className="clini-label">Nombre de Usuario *</label>
-              <div className="clini-input-group">
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon"><UserCheck size={18} /></div>
                 <input name="nombreUsuario" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.nombreUsuario} required />
               </div>
             </div>
             <div className="clini-form-group">
               <label className="clini-label">Contraseña *</label>
-              <div className="clini-input-group">
+              <div className="clini-input-group clini-relative">
                 <input name="contrasena" type={showPassword ? "text" : "password"} className="clini-input-field-right-action" defaultValue={selectedUsuario?.contrasena} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="clini-input-action">
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -354,16 +360,16 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
                 )}
               </div>
             </div>
-            <div className="clini-form-group"> 
+            <div className="clini-form-group">
               <label className="clini-label">Correo Electrónico *</label>
-              <div className="clini-input-group">
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon"><Mail size={18} /></div>
                 <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.correo} required />
               </div>
             </div>
             <div className="clini-form-group"> 
               <label className="clini-label">Teléfono</label>
-              <div className="clini-input-group">
+              <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon"><Phone size={18} /></div>
                 <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedUsuario?.telefono} />
               </div>

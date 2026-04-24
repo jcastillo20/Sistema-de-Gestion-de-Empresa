@@ -102,12 +102,12 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h2 className="clini-title-main">Bienvenido al Panel de Control</h2>
-          <p className="text-slate-500">Resumen de actividad clínica para <span className="font-bold text-primary">{selectedSedeFilter === 'ALL' ? 'Todas las Sedes' : selectedSedeFilter}</span></p>
+          <h2 className="clini-title-main text-lg md:text-xl">Panel de Control</h2>
+          <p className="text-xs text-slate-500">Resumen clínico: <span className="font-bold text-primary">{selectedSedeFilter === 'ALL' ? 'Todas las Sedes' : selectedSedeFilter}</span></p>
         </div>
         {isAdmin && (
           <div className="relative">
@@ -127,35 +127,35 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {(isLoading ? defaultStats : stats).map((stat, index) => {
           const Icon = typeof stat.icon === 'string' ? ICON_MAP[stat.icon] : stat.icon;
           return (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="clini-card p-6"
+            transition={{ delay: index * 0.05 }}
+            className="clini-card p-4 md:p-5"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className={cn("p-3 rounded-2xl text-white shadow-lg", stat.color, stat.color === 'bg-primary' && 'shadow-primary/20', stat.color === 'bg-success' && 'shadow-success/20', stat.color === 'bg-warning' && 'shadow-warning/20')}>
-                {Icon && <Icon size={24} />}
+            <div className="flex items-center justify-between mb-2">
+              <div className={cn("p-2 rounded-xl text-white shadow-md", stat.color, stat.color === 'bg-primary' && 'shadow-primary/20', stat.color === 'bg-success' && 'shadow-success/20', stat.color === 'bg-warning' && 'shadow-warning/20')}>
+                {Icon && <Icon size={20} />}
               </div>
-              <div className={`flex items-center gap-1 text-sm font-medium ${stat.trendUp ? 'text-success' : 'text-danger'}`}>
+              <div className={`flex items-center gap-1 text-[10px] font-bold ${stat.trendUp ? 'text-success' : 'text-danger'}`}>
                 {stat.trend}
-                {stat.trendUp ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                {stat.trendUp ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
               </div>
             </div>
-            <p className="text-slate-500 text-sm font-medium">{stat.label}</p>
-            <div className="text-2xl font-bold text-slate-900 mt-1">{isLoading ? <div className="h-8 w-24 bg-slate-200 rounded animate-pulse"></div> : stat.value}</div>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">{stat.label}</p>
+            <div className="text-xl font-black text-slate-900 mt-1">{isLoading ? <div className="h-6 w-16 bg-slate-200 rounded animate-pulse"></div> : stat.value}</div>
           </motion.div>
           );
         })}
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         {(isLoading ? defaultSecondaryStats : secondaryStats).map((stat, index) => {
           const Icon = typeof stat.icon === 'string' ? ICON_MAP[stat.icon] : stat.icon;
           return (
@@ -163,86 +163,74 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
             key={stat.label}
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 + (index * 0.1) }}
-            className={cn("p-4 rounded-2xl flex items-center gap-4 border border-transparent", stat.bg, isLoading && 'animate-pulse')}
+            transition={{ delay: 0.2 + (index * 0.05) }}
+            className={cn("p-3 rounded-xl flex items-center gap-3 border border-transparent", stat.bg, isLoading && 'animate-pulse')}
           >
-            <div className={cn("p-2 rounded-xl bg-white shadow-sm", stat.color)}>
-              {Icon && <Icon size={20} />}
+            <div className={cn("p-1.5 rounded-lg bg-white shadow-sm", stat.color)}>
+              {Icon && <Icon size={16} />}
             </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{stat.label}</p>
-              <div className={cn("text-lg font-bold", stat.color)}>{isLoading ? <div className="h-6 w-16 bg-slate-200 rounded"></div> : stat.value}</div>
+            <div className="truncate">
+              <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tight truncate">{stat.label}</p>
+              <div className={cn("text-sm font-black", stat.color)}>{isLoading ? <div className="h-4 w-12 bg-slate-200 rounded"></div> : stat.value}</div>
             </div>
           </motion.div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Appointments */}
-        <div className="lg:col-span-2 clini-card overflow-hidden p-0">
-          <div className="p-6 border-b border-slate-50 flex items-center justify-between">
-            <h3 className="clini-title-section">Citas Recientes</h3>
-            <button className="text-primary text-sm font-semibold hover:opacity-80">Ver todas</button>
+        <div className="lg:col-span-2 clini-card overflow-hidden p-0 h-fit">
+          <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
+            <h3 className="clini-title-section text-base">Citas Recientes</h3>
+            <button className="text-primary text-[11px] font-bold uppercase tracking-wider hover:opacity-80">Ver todas</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-slate-50/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                  <th className="px-6 py-4">Paciente</th>
-                  <th className="px-6 py-4">Terapeuta</th>
-                  <th className="px-6 py-4">Hora</th>
-                  <th className="px-6 py-4">Estado</th>
-                  <th className="px-6 py-4"></th>
+                <tr className="bg-slate-50/50 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                  <th className="px-5 py-3">Paciente</th>
+                  <th className="px-5 py-3">Terapeuta</th>
+                  <th className="px-5 py-3 text-center">Hora</th>
+                  <th className="px-5 py-3">Estado</th>
+                  <th className="px-5 py-3"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {(isLoading ? defaultRecentAppointments : recentAppointments).map((apt) => (
+                {(isLoading ? defaultRecentAppointments : recentAppointments.slice(0, 5)).map((apt) => (
                   <tr key={apt.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
                         {!isLoading && (
-                          <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary w-8 h-8">
-                            <span className="text-primary font-black text-[10px] tracking-tighter">
+                          <div className="pg-avatar flex items-center justify-center bg-primary/10 border border-primary w-7 h-7">
+                            <span className="text-primary font-black text-[9px] tracking-tighter">
                               {apt.patient.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
                             </span>
                           </div>
                         )}
-                        <span className="font-semibold text-slate-900">{isLoading ? <div className="h-4 w-24 bg-slate-200 rounded"></div> : apt.patient}</span>
+                        <span className="text-xs font-bold text-slate-900 line-clamp-1">{isLoading ? <div className="h-4 w-20 bg-slate-200 rounded"></div> : apt.patient}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-slate-600">
-                      <div className="flex items-center gap-2">
-                        {isLoading ? <div className="h-4 w-20 bg-slate-200 rounded"></div> : (
-                          <>
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            {apt.therapist}
-                          </>
-                        )}
-                      </div>
+                    <td className="px-5 py-3 text-slate-600 text-xs truncate max-w-[120px]">
+                      {isLoading ? <div className="h-3 w-16 bg-slate-200 rounded"></div> : apt.therapist}
                     </td>
-                    <td className="px-6 py-4 text-slate-600 font-medium">{isLoading ? <div className="h-4 w-12 bg-slate-200 rounded"></div> : apt.time}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3 text-slate-600 font-bold text-[11px] text-center">{isLoading ? <div className="h-3 w-10 bg-slate-200 rounded"></div> : apt.time}</td>
+                    <td className="px-5 py-3">
                       {isLoading ? (
-                        <div className="h-5 w-20 bg-slate-200 rounded-full"></div>
+                        <div className="h-4 w-16 bg-slate-200 rounded-full"></div>
                       ) : (
-                        <div className={cn("pg-status-pill",
+                        <div className={cn("pg-status-pill scale-90 origin-left truncate",
                           apt.status === 'COMPLETADA' ? 'pg-status--active' : 
                           apt.status === 'CONFIRMADA' ? 'pg-status--info' : 
                           'pg-status--warning'
                         )}>
-                           <span className={cn("pg-status-dot", 
-                            apt.status === 'COMPLETADA' ? 'pg-dot--active' : 
-                            apt.status === 'CONFIRMADA' ? 'bg-info' : 
-                            'bg-warning'
-                          )} />
                           {apt.status}
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-5 py-3 text-right">
                       <button className="text-slate-400 hover:text-slate-600">
-                        <MoreVertical size={18} />
+                        <MoreVertical size={14} />
                       </button>
                     </td>
                   </tr>
@@ -253,34 +241,34 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
         </div>
 
         {/* Quick Actions / Summary */}
-        <div className="clini-card p-6">
-          <h3 className="clini-title-section mb-6">Acciones Rápidas</h3>
-          <div className="space-y-4">
-            <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-primary/5 text-primary hover:bg-primary/10 transition-all group">
-              <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                <Calendar size={20} />
+        <div className="clini-card p-5 h-fit">
+          <h3 className="clini-title-section text-base mb-4 text-center lg:text-left">Acciones</h3>
+          <div className="grid grid-cols-3 lg:grid-cols-1 gap-3">
+            <button className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 p-3 rounded-xl bg-primary/5 text-primary hover:bg-primary/10 transition-all group">
+              <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-105 transition-transform shrink-0">
+                <Calendar size={16} />
               </div>
-              <span className="font-semibold">Nueva Cita</span>
+              <span className="text-[10px] lg:text-xs font-bold uppercase tracking-tight">Nueva Cita</span>
             </button>
-            <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-success/10 text-success hover:bg-success/20 transition-all group">
-              <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                <Users size={20} />
+            <button className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 p-3 rounded-xl bg-success/10 text-success hover:bg-success/20 transition-all group">
+              <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-105 transition-transform shrink-0">
+                <Users size={16} />
               </div>
-              <span className="font-semibold">Registrar Paciente</span>
+              <span className="text-[10px] lg:text-xs font-bold uppercase tracking-tight truncate">Registrar Paciente</span>
             </button>
-            <button className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group">
-              <div className="bg-white p-2 rounded-xl shadow-sm group-hover:scale-110 transition-transform">
-                <CreditCard size={20} />
+            <button className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 p-3 rounded-xl bg-slate-50 text-slate-700 hover:bg-slate-100 transition-all group">
+              <div className="bg-white p-2 rounded-lg shadow-sm group-hover:scale-105 transition-transform shrink-0">
+                <CreditCard size={16} />
               </div>
-              <span className="font-semibold">Nuevo Pago</span>
+              <span className="text-[10px] lg:text-xs font-bold uppercase tracking-tight">Nuevo Pago</span>
             </button>
           </div>
 
-          <div className="mt-8 pt-8 border-t border-slate-100">
-            <h4 className="clini-title-section text-sm mb-4">
-              Ocupación de Sedes
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <h4 className="clini-title-section text-[11px] uppercase tracking-widest mb-3 text-slate-400">
+              Ocupación
             </h4>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {isLoading ? (
                 Array.from({ length: 2 }).map((_, i) => (
                   <div key={i} className="space-y-2">
@@ -288,7 +276,7 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
                       <div className="h-4 w-24 bg-slate-200 rounded animate-pulse"></div>
                       <div className="h-4 w-12 bg-slate-200 rounded animate-pulse"></div>
                     </div>
-                    <div className="w-full h-2 bg-slate-200 rounded-full animate-pulse"></div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full animate-pulse"></div>
                   </div>
                 ))
               ) : (
@@ -296,13 +284,13 @@ export default function Dashboard({ currentUser }: { currentUser: any }) {
                   .filter(s => selectedSedeFilter === 'ALL' || s.nombreSede === selectedSedeFilter)
                   .map(sede => (
                     <div key={sede.idSede}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-slate-600">{sede.nombreSede}</span>
-                        <span className="font-bold text-slate-900">
-                          {sede.nombreSede === 'LIMA_SUR' ? '85%' : '42%'} {/* Mocked values */}
+                      <div className="flex justify-between text-[11px] mb-1">
+                        <span className="text-slate-600 font-bold truncate pr-2">{sede.nombreSede}</span>
+                        <span className="font-black text-slate-900">
+                          {sede.nombreSede === 'LIMA_SUR' ? '85%' : '42%'}
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div 
                           className={cn("h-full rounded-full", sede.nombreSede === 'LIMA_SUR' ? 'bg-primary' : 'bg-accent')} 
                           style={{ width: sede.nombreSede === 'LIMA_SUR' ? '85%' : '42%' }}

@@ -95,7 +95,7 @@
     --sys-radius-full: 9999px;
 
     --sys-avatar-sm:   2rem;
-    --sys-avatar-md:   2.5rem;
+    --sys-avatar-md:   3.25rem;
     --sys-avatar-lg:   4rem;
     --sys-avatar-xl:   5rem;
     --sys-icon-sm:     1rem;
@@ -145,7 +145,7 @@
     --layout-image-upload:      6rem;
     --layout-dict-min-height:   31.25rem;
     --layout-login-max-width:   28rem;
-    --layout-login-logo-size:   5rem;
+    --layout-login-logo-size:   6.5rem;
     --layout-login-logo-inner:  3rem;
     --layout-search-width:      16rem;
     --layout-input-icon-offset:  2.75rem;   /* padding-left cuando hay ícono  */
@@ -387,19 +387,23 @@
   .clini-sidebar-logo-icon-wrapper {
     width: var(--sys-avatar-md);
     height: var(--sys-avatar-md);
-    border-radius: var(--sys-radius-md);
-    background-color: rgb(var(--sys-color-primary-raw));
+    border-radius: var(--sys-radius-full);
+    background-color: var(--sys-color-surface);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--sys-color-surface);
+    color: rgb(var(--sys-color-primary-raw));
     flex-shrink: 0;
-    box-shadow: var(--sys-shadow-primary-sm);
+    border: var(--sys-border-width-2) solid rgb(var(--sys-color-primary-raw) / 0.15);
+    box-shadow: var(--sys-shadow-md);
+    overflow: hidden;
+    padding: 2px;
   }
   .clini-sidebar-logo-image {
-    width: var(--sys-icon-lg);
-    height: var(--sys-icon-lg);
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--sys-radius-full);
   }
   .clini-sidebar-logo-text {
     font-size: var(--sys-text-subtitle);
@@ -843,7 +847,7 @@
   .clini-user-avatar-header {
     width: var(--sys-avatar-md);
     height: var(--sys-avatar-md);
-    border-radius: var(--sys-radius-md);
+    border-radius: var(--sys-radius-full);
     background-color: rgb(var(--sys-color-primary-raw));
     display: flex;
     align-items: center;
@@ -1225,8 +1229,28 @@
   .clini-login-card { width: 100%; max-width: var(--layout-login-max-width); background-color: var(--sys-color-surface); border-radius: var(--sys-radius-card); box-shadow: var(--sys-shadow-xl); border: var(--sys-border-width) solid var(--sys-color-border); overflow: hidden; }
   .clini-login-content { padding: var(--layout-card-padding); text-align: center; display: flex; flex-direction: column; gap: var(--system-spacing-relaxed); }
   .clini-login-logo-section  { display: flex; flex-direction: column; align-items: center; gap: var(--layout-element-gap); }
-  .clini-login-logo-container { width: var(--layout-login-logo-size); height: var(--layout-login-logo-size); background-color: rgb(var(--sys-color-primary-raw) / 0.1); border-radius: var(--sys-radius-xl); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .clini-login-logo-image    { width: var(--layout-login-logo-inner); height: var(--layout-login-logo-inner); object-fit: contain; display: block; }
+  .clini-login-logo-container { 
+    width: var(--layout-login-logo-size); 
+    height: var(--layout-login-logo-size); 
+    background-color: var(--sys-color-surface);
+    border: var(--sys-border-width-2) solid rgb(var(--sys-color-primary-raw) / 0.1);
+    border-radius: var(--sys-radius-full); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    flex-shrink: 0; 
+    box-shadow: var(--sys-shadow-xl);
+    overflow: hidden;
+    padding: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .clini-login-logo-image { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    display: block; 
+    border-radius: var(--sys-radius-full);
+  }
   .clini-login-logo-icon     { width: var(--layout-icon-box); height: var(--layout-icon-box); color: rgb(var(--sys-color-primary-raw)); }
   .clini-login-title-group   { display: flex; flex-direction: column; align-items: center; gap: calc(var(--layout-element-gap-xs) / 2); }
   .clini-login-subtitle      { color: var(--sys-color-text-secondary); font-size: var(--sys-text-body); }

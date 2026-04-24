@@ -186,7 +186,6 @@ export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
   { id: 'CONF-10', clave: 'COLOR_REFRIGERIO', valor: '#ef4444', etiqueta: 'Color: Horario Refrigerio', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 3 },
   { id: 'CONF-11', clave: 'DURACION_SESION_GLOBAL', valor: 45, etiqueta: 'Duración Global Defecto (min)', categoria: 'AGENDA', tipoControl: 'NUMBER', orden: 4 },
   { id: 'CONF-111', clave: 'TIPO_DURACION_SESION', valor: 'POR_ESPECIALIDAD', etiqueta: 'Método de Duración de Sesiones', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['GLOBAL', 'POR_ESPECIALIDAD'], orden: 4.5 },
-  { id: 'CONF-12', clave: 'INTERVALO_CALENDARIO', valor: '30', etiqueta: 'Intervalo Visual de Agenda', categoria: 'AGENDA', tipoControl: 'SELECT', opciones: ['15', '30', '60'], orden: 5 },
 
   // --- CATEGORIA: DICCIONARIOS (DOCS + PAGOS + MONEDAS + MODALIDADES) ---
   // Tipos de Documento desacoplados

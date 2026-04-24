@@ -3,7 +3,7 @@ import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
 import { Paciente, Sede } from '../types';
-import { UserPlus, Mail, Phone, User, Building2, ShieldCheck } from 'lucide-react';
+import { UserPlus, Mail, Phone, User, Building2, ShieldCheck, UserCheck } from 'lucide-react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '@/src/lib/utils';
@@ -247,34 +247,58 @@ export default function Pacientes({ currentUser }: PacientesProps) {
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Nombres *</label>
               <div className="clini-input-group clini-relative">
-                <User className="clini-input-icon" size={18} />
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
                 <input name="nombres" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.nombres} required />
               </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Apellido Paterno *</label>
-              <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoPaterno} required />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
+                <input name="apellidoPaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.apellidoPaterno} required />
+              </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Apellido Materno</label>
-              <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedPaciente?.apellidoMaterno} />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
+                <input name="apellidoMaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.apellidoMaterno} />
+              </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Tipo de Documento *</label>
-              <select name="tipoDocumento" className="input-field" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
-                <option value="DNI">DNI</option>
-                <option value="CE">CE</option>
-                <option value="PASAPORTE">Pasaporte</option>
-              </select>
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <UserCheck size={18} />
+                </div>
+                <select name="tipoDocumento" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
+                  <option value="DNI">DNI</option>
+                  <option value="CE">CE</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
+              </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Nro. Documento *</label>
-              <input name="documentoIdentidad" type="text" className="input-field" placeholder="12345678" defaultValue={selectedPaciente?.documentoIdentidad} required />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
+                <input name="documentoIdentidad" type="text" className="clini-input-field-icon-left" placeholder="12345678" defaultValue={selectedPaciente?.documentoIdentidad} required />
+              </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Sede *</label>
               <div className="clini-input-group clini-relative">
-                <Building2 className="clini-input-icon" size={18} />
+                <div className="clini-input-icon">
+                  <Building2 size={18} />
+                </div>
                 {permissions.verTodo ? (
                   <select name="sede" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.sede || currentUser.sede}>
                     {sedes.map(s => ( 
@@ -292,14 +316,18 @@ export default function Pacientes({ currentUser }: PacientesProps) {
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Teléfono</label>
               <div className="clini-input-group clini-relative">
-                <Phone className="clini-input-icon" size={18} />
+                <div className="clini-input-icon">
+                  <Phone size={18} />
+                </div>
                 <input name="telefono" type="text" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.telefono} />
               </div>
             </div>
             <div className="clini-form-field clini-space-y-ui-c">
               <label className="clini-label">Correo Electrónico</label>
               <div className="clini-input-group clini-relative">
-                <Mail className="clini-input-icon" size={18} />
+                <div className="clini-input-icon">
+                  <Mail size={18} />
+                </div>
                 <input name="correo" type="email" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.correo} />
               </div>
             </div>

@@ -631,11 +631,21 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
             </div>
             <div className="clini-form-group clini-space-y-ui-c">
               <label className="clini-label">Apellido Paterno *</label>
-              <input name="apellidoPaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoPaterno} required />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
+                <input name="apellidoPaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.apellidoPaterno} required />
+              </div>
             </div>
             <div className="clini-form-group clini-space-y-ui-c">
               <label className="clini-label">Apellido Materno</label>
-              <input name="apellidoMaterno" type="text" className="input-field" defaultValue={selectedTerapeuta?.apellidoMaterno} />
+              <div className="clini-input-group clini-relative">
+                <div className="clini-input-icon">
+                  <User size={18} />
+                </div>
+                <input name="apellidoMaterno" type="text" className="clini-input-field-icon-left" defaultValue={selectedTerapeuta?.apellidoMaterno} />
+              </div>
             </div>
             <div className="clini-form-group md:col-span-2">
               <label className="clini-label">Servicios y Especialidades *</label>

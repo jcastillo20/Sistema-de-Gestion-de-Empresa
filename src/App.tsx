@@ -130,7 +130,7 @@ export default function App() {
         <div className="clini-sidebar-logo-container">
           <div className="clini-sidebar-logo-icon-wrapper">
             {clinicLogo ? (
-              <img src={clinicLogo} alt="Logo" className="w-6 h-6 object-contain" />
+              <img src={clinicLogo} alt="Logo" className="clini-sidebar-logo-image" />
             ) : (
               <Building2 size={24} />
             )}
@@ -265,7 +265,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8 relative">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-7 relative transition-all duration-300">
           {activePage === 'dashboard' && <Dashboard currentUser={user} />}
           {activePage === 'pacientes' && <Pacientes currentUser={user} />}
           {activePage === 'terapeutas' && <Terapeutas currentUser={user} />}
