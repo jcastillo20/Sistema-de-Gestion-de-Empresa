@@ -205,7 +205,7 @@ Matriz de capacidades granulares por rol y módulo.
 Registro individual de una sesión de atención clínica.
 
 | Campo | Tipo | Descripción |
-| :--- | :--- | : :--- |
+| :--- | :--- | :--- |
 | `idCita` | `string` | Identificador único de la cita. |
 | `idDoctor` | `string` | Referencia al terapeuta asignado. |
 | `idPaciente` | `string` | Referencia al paciente atendido. |
