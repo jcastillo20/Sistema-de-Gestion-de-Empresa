@@ -835,9 +835,10 @@
     justify-content: center;
     font-weight: var(--sys-font-bold);
     flex-shrink: 0;
+    border: var(--sys-border-width) solid transparent;
   }
-  .clini-avatar-patient { background-color: rgb(var(--sys-color-primary-raw) / 0.1); color: rgb(var(--sys-color-primary-raw)); }
-  .clini-avatar-user    { background-color: #e0e7ff; color: #4338ca; }
+  .clini-avatar-patient { background-color: rgb(var(--sys-color-primary-raw) / 0.1); color: rgb(var(--sys-color-primary-raw)); border-color: rgb(var(--sys-color-primary-raw) / 0.2); }
+  .clini-avatar-user    { background-color: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
 
   .clini-user-avatar-header {
     width: var(--sys-avatar-md);
@@ -1960,21 +1961,24 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--sys-text-xs);
-    font-weight: var(--sys-font-bold);
+    font-size: var(--sys-text-sm); /* Un poco más grande para legibilidad */
+    font-weight: var(--sys-font-black); /* Letra ultra-gruesa para que resalte */
     color: rgb(var(--sys-color-primary-raw));
-    background-color: rgb(var(--sys-color-primary-raw) / 0.1);
+    background-color: rgb(var(--sys-color-primary-raw) / 0.15); /* Fondo más definido, ya no parece blanco */
     flex-shrink: 0;
     text-transform: uppercase;
+    border: var(--sys-border-width-2) solid rgb(var(--sys-color-primary-raw) / 0.3); /* Borde mucho más marcado */
+    box-shadow: var(--sys-shadow-sm);
+    letter-spacing: -0.02em;
   }
 
   /* Paleta de avatares dinámicos — Heredan colores del panel de configuración */
-  .pg-avatar--primary { background: linear-gradient(135deg, rgb(var(--sys-color-primary-raw)), rgb(var(--sys-color-primary-raw) / 0.6)); }
-  .pg-avatar--success { background: linear-gradient(135deg, rgb(var(--sys-color-success-raw)), rgb(var(--sys-color-success-raw) / 0.6)); }
-  .pg-avatar--info    { background: linear-gradient(135deg, rgb(var(--sys-color-info-raw)), rgb(var(--sys-color-info-raw) / 0.6)); }
-  .pg-avatar--warning { background: linear-gradient(135deg, rgb(var(--sys-color-warning-raw)), rgb(var(--sys-color-warning-raw) / 0.6)); }
-  .pg-avatar--danger  { background: linear-gradient(135deg, rgb(var(--sys-color-danger-raw)), rgb(var(--sys-color-danger-raw) / 0.6)); }
-  .pg-avatar--accent  { background: linear-gradient(135deg, rgb(var(--sys-color-accent-raw)), rgb(var(--sys-color-accent-raw) / 0.6)); }
+  .pg-avatar--primary { background: linear-gradient(135deg, rgb(var(--sys-color-primary-raw)), rgb(var(--sys-color-primary-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--success { background: linear-gradient(135deg, rgb(var(--sys-color-success-raw)), rgb(var(--sys-color-success-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--info    { background: linear-gradient(135deg, rgb(var(--sys-color-info-raw)), rgb(var(--sys-color-info-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--warning { background: linear-gradient(135deg, rgb(var(--sys-color-warning-raw)), rgb(var(--sys-color-warning-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--danger  { background: linear-gradient(135deg, rgb(var(--sys-color-danger-raw)), rgb(var(--sys-color-danger-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
+  .pg-avatar--accent  { background: linear-gradient(135deg, rgb(var(--sys-color-accent-raw)), rgb(var(--sys-color-accent-raw) / 0.8)); color: white; border: var(--sys-border-width-2) solid rgb(255 255 255 / 0.6); box-shadow: var(--sys-shadow-md); }
 
   /* ── Cell layout helpers ── */
   .pg-cell-person { display: flex; align-items: center; gap: var(--layout-element-gap); line-height: 1.2; }

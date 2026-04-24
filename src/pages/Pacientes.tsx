@@ -143,17 +143,19 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       header: 'Paciente', 
       accessor: (p: Paciente) => (
         <div className="pg-cell-person">
-          <div className="pg-avatar">
-            {p.nombres.charAt(0)}{p.apellidoPaterno.charAt(0)}
+          <div className="pg-avatar flex items-center justify-center bg-[rgb(var(--sys-color-primary-raw))]">
+            <span className="text-white font-black text-[10px]">
+              {p.nombres.charAt(0).toUpperCase()}{p.apellidoPaterno.charAt(0).toUpperCase()}
+            </span>
           </div>
           <div className="pg-cell-person-info">
             <div className="flex items-center gap-2">
               <User size={14} className="text-primary/60 shrink-0" />
-              <p className="pg-cell-name">
+              <p className="pg-cell-name font-black">
                 {p.nombres} {p.apellidoPaterno}
               </p>
             </div>
-            <p className="pg-cell-doc">
+            <p className="pg-cell-doc text-slate-400">
               {p.tipoDocumento}: {p.documentoIdentidad}
             </p>
           </div>
@@ -185,9 +187,12 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     columns.push({ 
       header: 'Sede', 
       accessor: (p: Paciente) => (
-        <span className="clini-badge badge-primary">
+        <span className={cn(
+          "pg-chip", 
+          p.sede === 'ALL' ? "pg-chip--primary" : "pg-chip--info"
+        )}>
           <Building2 size={12} className="shrink-0" />
-          <span className="truncate">{p.sede}</span>
+          {p.sede}
         </span>
       ), 
       sortable: true, 
@@ -198,9 +203,10 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   columns.push({ 
     header: 'Estado', 
     accessor: (p: Paciente) => (
-      <span className={cn("clini-badge", p.estado ? "badge-success" : "badge-danger")}>
+      <div className={cn("pg-status-pill", p.estado ? "pg-status--active" : "pg-status--danger")}>
+        <span className={cn("pg-status-dot", p.estado ? "pg-dot--active" : "pg-dot--danger")} />
         {p.estado ? 'Activo' : 'Inactivo'}
-      </span>
+      </div>
     ),
     sortable: true,
     sortKey: 'estado'

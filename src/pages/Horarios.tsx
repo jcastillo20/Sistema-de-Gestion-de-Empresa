@@ -500,7 +500,20 @@ export default function Horarios({ currentUser }: HorariosProps) {
               )
             },
             { header: 'Mes/Año', accessor: (h: Horario) => `${meses[h.mes - 1]} ${h.año}` },
-            { header: 'Sede', accessor: 'sede' },
+            { 
+              header: 'Sede', 
+              accessor: (h: Horario) => (
+                <span className={cn(
+                  "pg-chip", 
+                  h.sede === 'ALL' ? "pg-chip--primary" : "pg-chip--info"
+                )}>
+                  <Building2 size={12} className="shrink-0" />
+                  {h.sede}
+                </span>
+              ),
+              sortable: true,
+              sortKey: 'sede'
+            },
             { 
               header: 'Bloques', 
               accessor: (h: Horario) => (
@@ -528,8 +541,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           ]}
           onEdit={permissions.puedeEditar ? handleOpenModal : undefined}
           onDelete={permissions.puedeEliminar ? handleDelete : undefined}
-          searchPlaceholder="Buscar por terapeuta..."
-          searchFields={['nombreTerapeuta', 'sede']}
+         
         />
       )}
       </>

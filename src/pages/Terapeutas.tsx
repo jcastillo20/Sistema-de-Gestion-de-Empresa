@@ -501,7 +501,10 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
             {t.nombres.charAt(0).toUpperCase()}{t.apellidoPaterno.charAt(0).toUpperCase()}
           </div>
           <div className="pg-cell-person-info">
-            <p className="pg-cell-name">{t.nombres} {t.apellidoPaterno}</p>
+            <div className="flex items-center gap-2">
+              <Stethoscope size={14} className="text-primary shrink-0" />
+              <p className="pg-cell-name">{t.nombres} {t.apellidoPaterno}</p>
+            </div>
             <p className="pg-cell-doc">{t.colegiatura || 'Sin Colegiatura'}</p>
           </div>
         </div>
@@ -549,7 +552,10 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
     columns.push({ 
       header: 'Sede', 
       accessor: (t: Terapeuta) => (
-        <span className="pg-chip pg-chip--slate">
+        <span className={cn(
+          "pg-chip", 
+          t.sede === 'ALL' ? "pg-chip--primary" : "pg-chip--info"
+        )}>
           <Building2 size={12} className="shrink-0" />
           {t.sede}
         </span>
@@ -599,7 +605,9 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
           <button 
             onClick={() => handleOpenHorario(t)}
             className="clini-action-btn-emerald"
+            title="Gestionar Horarios"
           >
+            <Calendar size={18} />
           </button>
         )}
       />
