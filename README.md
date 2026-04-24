@@ -12,17 +12,21 @@
 *   **Sedes y Operatividad**: Estado de sedes operativas y horas de terapia acumuladas.
 *   **Gestión de Citas Recientes**: Listado con estados dinámicos (Pendiente, Confirmada, Completada).
 
+*   **Optimización de Pantalla**: Interfaz diseñada para maximizar el área visible (Fit-to-Screen), reduciendo el scroll vertical excesivo mediante componentes compactos y modulares.
+
 ### 2. Módulo de Pacientes
 *   **Registro Maestro**: Gestión de datos demográficos y de contacto.
-*   **Identidad Visual**: Sistema de avatares con iniciales dinámicas y bordes de color primario para una rápida identificación.
-*   **Seguimiento por Sede**: Asignación y filtrado de pacientes según su ubicación preferente.
+*   **Identidad Visual**: Sistema de avatares con iniciales dinámicas, peso de fuente ultra-negro y centrado perfecto mediante Flexbox.
+*   **Consistencia de Iconos**: Unificación de la simbología en todos los formularios (Nombres, Apellidos, Documentos) para una experiencia de usuario Coherente.
 
 ### 3. Gestión de Terapeutas y Especialidades
 *   **Perfiles Profesionales**: Administración de colegiaturas y estados operativos.
+*   **Búsqueda Avanzada**: Implementación de `SearchableSelect` (Combos con buscador integrado) para facilitar la selección en listas extensas de profesionales.
 *   **Catálogo de Especialidades**: Definición de servicios médicos con duraciones personalizables.
 *   **Configuración de Duración Flexible**: 
-    *   **Global**: Todas las sesiones duran un tiempo estándar (definido en Agenda).
+    *   **Global**: Todas las sesiones duran un tiempo estándar (definido en Sección Agenda).
     *   **Por Especialidad**: Cada tipo de servicio tiene su propio tiempo de atención.
+    *   **Bulk Update**: Capacidad de aplicar una duración global a todos los servicios existentes con un solo clic.
 
 ### 4. Sistema de Horarios y Planificación (Core)
 *   **Planificador Mensual**: Motor para definir turnos rotativos y bloques de atención.
@@ -50,7 +54,6 @@ El sistema es altamente configurable a través del módulo de **Configuración**
 
 ### Reglas de Agenda
 *   **Método de Duración**: Selección entre duración 'GLOBAL' o 'POR_ESPECIALIDAD'.
-*   **Intervalo Visual**: Capacidad de ver la agenda en bloques de 15, 30 o 60 minutos.
 *   **Colores de Ocupación**: Personalización de los colores para bloques ocupados y de refrigerio.
 
 ### Parámetros de Sistema

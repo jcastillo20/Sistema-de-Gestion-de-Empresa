@@ -18,9 +18,11 @@ import {
   AlertCircle,
   Stethoscope,
   LayoutGrid,
-  Filter
+  Filter,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { SearchableSelect } from '../components/common/SearchableSelect';
 import { Horario, Terapeuta, Sede, BloqueHorario, Especialidad } from '@/src/types';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
@@ -359,72 +361,90 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
       {/* Filtros Avanzados */}
       <div className="clini-card clini-form-stack mb-6">
-        <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border pb-4 mb-5 gap-4">
           <div className="clini-label-with-icon">
-            <Filter size={16} className="text-primary" />
-            <span className="text-sm font-bold uppercase tracking-wider">Filtros de Búsqueda</span>
+            <Filter size={18} className="text-primary" />
+            <span className="text-base font-bold uppercase tracking-tight text-slate-900">Filtros de Búsqueda</span>
           </div>
-          <div className="relative w-full max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
+          <div className="relative w-full max-w-sm">
+            <div className="clini-input-icon">
+              <Search size={18} />
+            </div>
             <input 
               type="text"
-              placeholder="Buscar terapeuta o sede..."
-              className="input-field-xs pl-10"
+              placeholder="Buscar terapeuta o especialidad..."
+              className="clini-input-field-icon-left"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-        <div className="clini-form-grid md:grid-cols-4 gap-4">
+        <div className="clini-form-grid md:grid-cols-4 gap-6">
           <div className="clini-form-group">
             <label className="clini-label">Terapeuta</label>
-            <select 
-              className="input-field-xs"
+            <SearchableSelect 
+              options={[
+                { value: '', label: 'Todos los Terapeutas' },
+                ...terapeutas.map(t => ({ value: t.id, label: `${t.nombres} ${t.apellidoPaterno}` }))
+              ]}
               value={filterTerapeuta}
-              onChange={(e) => setFilterTerapeuta(e.target.value)}
-            >
-              <option value="">Todos los Terapeutas</option>
-              {terapeutas.map(t => (
-                <option key={t.id} value={t.id}>{t.nombres} {t.apellidoPaterno}</option>
-              ))}
-            </select>
+              onChange={(val) => setFilterTerapeuta(val as string)}
+              placeholder="Todos los Terapeutas"
+              className="w-full"
+              icon={<User size={18} />}
+            />
           </div>
           <div className="clini-form-group">
             <label className="clini-label">Especialidad</label>
-            <select 
-              className="input-field-xs"
-              value={filterEspecialidad}
-              onChange={(e) => setFilterEspecialidad(e.target.value)}
-            >
-              <option value="">Todas las Especialidades</option>
-              {especialidades.map(e => (
-                <option key={e.id} value={e.nombre}>{e.nombre}</option>
-              ))}
-            </select>
+            <div className="clini-input-group clini-relative">
+              <div className="clini-input-icon">
+                <ShieldCheck size={18} />
+              </div>
+              <select 
+                className="clini-input-field-icon-left"
+                value={filterEspecialidad}
+                onChange={(e) => setFilterEspecialidad(e.target.value)}
+              >
+                <option value="">Todas las Especialidades</option>
+                {especialidades.map(e => (
+                  <option key={e.id} value={e.nombre}>{e.nombre}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="clini-form-group">
             <label className="clini-label">Mes</label>
-            <select 
-              className="input-field-xs"
-              value={filterMonth}
-              onChange={(e) => setFilterMonth(Number(e.target.value))}
-            >
-              {meses.map((m, i) => (
-                <option key={i} value={i + 1}>{m}</option>
-              ))}
-            </select>
+            <div className="clini-input-group clini-relative">
+              <div className="clini-input-icon">
+                <Calendar size={18} />
+              </div>
+              <select 
+                className="clini-input-field-icon-left"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(Number(e.target.value))}
+              >
+                {meses.map((m, i) => (
+                  <option key={i} value={i + 1}>{m}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="clini-form-group">
             <label className="clini-label">Año</label>
-            <select 
-              className="input-field-xs"
-              value={filterYear}
-              onChange={(e) => setFilterYear(Number(e.target.value))}
-            >
-              {[2024, 2025, 2026].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
+            <div className="clini-input-group clini-relative">
+              <div className="clini-input-icon">
+                <Clock size={18} />
+              </div>
+              <select 
+                className="clini-input-field-icon-left"
+                value={filterYear}
+                onChange={(e) => setFilterYear(Number(e.target.value))}
+              >
+                {[2024, 2025, 2026].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -648,21 +668,19 @@ export default function Horarios({ currentUser }: HorariosProps) {
             <div className="clini-form-group">
               <label className="clini-label-with-icon">
                 <User size={16} />
-                Terapeuta
+                Terapeuta *
               </label>
-              <select 
-                className="input-field"
-                value={formData.idTerapeuta}
-                onChange={(e) => setFormData({ ...formData, idTerapeuta: e.target.value })}
-                disabled={!!selectedHorario}
-              >
-                <option value="">Seleccionar Terapeuta</option>
-                {terapeutas
+              <SearchableSelect
+                options={terapeutas
                   .filter(t => !formData.sede || t.sede === formData.sede)
-                  .map(t => (
-                  <option key={t.id} value={t.id}>{t.nombres} {t.apellidoPaterno}</option>
-                ))}
-              </select>
+                  .map(t => ({ value: t.id, label: `${t.nombres} ${t.apellidoPaterno}` }))
+                }
+                value={formData.idTerapeuta || ''}
+                onChange={(val) => setFormData({ ...formData, idTerapeuta: val as string })}
+                placeholder="Seleccionar Terapeuta"
+                disabled={!!selectedHorario}
+                icon={<User size={18} />}
+              />
             </div>
             <div className="clini-form-group">
               <label className="clini-label-with-icon">
