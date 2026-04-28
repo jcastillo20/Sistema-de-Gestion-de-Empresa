@@ -7,7 +7,10 @@ import {
   Sede,
   Auditoria,
   Especialidad,
-  Horario
+  Horario,
+  PaqueteMaestro,
+  PaquetePaciente,
+  Pago
 } from '../types';
 import { 
   MOCK_CONFIG_DINAMICA, 
@@ -18,7 +21,8 @@ import {
   MOCK_PACIENTES, 
   MOCK_AUDITORIA,
   MOCK_HORARIOS,
-  MOCK_ESPECIALIDADES_DICT
+  MOCK_ESPECIALIDADES_DICT,
+  MOCK_PAQUETES_MAESTROS
 } from './mockDb';
 
 // Simulated delay to mimic API calls
@@ -41,6 +45,9 @@ class ApiService {
   private auditoria: Auditoria[] = [];
   private especialidades: Especialidad[] = [];
   private horarios: Horario[] = [];
+  private paquetesMaestros: PaqueteMaestro[] = [];
+  private paquetesPacientes: PaquetePaciente[] = [];
+  private pagos: Pago[] = [];
 
   constructor() {
     this.loadFromStorage();
@@ -57,6 +64,9 @@ class ApiService {
       const savedAuditoria = localStorage.getItem('clini_auditoria');
       const savedEspecialidades = localStorage.getItem('clini_especialidades');
       const savedHorarios = localStorage.getItem('clini_horarios');
+      const savedPaquetesMaestros = localStorage.getItem('clini_paquetes_maestros');
+      const savedPaquetesPacientes = localStorage.getItem('clini_paquetes_pacientes');
+      const savedPagos = localStorage.getItem('clini_pagos');
 
       // Fusionar configuración: Mantener estructura de MOCK pero usar valores de LocalStorage si existen
       const savedConfigArr = savedConfig ? JSON.parse(savedConfig) : [];
@@ -75,6 +85,9 @@ class ApiService {
       this.auditoria = savedAuditoria ? JSON.parse(savedAuditoria) : [...MOCK_AUDITORIA];
       this.especialidades = savedEspecialidades ? JSON.parse(savedEspecialidades) : [...MOCK_ESPECIALIDADES];
       this.horarios = savedHorarios ? JSON.parse(savedHorarios) : [...MOCK_HORARIOS];
+      this.paquetesMaestros = savedPaquetesMaestros ? JSON.parse(savedPaquetesMaestros) : [...MOCK_PAQUETES_MAESTROS];
+      this.paquetesPacientes = savedPaquetesPacientes ? JSON.parse(savedPaquetesPacientes) : [];
+      this.pagos = savedPagos ? JSON.parse(savedPagos) : [];
     } catch (e) {
       console.error("Error al cargar localStorage, usando datos mock:", e);
       this.config = [...MOCK_CONFIG_DINAMICA];
@@ -86,6 +99,9 @@ class ApiService {
       this.auditoria = [...MOCK_AUDITORIA];
       this.especialidades = [...MOCK_ESPECIALIDADES];
       this.horarios = [...MOCK_HORARIOS];
+      this.paquetesMaestros = [...MOCK_PAQUETES_MAESTROS];
+      this.paquetesPacientes = [];
+      this.pagos = [];
     }
 
     // Migration: Ensure terapeutas have especialidades array
@@ -116,6 +132,9 @@ class ApiService {
       localStorage.setItem('clini_auditoria', JSON.stringify(this.auditoria));
       localStorage.setItem('clini_especialidades', JSON.stringify(this.especialidades));
       localStorage.setItem('clini_horarios', JSON.stringify(this.horarios));
+      localStorage.setItem('clini_paquetes_maestros', JSON.stringify(this.paquetesMaestros));
+      localStorage.setItem('clini_paquetes_pacientes', JSON.stringify(this.paquetesPacientes));
+      localStorage.setItem('clini_pagos', JSON.stringify(this.pagos));
     } catch (error: any) {
       if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
         console.warn("LocalStorage lleno. Pruning logs de auditoría para liberar espacio...");
@@ -508,7 +527,6 @@ class ApiService {
   }
 
   async deleteHorario(id: string, currentUser: string) {
-    await this.delay();
     const index = this.horarios.findIndex(h => h.id === id);
     if (index !== -1) {
       const oldData = { ...this.horarios[index] };
@@ -517,6 +535,114 @@ class ApiService {
       this.addAudit('HORARIOS', id, 'UPDATE_STATUS', currentUser, oldData, this.horarios[index]);
       this.saveToStorage();
     }
+  }
+
+  // --- PAQUETES MAESTROS ---
+  async getPaquetesMaestros() {
+    await this.delay();
+    return this.paquetesMaestros.filter(p => p.estado !== false);
+  }
+
+  async createPaqueteMaestro(paquete: Omit<PaqueteMaestro, 'id'>, currentUser: string) {
+    await this.delay();
+    const newPaquete = { 
+      ...paquete, 
+      id: `PM-${Math.random().toString(36).substr(2, 9)}`, 
+      estado: true,
+      fechaCreacion: new Date().toISOString(),
+      usuarioCreacion: currentUser
+    };
+    this.paquetesMaestros.push(newPaquete as PaqueteMaestro);
+    this.addAudit('PAQUETES_MAESTROS', newPaquete.id, 'INSERT', currentUser, null, newPaquete);
+    this.saveToStorage();
+    return newPaquete;
+  }
+
+  async updatePaqueteMaestro(id: string, data: Partial<PaqueteMaestro>, currentUser: string) {
+    await this.delay();
+    const index = this.paquetesMaestros.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const oldData = { ...this.paquetesMaestros[index] };
+      this.paquetesMaestros[index] = { ...this.paquetesMaestros[index], ...data };
+      this.addAudit('PAQUETES_MAESTROS', id, 'UPDATE', currentUser, oldData, this.paquetesMaestros[index]);
+      this.saveToStorage();
+    }
+    return this.paquetesMaestros[index];
+  }
+
+  async deletePaqueteMaestro(id: string, currentUser: string) {
+    await this.delay();
+    const index = this.paquetesMaestros.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const oldData = { ...this.paquetesMaestros[index] };
+      this.paquetesMaestros[index].estado = false;
+      this.addAudit('PAQUETES_MAESTROS', id, 'UPDATE_STATUS', currentUser, oldData, this.paquetesMaestros[index]);
+      this.saveToStorage();
+    }
+  }
+
+  // --- PAQUETES PACIENTES (VENTAS) ---
+  async getPaquetesPacientes(idPaciente?: string) {
+    await this.delay();
+    let filtered = this.paquetesPacientes;
+    if (idPaciente) {
+      filtered = filtered.filter(p => p.idPaciente === idPaciente);
+    }
+    return filtered;
+  }
+
+  async asignarPaqueteAPaciente(idPaciente: string, idMaestro: string, sede: string, currentUser: string) {
+    await this.delay();
+    const maestro = this.paquetesMaestros.find(m => m.id === idMaestro);
+    if (!maestro) throw new Error("Paquete maestro no encontrado");
+
+    const newPaquetePaciente: PaquetePaciente = {
+      id: `PP-${Math.random().toString(36).substr(2, 9)}`,
+      idPaciente,
+      idMaestro,
+      nombre: maestro.nombre,
+      cantCitas: maestro.cantCitas,
+      citasConsumidas: 0,
+      precioVenta: maestro.precioSugerido,
+      frecuencia: maestro.frecuencia,
+      limiteEspecialidades: maestro.limiteEspecialidades,
+      fechaContrato: new Date().toISOString(),
+      estado: 'ACTIVO',
+      sede,
+      usuarioCreacion: currentUser
+    };
+
+    this.paquetesPacientes.push(newPaquetePaciente);
+    this.addAudit('PAQUETES_PACIENTES', newPaquetePaciente.id, 'INSERT', currentUser, null, newPaquetePaciente);
+
+    // TRIGGER FINANCIERO: Crear pago automático
+    const newPago: Pago = {
+      idPago: `PAG-${Math.random().toString(36).substr(2, 9)}`,
+      idPaciente,
+      idPaquete: newPaquetePaciente.id,
+      concepto: `Pago por Paquete: ${maestro.nombre}`,
+      monto: maestro.precioSugerido,
+      estado: 'PENDIENTE',
+      fechaReferencial: new Date().toISOString(),
+      moneda: 'PEN',
+      idSede: sede,
+      fechaCreacion: new Date().toISOString(),
+      usuarioCreacion: currentUser
+    };
+    this.pagos.push(newPago);
+    this.addAudit('PAGOS', newPago.idPago, 'INSERT', currentUser, null, newPago);
+
+    this.saveToStorage();
+    return newPaquetePaciente;
+  }
+
+  // --- PAGOS ---
+  async getPagos(idPaciente?: string) {
+    await this.delay();
+    if (idPaciente) {
+      return this.pagos.filter(p => p.idPaciente === idPaciente);
+    }
+    return this.pagos;
   }
 
   // --- AUDITORIA ---

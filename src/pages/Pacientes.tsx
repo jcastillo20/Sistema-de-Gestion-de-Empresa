@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
-import { Paciente, Sede } from '../types';
-import { UserPlus, Mail, Phone, User, Building2, ShieldCheck, UserCheck } from 'lucide-react';
+import { Paciente, Sede, PaqueteMaestro, PaquetePaciente } from '../types';
+import { UserPlus, Mail, Phone, User, Building2, ShieldCheck, UserCheck, Package, ShoppingCart, Plus, Info } from 'lucide-react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '@/src/lib/utils';
 import { apiService } from '../services/apiService';
+import PackageCard from '../components/paquetes/PackageCard';
 
 interface PacientesProps {
   currentUser: any;
@@ -21,6 +22,11 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'error' as 'error' | 'success' });
   const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPackModalOpen, setIsPackModalOpen] = useState(false);
+  const [patientPackages, setPatientPackages] = useState<PaquetePaciente[]>([]);
+  const [masterPackages, setMasterPackages] = useState<PaqueteMaestro[]>([]);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [showAllPackages, setShowAllPackages] = useState(false);
 
   const permissions = usePermissions(currentUser, 'pacientes');
 
@@ -48,16 +54,51 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     try {
       // Use permission verTodo to decide if we filter by sede
       const sedeFilter = permissions.verTodo ? undefined : currentUser.sede;
-      const [pacientesData, sedesData] = await Promise.all([
+      const [pacientesData, sedesData, masters] = await Promise.all([
         apiService.getPacientes(sedeFilter),
-        apiService.getSedes()
+        apiService.getSedes(),
+        apiService.getPaquetesMaestros()
       ]);
       setPacientes(pacientesData);
       setSedes(sedesData);
+      setMasterPackages(masters);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadPatientPackages = async (pacienteId: string) => {
+    const packs = await apiService.getPaquetesPacientes(pacienteId);
+    setPatientPackages(packs);
+  };
+
+  const handleOpenPackages = async (p: Paciente) => {
+    setSelectedPaciente(p);
+    setShowAllPackages(false);
+    await loadPatientPackages(p.id);
+    setIsPackModalOpen(true);
+  };
+
+  const handleAssignPackage = async (idMaestro: string) => {
+    if (!selectedPaciente) return;
+    setIsAssigning(true);
+    try {
+      await apiService.asignarPaqueteAPaciente(
+        selectedPaciente.id,
+        idMaestro,
+        selectedPaciente.sede || currentUser.sede,
+        currentUser.nombreUsuario
+      );
+      await loadPatientPackages(selectedPaciente.id);
+      setAlertConfig({ title: 'Paquete Asignado', message: 'El paquete se ha vinculado al paciente y se ha generado el cargo financiero.', type: 'success' });
+      setIsAlertOpen(true);
+    } catch (error: any) {
+      setAlertConfig({ title: 'Error', message: error.message || 'No se pudo asignar el paquete.', type: 'error' });
+      setIsAlertOpen(true);
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -235,7 +276,102 @@ export default function Pacientes({ currentUser }: PacientesProps) {
           setIsModalOpen(true);
         } : undefined}
         onDelete={permissions.puedeEliminar ? handleDelete : undefined}
+        customActions={(p) => (
+          <button 
+            onClick={() => handleOpenPackages(p)}
+            className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors active:scale-95"
+            title="Paquetes del Paciente"
+          >
+            <Package size={16} />
+          </button>
+        )}
       />
+
+      {/* Modal de Paquetes del Paciente */}
+      <Modal
+        isOpen={isPackModalOpen}
+        onClose={() => setIsPackModalOpen(false)}
+        title={`Paquetes de ${selectedPaciente?.nombres}`}
+        size="lg"
+      >
+        <div className="space-y-8 py-4">
+          {/* Listado de Paquetes Contratados */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">
+                <ShoppingCart size={18} className="text-primary" />
+                Suscripciones y Contratos
+              </h4>
+              <span className="text-xs font-bold text-slate-400">{patientPackages.length} Encontrados</span>
+            </div>
+
+            {patientPackages.length > 0 ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(showAllPackages ? (patientPackages as PaquetePaciente[]) : (patientPackages.slice(0, 4) as PaquetePaciente[])).map((pack: PaquetePaciente) => (
+                    <PackageCard key={pack.id} pack={pack} />
+                  ))}
+                </div>
+
+                {patientPackages.length > 4 && (
+                  <button
+                    onClick={() => setShowAllPackages(!showAllPackages)}
+                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl border border-slate-200 transition-all active:scale-[0.99]"
+                  >
+                    {showAllPackages ? 'Ver menos' : `Ver historial completo (${patientPackages.length - 4} más)`}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="p-12 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4 text-slate-400">
+                  <Package size={32} />
+                </div>
+                <p className="text-slate-500 font-bold">Sin paquetes activos</p>
+                <p className="text-xs text-slate-400">El paciente aún no ha contratado ningún plan terapéutico.</p>
+              </div>
+            )}
+          </section>
+
+          {/* Buscador/Asignador de Paquetes Maestros */}
+          <section className="space-y-4 pt-6 border-t font-sans">
+            <div className="flex items-center gap-2">
+              <Plus size={18} className="text-primary" />
+              <h4 className="font-black text-slate-800 uppercase tracking-tight">Vincular Nuevo Paquete</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {masterPackages.map(master => (
+                <button
+                  key={master.id}
+                  disabled={isAssigning}
+                  onClick={() => handleAssignPackage(master.id)}
+                  className="p-4 rounded-3xl border border-slate-200 text-left hover:border-primary hover:shadow-lg hover:shadow-primary/5 transition-all group relative overflow-hidden"
+                >
+                  <div className="flex flex-col gap-1">
+                    <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{master.nombre}</p>
+                    <div className="flex items-center justify-between mt-2">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{master.cantCitas} Citas</span>
+                       <span className="text-primary font-black">S/ {master.precioSugerido}</span>
+                    </div>
+                  </div>
+                  <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Plus size={16} className="text-primary" />
+                  </div>
+                </button>
+              ))}
+            </div>
+            {masterPackages.length === 0 && (
+              <div className="flex items-center gap-3 p-4 bg-amber-50 text-amber-700 rounded-2xl border border-amber-200 shadow-sm">
+                <Info size={20} className="shrink-0" />
+                <p className="text-xs font-bold leading-tight">
+                  No hay "Paquetes Maestros" definidos. Debe crearlos primero en el módulo de Paquetes para poder venderlos.
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
+      </Modal>
 
       <Modal
         isOpen={isModalOpen}

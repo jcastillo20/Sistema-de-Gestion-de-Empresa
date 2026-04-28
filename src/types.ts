@@ -227,6 +227,34 @@ export interface Especialidad {
   estado: boolean;
 }
 
+export interface PaqueteMaestro {
+  id: string;
+  nombre: string;
+  cantCitas: number;
+  precioSugerido: number;
+  frecuencia: 'SEMANAL' | 'QUINCENAL' | 'MENSUAL';
+  limiteEspecialidades: number;
+  estado: boolean;
+  fechaCreacion: string;
+  usuarioCreacion: string;
+}
+
+export interface PaquetePaciente {
+  id: string;
+  idPaciente: string;
+  idMaestro: string; // Referencia al molde original
+  nombre: string; // Copia del maestro
+  cantCitas: number; // Copia del maestro
+  citasConsumidas: number;
+  precioVenta: number; // Precio al momento de la venta
+  frecuencia: string; // Copia del maestro
+  limiteEspecialidades: number; // Copia del maestro
+  fechaContrato: string;
+  estado: 'ACTIVO' | 'AGOTADO' | 'CANCELADO';
+  sede: string;
+  usuarioCreacion: string;
+}
+
 export interface Auditoria {
   id: string;
   tabla: string;

@@ -10,6 +10,8 @@ import Terapeutas from './pages/Terapeutas';
 import Horarios from './pages/Horarios';
 import Usuarios from './pages/Usuarios';
 import Configuracion from './pages/Configuracion';
+import CatalogoPaquetes from './pages/paquetes/CatalogoPaquetes';
+import ControlPaquetes from './pages/paquetes/ControlPaquetes';
 import { 
   LayoutGrid, 
   Users, 
@@ -23,7 +25,9 @@ import {
   ChevronLeft,
   Mail,
   User as UserIcon,
-  ChevronDown
+  ChevronDown,
+  BookOpen,
+  ClipboardCheck
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from './lib/utils';
@@ -119,6 +123,8 @@ export default function App() {
     { id: 'pacientes', label: 'Pacientes', icon: Users },
     { id: 'terapeutas', label: 'Terapeutas', icon: Stethoscope },
     { id: 'horarios', label: 'Horarios', icon: Calendar },
+    { id: 'paquetes_catalogo', label: 'Catálogo Paquetes', icon: BookOpen },
+    { id: 'paquetes_control', label: 'Control de Paquetes', icon: ClipboardCheck },
     { id: 'usuarios', label: 'Usuarios', icon: UserCog },
     { id: 'configuracion', label: 'Configuración', icon: Settings },
   ];
@@ -270,6 +276,8 @@ export default function App() {
           {activePage === 'pacientes' && <Pacientes currentUser={user} />}
           {activePage === 'terapeutas' && <Terapeutas currentUser={user} />}
           {activePage === 'horarios' && <Horarios currentUser={user} />}
+          {activePage === 'paquetes_catalogo' && <CatalogoPaquetes currentUser={user} />}
+          {activePage === 'paquetes_control' && <ControlPaquetes currentUser={user} />}
           {activePage === 'usuarios' && <Usuarios currentUser={user} />}
           {activePage === 'configuracion' && <Configuracion currentUser={user} />}
         </main>

@@ -179,6 +179,8 @@ export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
   { id: 'MOD-05', clave: 'MOD_CONFIG', valor: 'CONFIGURACION', etiqueta: 'Módulo: Configuración', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 12 },
   { id: 'MOD-06', clave: 'MOD_AGENDA', valor: 'AGENDA', etiqueta: 'Módulo: Agenda', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 13 },
   { id: 'MOD-07', clave: 'MOD_FINANZAS', valor: 'FINANZAS', etiqueta: 'Módulo: Finanzas', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 14 },
+  { id: 'MOD-08', clave: 'MOD_PAQUETES_CATALOGO', valor: 'PAQUETES_CATALOGO', etiqueta: 'Módulo: Catálogo de Paquetes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 15 },
+  { id: 'MOD-09', clave: 'MOD_PAQUETES_CONTROL', valor: 'PAQUETES_CONTROL', etiqueta: 'Módulo: Control de Paquetes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 16 },
 
   // --- CATEGORIA: AGENDA (ESTADOS + TIEMPOS) ---
   { id: 'CONF-08', clave: 'COLOR_DISPONIBLE', valor: '#f59e0b', etiqueta: 'Color: Horario Disponible', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 1 },
@@ -317,6 +319,26 @@ export const MOCK_PERMISOS: Permiso[] = [
     filtrarPersonas: false
   },
   {
+    perfil: 'ADMINISTRADOR',
+    modulo: 'PAQUETES_CATALOGO',
+    acceso: true,
+    verTodo: true,
+    puedeCrear: true,
+    puedeEditar: true,
+    puedeEliminar: true,
+    filtrarPersonas: false
+  },
+  {
+    perfil: 'ADMINISTRADOR',
+    modulo: 'PAQUETES_CONTROL',
+    acceso: true,
+    verTodo: true,
+    puedeCrear: true,
+    puedeEditar: true,
+    puedeEliminar: true,
+    filtrarPersonas: false
+  },
+  {
     perfil: 'RECEPCIONISTA',
     modulo: 'PACIENTES',
     acceso: true,
@@ -331,6 +353,42 @@ export const MOCK_PERMISOS: Permiso[] = [
 export const MOCK_USUARIOS: Usuario[] = generateMockUsuarios();
 export const MOCK_TERAPEUTAS: Terapeuta[] = generateMockTerapeutas();
 export const MOCK_PACIENTES: Paciente[] = generateMockPacientes();
+
+export const MOCK_PAQUETES_MAESTROS: any[] = [
+  {
+    id: 'PM-001',
+    nombre: 'Paquete Evaluativo Especializado',
+    cantCitas: 4,
+    precioSugerido: 450,
+    frecuencia: 'SEMANAL',
+    limiteEspecialidades: 1,
+    estado: true,
+    fechaCreacion: '2024-01-01',
+    usuarioCreacion: 'SYSTEM'
+  },
+  {
+    id: 'PM-002',
+    nombre: 'Plan Terapéutico Mensual',
+    cantCitas: 12,
+    precioSugerido: 1200,
+    frecuencia: 'SEMANAL',
+    limiteEspecialidades: 2,
+    estado: true,
+    fechaCreacion: '2024-01-01',
+    usuarioCreacion: 'SYSTEM'
+  },
+  {
+    id: 'PM-003',
+    nombre: 'Mantenimiento Quincenal',
+    cantCitas: 6,
+    precioSugerido: 650,
+    frecuencia: 'QUINCENAL',
+    limiteEspecialidades: 1,
+    estado: true,
+    fechaCreacion: '2024-01-01',
+    usuarioCreacion: 'SYSTEM'
+  }
+];
 
 export const MOCK_HORARIOS: any[] = [
   {
