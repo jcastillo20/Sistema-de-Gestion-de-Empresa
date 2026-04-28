@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ClipboardCheck, Plus, Search, Filter, Building2 as SedeIcon, Info, Package, User, Building2, ChevronDown } from 'lucide-react';
+import { ClipboardCheck, Plus, Search, Filter, Building2 as SedeIcon, Info, Package, User, Building2, ChevronDown, Trash2 } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { AlertModal } from '../../components/common/AlertModal';
 import { apiService } from '../../services/apiService';
 import { PaquetePaciente, Sede, PaqueteMaestro } from '../../types';
 import ModalVentaPaquete from '../../components/paquetes/ModalVentaPaquete';
@@ -17,6 +18,8 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
   const [maestros, setMaestros] = useState<PaqueteMaestro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isVentaModalOpen, setIsVentaModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [ventaToCancel, setVentaToCancel] = useState<PaquetePaciente | null>(null);
 
   const permissions = usePermissions(currentUser, 'paquetes_control');
 
@@ -44,16 +47,23 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
         apiService.getPacientes()
       ]);
 
-      // Data Enrichment: Ensure pacienteNombre is present even for stale/old records
+      // Data Enrichment: Ensure pacienteNombre is present and accurate
       const enrichedVentas = v.map(venta => {
-        if (!venta.pacienteNombre) {
-          const patient = p.find(pac => pac.id === venta.idPaciente);
-          return {
-            ...venta,
-            pacienteNombre: patient ? `${patient.nombres} ${patient.apellidoPaterno}` : `ID: ${venta.idPaciente}`
-          };
+        // Try to find patient by exact ID or by numeric part if needed
+        let patient = p.find(pac => pac.id === venta.idPaciente);
+        
+        // Fallback for numeric IDs (e.g. "1" matching "PAC001")
+        if (!patient && /^\d+$/.test(venta.idPaciente)) {
+          const paddedId = `PAC${venta.idPaciente.padStart(3, '0')}`;
+          patient = p.find(pac => pac.id === paddedId);
         }
-        return venta;
+
+        return {
+          ...venta,
+          pacienteNombre: patient 
+            ? `${patient.nombres} ${patient.apellidoPaterno}` 
+            : (venta.pacienteNombre && venta.pacienteNombre !== "1" ? venta.pacienteNombre : `ID: ${venta.idPaciente}`)
+        };
       });
 
       setVentas(enrichedVentas);
@@ -62,7 +72,6 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
     } catch (e) {
       console.error(e);
     } finally {
-      setIsLoading(true); // Wait, setting it to true? Should be false.
       setIsLoading(false);
     }
   };
@@ -70,6 +79,22 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleCancelClick = (venta: PaquetePaciente) => {
+    setVentaToCancel(venta);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!ventaToCancel) return;
+    try {
+      await apiService.cancelarPaquetePaciente(ventaToCancel.id, currentUser.nombreUsuario);
+      setIsCancelModalOpen(false);
+      loadData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const filteredVentas = useMemo(() => {
     let result = ventas;
@@ -86,8 +111,10 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
                            patientName.includes(filters.search.toLowerCase()) ||
                            v.id.toLowerCase().includes(filters.search.toLowerCase());
       
-      // Match using nombreSede (string) since that's what's in v.sede
-      const matchesSede = filters.sede === 'ALL' || v.sede === filters.sede;
+      // Match using nombreSede (string) or idSede
+      const matchesSede = filters.sede === 'ALL' || 
+                         v.sede === filters.sede || 
+                         (sedes.find(s => s.idSede === filters.sede)?.nombreSede === v.sede);
       const matchesMaestro = filters.maestro === 'ALL' || v.idMaestro === filters.maestro;
       
       let matchesEstado = filters.estado === 'ALL';
@@ -284,6 +311,16 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
         data={filteredVentas}
         columns={columns as any}
         isLoading={isLoading}
+        onDelete={permissions.puedeEliminar ? handleCancelClick : undefined}
+      />
+
+      <AlertModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Anular Paquete"
+        message={`¿Estás seguro que deseas anular el paquete "${ventaToCancel?.nombre}" para el paciente "${ventaToCancel?.pacienteNombre}"? Se anularán los cobros pendientes y citas no realizadas.`}
+        type="error"
+        onConfirm={handleConfirmCancel}
       />
 
       {ventas.length === 0 && !isLoading && (

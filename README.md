@@ -49,41 +49,68 @@ El sistema utiliza una capa de persistencia simulada. Puedes ingresar con:
 
 ---
 
-## 🔍 4. Auditoría Técnica y Roadmap Estratégico (Actualizado)
+## 🔍 4. Auditoría Técnica y Roadmap Estratégico (Actualizado Vision 2.0)
 
-Se ha realizado una auditoría integral del sistema para evaluar la coherencia entre el diseño arquitectónico y la implementación actual.
+Se ha realizado una auditoría integral del sistema comparando la implementación actual con la **Visión 2.0 de CliniGest Pro**, que define un alcance de 9 etapas críticas para la madurez del producto.
 
-### 📊 Cuadro de Cumplimiento Operativo
+### 📊 Cuadro de Cumplimiento de Visión
 
-| Módulo | Estado | Cumplimiento | Resumen Técnico |
+| Etapa / Requerimiento | Estado | Cumplimiento | Resumen del Análisis |
 | :--- | :--- | :--- | :--- |
-| **Identidad / Branding** | 🟢 Completado | 100% | Inyección dinámica de `:root` y SST en CSS. |
-| **Seguridad (RBAC)** | 🟢 Completado | 100% | Aislamiento por sede y validación granular de botones. |
-| **Pacientes** | 🟢 Completado | 95% | CRUD con avatares de iniciales y validación de DNI. |
-| **Horarios** | 🟢 Completado | 100% | Motor de bloques sin solapamientos y reglas de jornada. |
-| **Paquetes Maestros** | 🟢 Completado | 100% | Definición de productos con inmutabilidad en venta. |
-| **Control Paquetes** | 🟢 Completado | 100% | Filtros de sede corregidos, visualización estandarizada. |
-| **Finanzas (Pagos)** | 🟡 En Proceso | 30% | Generación automática de cobro al vender paquetes. |
-| **Citas (Agenda)** | 🟡 En Proceso | 60% | Agendado manual operativo. Pendiente motor automático. |
+| **1. Personas (Terapeutas/Pacientes)** | 🟢 Completado | 100% | CRUDs operativos con RBAC y validaciones de DNI/Email. |
+| **2. Especialidades & Paquetes** | 🟢 Completado | 95% | Catálogo maestro y venta operativos. Pendiente: Restricción de especialidades por tamaño. |
+| **3. Horarios Avanzados** | 🟢 Completado | 90% | Bloques mensuales y solapamientos validados. Pendiente: Forzado de media jornada sábados. |
+| **4. Gestión de Citas** | 🟡 En Proceso | 60% | Citas manuales con colores. Pendiente: Vínculo automático a saldo de paquetes. |
+| **5. Reprogramaciones** | 🔴 Pendiente | 0% | Falta lógica de 1 estándar / 1 excepcional con carga de archivos. |
+| **6. Paquetes (Automatización)** | 🟡 En Proceso | 50% | Registro de consumo manual. Pendiente: Motor de generación masiva de citas. |
+| **7. Gestión Financiera** | 🟡 En Proceso | 20% | Generación de deuda al vender. Pendiente: Transacciones parciales y abonos. |
+| **8. Auditoría & Trazabilidad** | 🟡 En Proceso | 40% | Registro de logs en backend (O(1)). Pendiente: Módulo de visualización historial. |
+| **9. WhatsApp (n8n)** | 🔴 Pendiente | 0% | Roadmap estratégico para integración con agente externo. |
 
-### 🛠️ Correcciones Técnicas de Último Turno
-1.  **Aislamiento de Sede:** Se corrigió el motor de filtrado en `ControlPaquetes.tsx`. Ahora el usuario sin permiso `verTodo` queda bloqueado en su sede y no puede "saltar" a ver contratos de otras sedes.
-2.  **Identidad Visual PG-V3:** Se estandarizaron las celdas de las tablas usando la clase `pg-avatar` y `pg-status-pill` con animaciones de pulso para estados activos.
-3.  **Integridad de Datos:** Se añadió el campo `pacienteNombre` denormalizado en la tabla de ventas para permitir búsquedas instantáneas sin recursividad pesada hacia la tabla de pacientes (O(1) logic).
+### 📝 Gaps Críticos e Identificación de Pendientes
+1.  **Motor de Generación de Citas (Punto 6):** El sistema permite vender paquetes, pero no "agendarlos" masivamente siguiendo la frecuencia seleccionada (Semanal/Quincenal).
+2.  **Reprogramaciones con Evidencia (Punto 5):** Requerimiento legal y administrativo para evitar fraudes; se requiere un componente de subida de archivos vinculada a la reprogramación.
+3.  **Transacciones Múltiples (Punto 7):** Actualmente una venta genera una deuda. Falta que se puedan registrar abonos parciales (ej: S/50 Yape, S/50 Efectivo) hasta completar el monto del paquete.
 
-### 📝 Gaps Detectados (Pendientes Urgentes)
-- **Motor de Paquetes en Agenda (Vínculo Crítico):** Falta que al agendar una cita, el sistema permita seleccionar la especialidad del paquete activo, el terapeuta calificado y descuente automáticamente el saldo de citas.
-- **Transacciones Múltiples:** La cabecera de `Pagos` ya existe, pero falta el historial de abonos individuales (Yape, Efectivo, Transf) para una misma deuda.
-- **Historial Híbrido:** Unificar en la ficha del paciente las citas consumidas de TODOS sus paquetes en una sola línea de tiempo.
+### 🗺️ Roadmap: Evolución por Etapas Priorizadas
 
-### 📅 Roadmap: Fase de Consolidación Core
-1.  **Etapa 7 (Finanzas):** CRUD de Transacciones. Registro de abonos parciales y liquidación de deudas automáticas.
-2.  **Etapa 8 (Agendamiento por Paquete):** Implementar flujo: Seleccionar Paquete → Seleccionar Especialidad (del paquete) → Seleccionar Terapeuta/Horario → Registrar Cita → Actualizar Saldo de Paquete.
-3.  **Etapa 9 (BI):** Reporte de rentabilidad por sede y terapeuta (Citas Realizadas vs. Paquetes Vendidos).
+#### **Etapa 1: Consolidación Operativa (1, 2, 3, 4, 5, 6)**
+*   **Faltante:** Implementar el "Generador de Citas" en `ControlPaquetes.tsx` o `Agenda.tsx`.
+*   **Faltante:** Lógica de bloqueo de reprogramaciones extras sin motivo justificado.
+*   **Faltante:** Restricción de selección de especialidades según el tope contratado en el paquete.
+
+#### **Etapa 2: Gestión Financiera & Auditoría (7, 8)**
+*   **Faltante:** Módulo de 'Caja/Tesorería' para registro de transacciones asociadas a deudas.
+*   **Faltante:** Dashboard de Auditoría Global para SuperAdmin (Visualización de Before/After).
+
+#### **Etapa 3: Automatización & Notificaciones (9)**
+*   **Integración:** Conexión vía Webhooks a n8n para envío de recordatorios y confirmación de citas automática.
 
 ---
 
-##  4. Estructura del Proyecto
+## 🏗️ 5. Arquitectura de Producción Propuesta
+
+El sistema ha sido diseñado como un **Monolito Moderno** preparado para ser desacoplado o desplegado de forma eficiente según costes de nube.
+
+### Opción A: Despliegue en Azure (Costo Optimizado)
+*   **Frontend:** Azure Storage Account (Static Website) -> Costo mínimo.
+*   **Backend:** Azure Web App (Containerizada con Spring Boot) o App Service.
+*   **Base de Datos:** Azure Database for MariaDB/Postgres.
+*   **Seguridad:** Azure Key Vault + SSL Gestionado por el dominio.
+
+### Opción B: Despliegue en AWS (Rendimiento)
+*   **Cómputo:** AWS EC2 (t3.micro/small) para el motor monolítico.
+*   **Almacenamiento:** Amazon S3 para evidencias de reprogramación y logos.
+*   **Base de Datos:** Amazon RDS (Postgres).
+
+### Estrategia Tecnológica Sugerida
+*   **Backend:** Spring Boot (Java) para robustez en transacciones financieras.
+*   **Frontend:** React/Angular (SPA) consumiendo la API.
+*   **Automatización:** Agente n8n residente en EC2/Contenedor conectándose directamente a la DB para flujos de WhatsApp.
+
+---
+
+##  6. Estructura del Proyecto
 
 ```bash
 src/

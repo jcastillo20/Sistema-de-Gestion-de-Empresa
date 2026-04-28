@@ -10,7 +10,8 @@ import {
   Horario,
   PaqueteMaestro,
   PaquetePaciente,
-  Pago
+  Pago,
+  Transaccion
 } from '../types';
 import { 
   MOCK_CONFIG_DINAMICA, 
@@ -22,7 +23,8 @@ import {
   MOCK_AUDITORIA,
   MOCK_HORARIOS,
   MOCK_ESPECIALIDADES_DICT,
-  MOCK_PAQUETES_MAESTROS
+  MOCK_PAQUETES_MAESTROS,
+  MOCK_CITAS
 } from './mockDb';
 
 // Simulated delay to mimic API calls
@@ -48,6 +50,8 @@ class ApiService {
   private paquetesMaestros: PaqueteMaestro[] = [];
   private paquetesPacientes: PaquetePaciente[] = [];
   private pagos: Pago[] = [];
+  private transacciones: Transaccion[] = [];
+  private citas: any[] = [];
 
   constructor() {
     this.loadFromStorage();
@@ -88,6 +92,10 @@ class ApiService {
       this.paquetesMaestros = savedPaquetesMaestros ? JSON.parse(savedPaquetesMaestros) : [...MOCK_PAQUETES_MAESTROS];
       this.paquetesPacientes = savedPaquetesPacientes ? JSON.parse(savedPaquetesPacientes) : [];
       this.pagos = savedPagos ? JSON.parse(savedPagos) : [];
+      const savedTransacciones = localStorage.getItem('clini_transacciones');
+      this.transacciones = savedTransacciones ? JSON.parse(savedTransacciones) : [];
+      const savedCitas = localStorage.getItem('clini_citas');
+      this.citas = savedCitas ? JSON.parse(savedCitas) : [...MOCK_CITAS];
     } catch (e) {
       console.error("Error al cargar localStorage, usando datos mock:", e);
       this.config = [...MOCK_CONFIG_DINAMICA];
@@ -102,6 +110,8 @@ class ApiService {
       this.paquetesMaestros = [...MOCK_PAQUETES_MAESTROS];
       this.paquetesPacientes = [];
       this.pagos = [];
+      this.transacciones = [];
+      this.citas = [...MOCK_CITAS];
     }
 
     // Migration: Ensure terapeutas have especialidades array
@@ -135,6 +145,8 @@ class ApiService {
       localStorage.setItem('clini_paquetes_maestros', JSON.stringify(this.paquetesMaestros));
       localStorage.setItem('clini_paquetes_pacientes', JSON.stringify(this.paquetesPacientes));
       localStorage.setItem('clini_pagos', JSON.stringify(this.pagos));
+      localStorage.setItem('clini_transacciones', JSON.stringify(this.transacciones));
+      localStorage.setItem('clini_citas', JSON.stringify(this.citas));
     } catch (error: any) {
       if (error.name === 'QuotaExceededError' || error.message?.includes('quota')) {
         console.warn("LocalStorage lleno. Pruning logs de auditoría para liberar espacio...");
@@ -591,6 +603,17 @@ class ApiService {
     return filtered;
   }
 
+  /**
+   * CORE FLOW: ASIGNACIÓN DE PAQUETE A PACIENTE
+   * 
+   * Este es el disparador central del negocio. Ejecuta las siguientes acciones en cadena:
+   * 1. Vincula un paciente con un paquete maestro específico.
+   * 2. Calcula proyecciones de citas basadas en la frecuencia (Semanal, Quincenal, Mensual).
+   * 3. Registra una cuenta por cobrar (Pago) en el módulo financiero.
+   * 4. Registra auditoría detallada de cada inserción masiva.
+   * 
+   * @throws Error si el paquete o el paciente no existen.
+   */
   async asignarPaqueteAPaciente(idPaciente: string, idMaestro: string, sede: string, currentUser: string) {
     await this.delay();
     const maestro = this.paquetesMaestros.find(m => m.id === idMaestro);
@@ -619,6 +642,41 @@ class ApiService {
     this.paquetesPacientes.push(newPaquetePaciente);
     this.addAudit('PAQUETES_PACIENTES', newPaquetePaciente.id, 'INSERT', currentUser, null, newPaquetePaciente);
 
+    // --- MOTOR DE GENERACIÓN DE CITAS ---
+    // Proyectar citas automáticamente basadas en la frecuencia del paquete
+    const citasGeneradas: any[] = [];
+    const fechaBase = new Date();
+    
+    for(let i = 0; i < maestro.cantCitas; i++) {
+        const fechaCita = new Date(fechaBase);
+        if (maestro.frecuencia === 'SEMANAL') {
+            fechaCita.setDate(fechaBase.getDate() + (i * 7) + 1); // +1 para no empezar hoy mismo
+        } else if (maestro.frecuencia === 'QUINCENAL') {
+            fechaCita.setDate(fechaBase.getDate() + (i * 14) + 1);
+        } else if (maestro.frecuencia === 'MENSUAL') {
+            fechaCita.setMonth(fechaBase.getMonth() + i + 1);
+        }
+
+        const newCita = {
+            id: `CT-${Math.random().toString(36).substr(2, 9)}`,
+            idPaciente,
+            nombrePaciente: `${paciente.nombres} ${paciente.apellidoPaterno}`,
+            idPaquete: newPaquetePaciente.id,
+            fecha: fechaCita.toISOString().split('T')[0],
+            horaInicio: '09:00', // Default propuesto
+            horaFin: '09:45',
+            sede,
+            estadoCita: 'PENDIENTE',
+            estadoPago: 'PENDIENTE',
+            montoPagado: 0,
+            usuarioCreacion: currentUser,
+            fechaCreacion: new Date().toISOString()
+        };
+        citasGeneradas.push(newCita);
+        this.citas.push(newCita);
+    }
+    this.addAudit('CITAS', newPaquetePaciente.id, 'BULK_INSERT', currentUser, null, { count: citasGeneradas.length });
+
     // TRIGGER FINANCIERO: Crear pago automático
     const newPago: Pago = {
       idPago: `PAG-${Math.random().toString(36).substr(2, 9)}`,
@@ -641,12 +699,120 @@ class ApiService {
   }
 
   // --- PAGOS ---
-  async getPagos(idPaciente?: string) {
+  async getPagos(idPaciente?: string, sede?: string) {
     await this.delay();
+    let filtered = this.pagos;
     if (idPaciente) {
-      return this.pagos.filter(p => p.idPaciente === idPaciente);
+      filtered = filtered.filter(p => p.idPaciente === idPaciente);
     }
-    return this.pagos;
+    if (sede && sede.toLowerCase() !== 'all') {
+      filtered = filtered.filter(p => p.idSede === sede);
+    }
+    return filtered;
+  }
+
+  async getTransacciones(idPago?: string) {
+    await this.delay();
+    if (idPago) {
+      return this.transacciones.filter(t => t.idPago === idPago);
+    }
+    return this.transacciones;
+  }
+
+  // --- CITAS ---
+  async getCitas(sede?: string, idPaciente?: string, idTerapeuta?: string) {
+    await this.delay();
+    let filtered = this.citas;
+    if (sede && sede.toLowerCase() !== 'all') {
+      filtered = filtered.filter(c => c.sede === sede);
+    }
+    if (idPaciente) {
+      filtered = filtered.filter(c => c.idPaciente === idPaciente);
+    }
+    if (idTerapeuta) {
+      filtered = filtered.filter(c => c.idTerapeuta === idTerapeuta);
+    }
+    return filtered;
+  }
+
+  async updateCita(id: string, data: any, currentUser: string) {
+    await this.delay();
+    const index = this.citas.findIndex(c => c.id === id);
+    if (index !== -1) {
+      const oldData = { ...this.citas[index] };
+      this.citas[index] = { ...this.citas[index], ...data };
+      this.addAudit('CITAS', id, 'UPDATE', currentUser, oldData, this.citas[index]);
+      this.saveToStorage();
+    }
+    return this.citas[index];
+  }
+
+  async cancelarPaquetePaciente(id: string, currentUser: string) {
+    await this.delay();
+    const index = this.paquetesPacientes.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const oldData = { ...this.paquetesPacientes[index] };
+      this.paquetesPacientes[index].estado = 'CANCELADO';
+      this.addAudit('PAQUETES_PACIENTES', id, 'UPDATE_STATUS', currentUser, oldData, this.paquetesPacientes[index]);
+      
+      // Cancelar también el pago si sigue pendiente
+      const pago = this.pagos.find(p => p.idPaquete === id && p.estado === 'PENDIENTE');
+      if (pago) {
+        const oldPago = { ...pago };
+        pago.estado = 'ANULADO';
+        this.addAudit('PAGOS', pago.idPago, 'UPDATE_STATUS', currentUser, oldPago, pago);
+      }
+
+      // Cancelar citas pendientes vinculadas a este paquete
+      this.citas = this.citas.filter(c => !(c.idPaquete === id && c.estadoCita === 'PENDIENTE'));
+
+      this.saveToStorage();
+    }
+    return this.paquetesPacientes[index];
+  }
+
+  async registrarAbono(idPago: string, monto: number, medio: Transaccion['medio'], comprobante: string, currentUser: string) {
+    await this.delay();
+    const pagoIndex = this.pagos.findIndex(p => p.idPago === idPago);
+    if (pagoIndex === -1) throw new Error("Registro de pago no encontrado");
+
+    const pago = this.pagos[pagoIndex];
+    const transaccionesDelPago = this.transacciones.filter(t => t.idPago === idPago);
+    const totalAbonadoPrevio = transaccionesDelPago.reduce((sum, t) => sum + t.monto, 0);
+    
+    if (totalAbonadoPrevio + monto > pago.monto) {
+      throw new Error(`El abono excede el saldo pendiente (Saldo: S/ ${pago.monto - totalAbonadoPrevio})`);
+    }
+
+    const newTransaccion: Transaccion = {
+      idTransaccion: `TRX-${Math.random().toString(36).substr(2, 9)}`,
+      idPago,
+      monto,
+      fecha: new Date().toISOString(),
+      medio,
+      comprobante,
+      tipoTransaccion: 'INGRESO',
+      estado: 'COMPLETADO',
+      idSede: pago.idSede,
+      fechaCreacion: new Date().toISOString(),
+      usuarioCreacion: currentUser
+    };
+
+    this.transacciones.push(newTransaccion);
+    
+    // Actualizar estado del pago
+    const nuevoTotal = totalAbonadoPrevio + monto;
+    if (nuevoTotal >= pago.monto) {
+      this.pagos[pagoIndex].estado = 'PAGADO';
+    } else {
+      this.pagos[pagoIndex].estado = 'PARCIAL';
+    }
+
+    this.addAudit('TRANSACCIONES', newTransaccion.idTransaccion, 'INSERT', currentUser, null, newTransaccion);
+    this.addAudit('PAGOS', idPago, 'UPDATE', currentUser, { estado: pago.estado }, { estado: this.pagos[pagoIndex].estado });
+    
+    this.saveToStorage();
+    return newTransaccion;
   }
 
   // --- AUDITORIA ---

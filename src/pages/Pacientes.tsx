@@ -73,15 +73,45 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     }
   };
 
-  const loadPatientPackages = async (pacienteId: string) => {
-    const packs = await apiService.getPaquetesPacientes(pacienteId);
+  const [patientStats, setPatientStats] = useState({
+    totalCitas: 0,
+    asistencias: 0,
+    deuda: 0,
+    paquetesActivos: 0
+  });
+
+  const [patientCitas, setPatientCitas] = useState<any[]>([]);
+
+  const loadPatientStats = async (pacienteId: string) => {
+    const [packs, pagos, citas, transacciones] = await Promise.all([
+      apiService.getPaquetesPacientes(pacienteId),
+      apiService.getPagos(pacienteId), // Note: apiService.getPagos arg order is idPaciente, sede? 
+      apiService.getCitas(undefined, pacienteId),
+      apiService.getTransacciones()
+    ]);
+    
     setPatientPackages(packs);
+    setPatientCitas(citas);
+    
+    // Calcular deuda: Suma de montos de pagos menos suma de transacciones vinculadas
+    const stats = {
+      totalCitas: citas.length,
+      asistencias: citas.filter(c => c.estadoCita === 'ASISTIÓ' || c.estadoCita === 'FINALIZADO').length,
+      deuda: pagos.reduce((acc, p) => {
+        const pagado = transacciones
+          .filter(t => t.idPago === p.idPago)
+          .reduce((sum, t) => sum + t.monto, 0);
+        return acc + (p.monto - pagado);
+      }, 0),
+      paquetesActivos: packs.filter(p => p.estado === 'ACTIVO').length
+    };
+    setPatientStats(stats);
   };
 
   const handleOpenPackages = async (p: Paciente) => {
     setSelectedPaciente(p);
     setShowAllPackages(false);
-    await loadPatientPackages(p.id);
+    loadPatientStats(p.id);
     setIsPackModalOpen(true);
   };
 
@@ -102,7 +132,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         selectedPaciente.sede || currentUser.sede,
         currentUser.nombreUsuario
       );
-      await loadPatientPackages(selectedPaciente.id);
+      await loadPatientStats(selectedPaciente.id);
       setAlertConfig({ title: 'Paquete Asignado', message: `El paquete "${packageNameToAssign}" se ha vinculado al paciente y se ha generado el cargo financiero.`, type: 'success' });
       setIsAlertOpen(true);
     } catch (error: any) {
@@ -299,14 +329,73 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         )}
       />
 
-      {/* Modal de Paquetes del Paciente */}
       <Modal
         isOpen={isPackModalOpen}
         onClose={() => setIsPackModalOpen(false)}
-        title={`Paquetes de ${selectedPaciente?.nombres}`}
+        title={`Expediente: ${selectedPaciente?.nombres} ${selectedPaciente?.apellidoPaterno}`}
         size="lg"
       >
         <div className="space-y-8 py-4">
+          {/* Top 4 Cards - Expediente Híbrido */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Citas Totales</p>
+              <p className="text-2xl font-black text-slate-900">{patientStats.totalCitas}</p>
+            </div>
+            <div className="p-4 rounded-3xl bg-emerald-50 border border-emerald-100">
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Asistencias</p>
+              <p className="text-2xl font-black text-emerald-700">{patientStats.asistencias}</p>
+            </div>
+            <div className="p-4 rounded-3xl bg-rose-50 border border-rose-100">
+              <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Deuda Pendiente</p>
+              <p className="text-2xl font-black text-rose-700">S/ {patientStats.deuda}</p>
+            </div>
+            <div className="p-4 rounded-3xl bg-amber-50 border border-amber-100">
+              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Paquetes Activos</p>
+              <p className="text-2xl font-black text-amber-700">{patientStats.paquetesActivos}</p>
+            </div>
+          </div>
+
+          {/* Listado de Citas Recientes/Próximas */}
+          <section className="space-y-4">
+            <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">
+              <ShieldCheck size={18} className="text-primary" />
+              Agenda y Seguimiento
+            </h4>
+            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
+               {patientCitas.length > 0 ? (
+                 <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                   {patientCitas.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).map(cita => (
+                     <div key={cita.id} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
+                        <div className="flex items-center gap-4">
+                           <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center">
+                              <span className="text-[10px] font-black text-primary leading-none">{new Date(cita.fecha).getDate()}</span>
+                              <span className="text-[8px] font-bold text-slate-400 uppercase leading-none">{new Date(cita.fecha).toLocaleDateString('es', { month: 'short' })}</span>
+                           </div>
+                           <div>
+                              <p className="text-xs font-black text-slate-700">{cita.horaInicio} - {cita.horaFin}</p>
+                              <p className="text-[10px] text-slate-400 font-medium">{cita.sede}</p>
+                           </div>
+                        </div>
+                        <span className={cn(
+                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter",
+                          cita.estadoCita === 'PENDIENTE' ? "bg-amber-100 text-amber-600" :
+                          cita.estadoCita === 'ASISTIÓ' ? "bg-emerald-100 text-emerald-600" :
+                          "bg-slate-100 text-slate-400"
+                        )}>
+                          {cita.estadoCita}
+                        </span>
+                     </div>
+                   ))}
+                 </div>
+               ) : (
+                 <div className="p-8 text-center text-slate-400 italic text-xs">
+                    No se registran citas para este paciente.
+                 </div>
+               )}
+            </div>
+          </section>
+
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">

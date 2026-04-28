@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 
-export function usePermissions(user: any, module: string) {
+export function usePermissions(currentUser: any, module: string) {
+  const { user } = useAuth();
+  
+  // Usamos el user del context si existe, sino el que pasaron por props
+  const targetUser = user || currentUser;
+
   const permissions = useMemo(() => {
     const defaultPermissions = {
       acceso: false,
@@ -11,12 +17,12 @@ export function usePermissions(user: any, module: string) {
       filtrarPersonas: true
     };
 
-    if (!user) {
+    if (!targetUser) {
       return defaultPermissions;
     }
 
     // If user is super admin, grant all by default
-    if (user.perfil === 'SUPER_ADMIN' || user.perfil === 'SUPERADMIN') {
+    if (targetUser.perfil === 'SUPER_ADMIN' || targetUser.perfil === 'SUPERADMIN') {
       return {
         acceso: true,
         verTodo: true,
@@ -27,9 +33,9 @@ export function usePermissions(user: any, module: string) {
       };
     }
 
-    // ADMINISTRADOR sees all sedes by default, but respects other permissions
-    if (user.perfil === 'ADMINISTRADOR') {
-      const modulePerms = user.permisos?.[module.toLowerCase()];
+    // Perfil ADMINISTRADOR (Global)
+    if (targetUser.perfil === 'ADMINISTRADOR') {
+      const modulePerms = targetUser.permisos?.[module.toLowerCase()];
       if (modulePerms) return modulePerms;
       
       return {
@@ -42,15 +48,15 @@ export function usePermissions(user: any, module: string) {
       };
     }
 
-    if (!user.permisos) {
+    if (!targetUser.permisos) {
       return defaultPermissions;
     }
 
-    const modulePerms = user.permisos[module.toLowerCase()];
+    const modulePerms = targetUser.permisos[module.toLowerCase()];
     if (modulePerms) return modulePerms;
     
     return defaultPermissions;
-  }, [user, module]);
+  }, [targetUser, module]);
 
   return permissions;
 }

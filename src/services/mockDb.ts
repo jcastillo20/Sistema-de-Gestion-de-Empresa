@@ -172,16 +172,18 @@ export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
   { id: 'PRF-05', clave: 'PERFIL_GEREN', valor: 'GERENTE', etiqueta: 'Perfil: Gerente', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 7 },
   { id: 'PRF-06', clave: 'PERFIL_SUPER', valor: 'SUPERADMIN', etiqueta: 'Perfil: Super Administrador', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 8 },
 
-  // Módulos desacoplados
-  { id: 'MOD-01', clave: 'MOD_PACIENTES', valor: 'PACIENTES', etiqueta: 'Módulo: Pacientes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 8 },
-  { id: 'MOD-02', clave: 'MOD_TERAPEUTAS', valor: 'TERAPEUTAS', etiqueta: 'Módulo: Terapeutas', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 9 },
-  { id: 'MOD-03', clave: 'MOD_HORARIOS', valor: 'HORARIOS', etiqueta: 'Módulo: Horarios', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 10 },
-  { id: 'MOD-04', clave: 'MOD_USUARIOS', valor: 'USUARIOS', etiqueta: 'Módulo: Usuarios', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 11 },
-  { id: 'MOD-05', clave: 'MOD_CONFIG', valor: 'CONFIGURACION', etiqueta: 'Módulo: Configuración', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 12 },
-  { id: 'MOD-06', clave: 'MOD_AGENDA', valor: 'AGENDA', etiqueta: 'Módulo: Agenda', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 13 },
-  { id: 'MOD-07', clave: 'MOD_FINANZAS', valor: 'FINANZAS', etiqueta: 'Módulo: Finanzas', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 14 },
-  { id: 'MOD-08', clave: 'MOD_PAQUETES_CATALOGO', valor: 'PAQUETES_CATALOGO', etiqueta: 'Módulo: Catálogo de Paquetes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 15 },
-  { id: 'MOD-09', clave: 'MOD_PAQUETES_CONTROL', valor: 'PAQUETES_CONTROL', etiqueta: 'Módulo: Control de Paquetes', categoria: 'SEGURIDAD', tipoControl: 'CHECKBOX', orden: 16 },
+  // Módulos desacoplados (Restaurados a SEGURIDAD para compatibilidad con permisos)
+  { id: 'MOD-01', clave: 'MOD_PACIENTES', valor: 'PACIENTES', etiqueta: 'Pacientes', categoria: 'SEGURIDAD', descripcion: 'GESTIÓN CLÍNICA', tipoControl: 'CHECKBOX', orden: 8 },
+  { id: 'MOD-02', clave: 'MOD_TERAPEUTAS', valor: 'TERAPEUTAS', etiqueta: 'Terapeutas', categoria: 'SEGURIDAD', descripcion: 'CONFIGURACIÓN', tipoControl: 'CHECKBOX', orden: 9 },
+  { id: 'MOD-03', clave: 'MOD_HORARIOS', valor: 'HORARIOS', etiqueta: 'Horarios', categoria: 'SEGURIDAD', descripcion: 'GESTIÓN CLÍNICA', tipoControl: 'CHECKBOX', orden: 10 },
+  { id: 'MOD-04', clave: 'MOD_USUARIOS', valor: 'USUARIOS', etiqueta: 'Usuarios', categoria: 'SEGURIDAD', descripcion: 'CONFIGURACIÓN', tipoControl: 'CHECKBOX', orden: 11 },
+  { id: 'MOD-05', clave: 'MOD_CONFIG', valor: 'CONFIGURACION', etiqueta: 'Configuración', categoria: 'SEGURIDAD', descripcion: 'CONFIGURACIÓN', tipoControl: 'CHECKBOX', orden: 12 },
+  { id: 'MOD-06', clave: 'MOD_AGENDA', valor: 'AGENDA', etiqueta: 'Agenda', categoria: 'SEGURIDAD', descripcion: 'GESTIÓN CLÍNICA', tipoControl: 'CHECKBOX', orden: 13 },
+  { id: 'MOD-07', clave: 'MOD_FINANZAS', valor: 'FINANZAS', etiqueta: 'Caja y Cobranzas', categoria: 'SEGURIDAD', descripcion: 'FINANZAS Y CONTROL', tipoControl: 'CHECKBOX', orden: 14 },
+  { id: 'MOD-08', clave: 'MOD_PAQUETES_CATALOGO', valor: 'PAQUETES_CATALOGO', etiqueta: 'Catálogo de Paquetes', categoria: 'SEGURIDAD', descripcion: 'CONFIGURACIÓN', tipoControl: 'CHECKBOX', orden: 15 },
+  { id: 'MOD-09', clave: 'MOD_PAQUETES_CONTROL', valor: 'PAQUETES_CONTROL', etiqueta: 'Ventas y Paquetes', categoria: 'SEGURIDAD', descripcion: 'FINANZAS Y CONTROL', tipoControl: 'CHECKBOX', orden: 16 },
+  { id: 'MOD-10', clave: 'MOD_AUDITORIA', valor: 'AUDITORIA', etiqueta: 'Auditoría', categoria: 'SEGURIDAD', descripcion: 'FINANZAS Y CONTROL', tipoControl: 'CHECKBOX', orden: 17 },
+
 
   // --- CATEGORIA: AGENDA (ESTADOS + TIEMPOS) ---
   { id: 'CONF-08', clave: 'COLOR_DISPONIBLE', valor: '#f59e0b', etiqueta: 'Color: Horario Disponible', categoria: 'AGENDA', tipoControl: 'COLOR', orden: 1 },
@@ -337,6 +339,16 @@ export const MOCK_PERMISOS: Permiso[] = [
     puedeCrear: true,
     puedeEditar: true,
     puedeEliminar: true,
+    filtrarPersonas: false
+  },
+  {
+    perfil: 'ADMINISTRADOR',
+    modulo: 'FINANZAS',
+    acceso: true,
+    verTodo: true,
+    puedeCrear: true,
+    puedeEditar: true,
+    puedeEliminar: false,
     filtrarPersonas: false
   },
   {
