@@ -37,17 +37,32 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [v, s, m] = await Promise.all([
+      const [v, s, m, p] = await Promise.all([
         apiService.getPaquetesPacientes(),
         apiService.getSedes(),
-        apiService.getPaquetesMaestros()
+        apiService.getPaquetesMaestros(),
+        apiService.getPacientes()
       ]);
-      setVentas(v);
+
+      // Data Enrichment: Ensure pacienteNombre is present even for stale/old records
+      const enrichedVentas = v.map(venta => {
+        if (!venta.pacienteNombre) {
+          const patient = p.find(pac => pac.id === venta.idPaciente);
+          return {
+            ...venta,
+            pacienteNombre: patient ? `${patient.nombres} ${patient.apellidoPaterno}` : `ID: ${venta.idPaciente}`
+          };
+        }
+        return venta;
+      });
+
+      setVentas(enrichedVentas);
       setSedes(s);
       setMaestros(m);
     } catch (e) {
       console.error(e);
     } finally {
+      setIsLoading(true); // Wait, setting it to true? Should be false.
       setIsLoading(false);
     }
   };
@@ -59,20 +74,29 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
   const filteredVentas = useMemo(() => {
     let result = ventas;
 
-    // Aislamiento de sede por permisos
+    // Aislamiento de sede por permisos (RBAC Strict)
     if (!permissions.verTodo && currentUser?.sede) {
       result = result.filter(v => v.sede === currentUser.sede);
     }
 
     return result.filter(v => {
-      const patientName = v.pacienteNombre?.toLowerCase() || '';
+      const patientName = v.pacienteNombre?.toLowerCase() || "";
       const matchesSearch = v.nombre.toLowerCase().includes(filters.search.toLowerCase()) || 
                            v.idPaciente.toLowerCase().includes(filters.search.toLowerCase()) ||
-                           patientName.includes(filters.search.toLowerCase());
+                           patientName.includes(filters.search.toLowerCase()) ||
+                           v.id.toLowerCase().includes(filters.search.toLowerCase());
       
+      // Match using nombreSede (string) since that's what's in v.sede
       const matchesSede = filters.sede === 'ALL' || v.sede === filters.sede;
       const matchesMaestro = filters.maestro === 'ALL' || v.idMaestro === filters.maestro;
-      const matchesEstado = filters.estado === 'ALL' || v.estado === filters.estado;
+      
+      let matchesEstado = filters.estado === 'ALL';
+      if (!matchesEstado) {
+        if (filters.estado === 'ACTIVO') matchesEstado = v.estado === 'ACTIVO' && v.citasConsumidas < v.cantCitas;
+        if (filters.estado === 'AGOTADO') matchesEstado = v.citasConsumidas >= v.cantCitas;
+        if (filters.estado === 'CANCELADO') matchesEstado = v.estado === 'CANCELADO';
+      }
+
       return matchesSearch && matchesSede && matchesMaestro && matchesEstado;
     });
   }, [ventas, filters, permissions.verTodo, currentUser?.sede]);
@@ -207,7 +231,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
                 onChange={e => setFilters({...filters, sede: e.target.value})}
               >
                 <option value="ALL">Todas las Sedes</option>
-                {sedes.map(s => <option key={s.idSede} value={s.idSede}>{s.nombreSede}</option>)}
+                {sedes.map(s => <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>)}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                 <ChevronDown size={14} />

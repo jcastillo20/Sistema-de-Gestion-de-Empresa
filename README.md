@@ -72,13 +72,13 @@ Se ha realizado una auditoría integral del sistema para evaluar la coherencia e
 3.  **Integridad de Datos:** Se añadió el campo `pacienteNombre` denormalizado en la tabla de ventas para permitir búsquedas instantáneas sin recursividad pesada hacia la tabla de pacientes (O(1) logic).
 
 ### 📝 Gaps Detectados (Pendientes Urgentes)
-- **Motor de Paquetes en Agenda:** Falta que al agendar una cita por especialidad, esta se descuente automáticamente del paquete activo del paciente.
+- **Motor de Paquetes en Agenda (Vínculo Crítico):** Falta que al agendar una cita, el sistema permita seleccionar la especialidad del paquete activo, el terapeuta calificado y descuente automáticamente el saldo de citas.
 - **Transacciones Múltiples:** La cabecera de `Pagos` ya existe, pero falta el historial de abonos individuales (Yape, Efectivo, Transf) para una misma deuda.
 - **Historial Híbrido:** Unificar en la ficha del paciente las citas consumidas de TODOS sus paquetes en una sola línea de tiempo.
 
 ### 📅 Roadmap: Fase de Consolidación Core
 1.  **Etapa 7 (Finanzas):** CRUD de Transacciones. Registro de abonos parciales y liquidación de deudas automáticas.
-2.  **Etapa 8 (Automática):** Motor de agendamiento masivo. Generar las 10 citas de un paquete de una sola vez respetando la disponibilidad del terapeuta.
+2.  **Etapa 8 (Agendamiento por Paquete):** Implementar flujo: Seleccionar Paquete → Seleccionar Especialidad (del paquete) → Seleccionar Terapeuta/Horario → Registrar Cita → Actualizar Saldo de Paquete.
 3.  **Etapa 9 (BI):** Reporte de rentabilidad por sede y terapeuta (Citas Realizadas vs. Paquetes Vendidos).
 
 ---
