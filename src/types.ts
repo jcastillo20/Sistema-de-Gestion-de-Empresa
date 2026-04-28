@@ -242,6 +242,7 @@ export interface PaqueteMaestro {
 export interface PaquetePaciente {
   id: string;
   idPaciente: string;
+  pacienteNombre?: string;
   idMaestro: string; // Referencia al molde original
   nombre: string; // Copia del maestro
   cantCitas: number; // Copia del maestro

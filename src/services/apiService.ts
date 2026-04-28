@@ -596,9 +596,13 @@ class ApiService {
     const maestro = this.paquetesMaestros.find(m => m.id === idMaestro);
     if (!maestro) throw new Error("Paquete maestro no encontrado");
 
+    const paciente = this.pacientes.find(p => p.id === idPaciente);
+    if (!paciente) throw new Error("Paciente no encontrado");
+
     const newPaquetePaciente: PaquetePaciente = {
       id: `PP-${Math.random().toString(36).substr(2, 9)}`,
       idPaciente,
+      pacienteNombre: `${paciente.nombres} ${paciente.apellidoPaterno}`,
       idMaestro,
       nombre: maestro.nombre,
       cantCitas: maestro.cantCitas,

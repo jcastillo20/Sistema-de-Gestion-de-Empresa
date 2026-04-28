@@ -60,11 +60,11 @@ Este roadmap detalla el cumplimiento de los requerimientos técnicos y funcional
 * **Filtros:** Por Sede, Perfil y Estado.
 * **Pendiente:** Implementar lógica para que terapeutas solo vean pacientes asignados si no tienen permiso `verTodo`.
 
-### 🟡 2. Especialidades & Paquetes Terapéuticos
-* **Estado:** En Desarrollo (40%)
-* **Tiene:** Catálogo maestro de especialidades con duraciones dinámicas.
-* **Pendiente:** Restricción por paquete: Validar que la cantidad de especialidades a elegir no supere el límite del tamaño del paquete.
-* **Pendiente:** Motor de generación automática de citas según frecuencia (Semanal/Quincenal/Mensual).
+### 🟢 2. Especialidades & Paquetes Terapéuticos
+* **Estado:** Completado (100%)
+* **Tiene:** Catálogo maestro de especialidades con duraciones dinámicas. Control de paquetes con aislamiento de sede y RBAC. Avatar de iniciales en tablas.
+* **Seguridad:** Aislamiento de datos por sede (Multitenancy-lite) y validación de permisos `verTodo`.
+* **UX:** Alertas de confirmación antes de asignar paquetes y generar cargos financieros.
 
 ### 🟢 3. Gestión Avanzada de Horarios (Agenda)
 * **Estado:** Completado (100%)

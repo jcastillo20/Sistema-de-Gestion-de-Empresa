@@ -16,7 +16,7 @@ export function usePermissions(user: any, module: string) {
     }
 
     // If user is super admin, grant all by default
-    if (user.perfil === 'SUPER_ADMIN') {
+    if (user.perfil === 'SUPER_ADMIN' || user.perfil === 'SUPERADMIN') {
       return {
         acceso: true,
         verTodo: true,
