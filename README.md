@@ -49,44 +49,37 @@ El sistema utiliza una capa de persistencia simulada. Puedes ingresar con:
 
 ---
 
-## 🗺️ 3. Roadmap Estratégico (Alcance vs. Implementación)
+## 🔍 4. Auditoría Técnica y Roadmap Estratégico (Actualizado)
 
-Este roadmap detalla el cumplimiento de los requerimientos técnicos y funcionales solicitados.
+Se ha realizado una auditoría integral del sistema para evaluar la coherencia entre el diseño arquitectónico y la implementación actual.
 
-### 🟢 1. Gestión de Personas y Perfiles
-* **Estado:** Completado (95%)
-* **Tiene:** CRUD Terapeutas, Pacientes y Usuarios. Asociación de roles (RBAC) y estados. Relación múltiple Terapeuta ↔ Especialidad.
-* **Validaciones:** DNI (8 dígitos), Email formato, Nombres (solo texto), Teléfono.
-* **Filtros:** Por Sede, Perfil y Estado.
-* **Pendiente:** Implementar lógica para que terapeutas solo vean pacientes asignados si no tienen permiso `verTodo`.
+### 📊 Cuadro de Cumplimiento Operativo
 
-### 🟢 2. Especialidades & Paquetes Terapéuticos
-* **Estado:** Completado (100%)
-* **Tiene:** Catálogo maestro de especialidades con duraciones dinámicas. Control de paquetes con aislamiento de sede y RBAC. Avatar de iniciales en tablas.
-* **Seguridad:** Aislamiento de datos por sede (Multitenancy-lite) y validación de permisos `verTodo`.
-* **UX:** Alertas de confirmación antes de asignar paquetes y generar cargos financieros.
+| Módulo | Estado | Cumplimiento | Resumen Técnico |
+| :--- | :--- | :--- | :--- |
+| **Identidad / Branding** | 🟢 Completado | 100% | Inyección dinámica de `:root` y SST en CSS. |
+| **Seguridad (RBAC)** | 🟢 Completado | 100% | Aislamiento por sede y validación granular de botones. |
+| **Pacientes** | 🟢 Completado | 95% | CRUD con avatares de iniciales y validación de DNI. |
+| **Horarios** | 🟢 Completado | 100% | Motor de bloques sin solapamientos y reglas de jornada. |
+| **Paquetes Maestros** | 🟢 Completado | 100% | Definición de productos con inmutabilidad en venta. |
+| **Control Paquetes** | 🟢 Completado | 100% | Filtros de sede corregidos, visualización estandarizada. |
+| **Finanzas (Pagos)** | 🟡 En Proceso | 30% | Generación automática de cobro al vender paquetes. |
+| **Citas (Agenda)** | 🟡 En Proceso | 60% | Agendado manual operativo. Pendiente motor automático. |
 
-### 🟢 3. Gestión Avanzada de Horarios (Agenda)
-* **Estado:** Completado (100%)
-* **Tiene:** Horarios por terapeuta, bloques múltiples por día, disponibilidad real.
-* **Validaciones:** No solapamientos de bloques, respeto estricto de horario de apertura de sede.
-* **Regla Especial:** Restricción automática de media jornada para sábados.
+### 🛠️ Correcciones Técnicas de Último Turno
+1.  **Aislamiento de Sede:** Se corrigió el motor de filtrado en `ControlPaquetes.tsx`. Ahora el usuario sin permiso `verTodo` queda bloqueado en su sede y no puede "saltar" a ver contratos de otras sedes.
+2.  **Identidad Visual PG-V3:** Se estandarizaron las celdas de las tablas usando la clase `pg-avatar` y `pg-status-pill` con animaciones de pulso para estados activos.
+3.  **Integridad de Datos:** Se añadió el campo `pacienteNombre` denormalizado en la tabla de ventas para permitir búsquedas instantáneas sin recursividad pesada hacia la tabla de pacientes (O(1) logic).
 
-### 🟡 4. Gestión de Citas & Reprogramaciones
-* **Estado:** En Desarrollo (60%)
-* **Tiene:** Creación manual, estados con colores configurables, duración variable.
-* **Validaciones:** No solapamientos de citas, integración con pagos previos.
-* **Pendiente:** Flujo de 1 reprogramación estándar vs. excepcional con carga obligatoria de evidencia (Archivo/Motivo).
+### 📝 Gaps Detectados (Pendientes Urgentes)
+- **Motor de Paquetes en Agenda:** Falta que al agendar una cita por especialidad, esta se descuente automáticamente del paquete activo del paciente.
+- **Transacciones Múltiples:** La cabecera de `Pagos` ya existe, pero falta el historial de abonos individuales (Yape, Efectivo, Transf) para una misma deuda.
+- **Historial Híbrido:** Unificar en la ficha del paciente las citas consumidas de TODOS sus paquetes en una sola línea de tiempo.
 
-### 🔴 5. Gestión Financiera: Pagos y Transacciones
-* **Estado:** Pendiente (10%)
-* **Tiene:** Diccionarios de medios de pago.
-* **Pendiente:** Registro de pagos parciales y múltiples transacciones para una sola deuda.
-* **Validación:** Sumatoria de transacciones <= Monto total. Cambio automático de estado a "Pagado" al completar saldo.
-
-### 🔴 6. Atención Automatizada (WhatsApp)
-* **Estado:** Roadmap Estratégico
-* **Pendiente:** Bot para consulta de citas y compra de paquetes. Registro de conversaciones en los logs de auditoría del paciente.
+### 📅 Roadmap: Fase de Consolidación Core
+1.  **Etapa 7 (Finanzas):** CRUD de Transacciones. Registro de abonos parciales y liquidación de deudas automáticas.
+2.  **Etapa 8 (Automática):** Motor de agendamiento masivo. Generar las 10 citas de un paquete de una sola vez respetando la disponibilidad del terapeuta.
+3.  **Etapa 9 (BI):** Reporte de rentabilidad por sede y terapeuta (Citas Realizadas vs. Paquetes Vendidos).
 
 ---
 

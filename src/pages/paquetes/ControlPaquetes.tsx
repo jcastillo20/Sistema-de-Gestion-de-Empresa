@@ -87,12 +87,12 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
             : v.idPaciente.substring(0, 2).toUpperCase();
 
           return (
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-black text-[10px] group-hover:scale-110 transition-transform shrink-0">
+            <div className="pg-cell-person">
+              <div className="pg-avatar group-hover:scale-110 transition-transform">
                 {initials}
               </div>
-              <div className="min-w-0">
-                <p className="font-bold text-slate-900 leading-tight truncate">{v.pacienteNombre || v.idPaciente}</p>
+              <div className="pg-cell-person-info">
+                <p className="pg-cell-name">{v.pacienteNombre || v.idPaciente}</p>
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-wider">ID Venta: {v.id}</p>
               </div>
             </div>
@@ -105,7 +105,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
           <div className="flex flex-col gap-1">
             <span className="font-bold text-slate-700 text-sm">{v.nombre}</span>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{v.frecuencia}</span>
+              <span className="pg-chip pg-chip--slate">{v.frecuencia}</span>
             </div>
           </div>
         )
@@ -134,6 +134,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
             "pg-status-pill", 
             v.estado === 'ACTIVO' ? "pg-status--active" : "pg-status--inactive"
           )}>
+            <span className={cn("pg-status-dot", v.estado === 'ACTIVO' ? "pg-dot--active" : "pg-dot--inactive")}></span>
             {v.estado}
           </span>
         )
@@ -146,7 +147,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
         accessor: (v: PaquetePaciente) => (
           <div className="flex items-center gap-2 text-slate-500 font-bold">
             <Building2 size={14} className="text-slate-300" />
-            <span className="text-[10px] uppercase tracking-wider">{v.sede}</span>
+            <span className="pg-chip pg-chip--primary text-[9px]">{v.sede}</span>
           </div>
         )
       } as any);
@@ -179,10 +180,10 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
       </div>
 
       {/* Área de Filtros pg-card */}
-      <div className="pg-card p-6 border border-slate-100 bg-white/50 backdrop-blur-sm shadow-sm ring-1 ring-slate-100">
+      <div className="clini-card p-6 border border-slate-100 bg-white/50 backdrop-blur-sm shadow-sm ring-1 ring-slate-100">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-1">Buscar Paciente</label>
+            <label className="clini-label px-1">Buscar Paciente</label>
             <div className="relative group">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <input 
@@ -196,7 +197,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
           </div>
 
           <div className={cn("space-y-2", !permissions.verTodo && "opacity-50 pointer-events-none grayscale")}>
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-1">Filtrar Sede</label>
+            <label className="clini-label px-1">Filtrar Sede</label>
             <div className="relative group">
               <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <select 
@@ -215,7 +216,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-1">Paquete Maestro</label>
+            <label className="clini-label px-1">Paquete Maestro</label>
             <div className="relative group">
               <Package className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <select 
@@ -233,7 +234,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-1">Estado de Uso</label>
+            <label className="clini-label px-1">Estado de Uso</label>
             <div className="relative group">
               <ClipboardCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
               <select 
