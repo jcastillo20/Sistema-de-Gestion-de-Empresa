@@ -40,7 +40,7 @@ interface ConfiguracionProps {
 
 export default function Configuracion({ currentUser }: ConfiguracionProps) {
   const permissions = usePermissions(currentUser, 'configuracion');
-  const [activeSection, setActiveSection] = useState<'BRANDING' | 'SEDES' | 'ESPECIALIDADES' | 'SEGURIDAD' | 'AGENDA' | 'DICCIONARIOS'>('BRANDING');
+  const [activeSection, setActiveSection] = useState<'BRANDING' | 'SEDES' | 'ESPECIALIDADES' | 'SEGURIDAD' | 'AGENDA' | 'DICCIONARIOS' | 'AUDITORIA'>('BRANDING');
 
   // Helper function to convert hex to RGB
   const hexToRgb = (hex: string) => {
@@ -488,6 +488,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
     { id: 'SEGURIDAD', label: '🔐 Seguridad', icon: Shield },
     { id: 'AGENDA', label: '📅 Agenda', icon: Calendar },
     { id: 'DICCIONARIOS', label: '📑 Diccionarios', icon: LayoutGrid },
+    { id: 'AUDITORIA', label: '📜 Auditoría', icon: History },
   ];
 
   const renderControl = (item: ConfiguracionDinamica) => {
@@ -827,9 +828,37 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                         </table>
                       </div>
                     </div>
-                    <div className="clini-footer-divider">
-                      <DataTable title="Registro de Auditoría" data={auditoria} columns={[{ header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px]">{new Date(a.fecha).toLocaleString()}</span> }, { header: 'Usuario', accessor: 'nombreUsuario' }, { header: 'Acción', accessor: (a: Auditoria) => <span className={cn("clini-badge clini-badge-audit", a.accion === 'INSERT' ? "clini-badge-audit-insert" : "clini-badge-audit-update")}>{a.accion}</span> }, { header: 'Tabla', accessor: 'tabla' }]} searchPlaceholder="Buscar logs..." searchFields={['nombreUsuario', 'tabla', 'accion']} />
+                  </div>
+                )}
+
+                {activeSection === 'AUDITORIA' && (
+                  <div className="clini-config-section-wrapper clini-animate-fade">
+                    <div>
+                      <h4 className="clini-title-section">Logs de Auditoría</h4>
+                      <p className="clini-form-input-info-large">Registro inmutable de todas las acciones críticas realizadas en el sistema.</p>
                     </div>
+                    <DataTable 
+                      title="" 
+                      data={auditoria} 
+                      columns={[
+                        { header: 'Fecha', accessor: (a: Auditoria) => <span className="text-[10px] font-mono">{new Date(a.fecha).toLocaleString()}</span> }, 
+                        { header: 'Usuario', accessor: 'nombreUsuario' }, 
+                        { header: 'Acción', accessor: (a: Auditoria) => (
+                          <span className={cn(
+                            "clini-badge px-2 py-0.5 rounded text-[10px] font-bold", 
+                            a.accion === 'INSERT' ? "bg-emerald-100 text-emerald-700" : 
+                            a.accion === 'UPDATE' ? "bg-amber-100 text-amber-700" : 
+                            "bg-rose-100 text-rose-700"
+                          )}>
+                            {a.accion}
+                          </span>
+                        )}, 
+                        { header: 'Módulo', accessor: 'tabla' },
+                        { header: 'ID Reg.', accessor: 'idRegistro' }
+                      ]} 
+                      searchPlaceholder="Buscar en logs (Usuario, Módulo, Acción)..." 
+                      searchFields={['nombreUsuario', 'tabla', 'accion', 'idRegistro']} 
+                    />
                   </div>
                 )}
 

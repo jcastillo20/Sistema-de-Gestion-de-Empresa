@@ -49,42 +49,156 @@ El sistema utiliza una capa de persistencia simulada. Puedes ingresar con:
 
 ---
 
-## 🔍 4. Auditoría Técnica y Roadmap Estratégico (Actualizado Vision 2.0)
+## 📘 Manual de Usuario e Informe Técnico: CliniGest Pro
 
-Se ha realizado una auditoría integral del sistema comparando la implementación actual con la **Visión 2.0 de CliniGest Pro**, que define un alcance de 9 etapas críticas para la madurez del producto.
+**Destino:** Auditoría de Implementación y Manual de Cierre de Gaps.
 
-### 📊 Cuadro de Cumplimiento de Visión
+### 0. Arquitectura Transversal (El Corazón del Sistema)
+El sistema opera bajo una arquitectura **Metadata-Driven** donde el diseño visual y la seguridad están centralizados en una "Única Fuente de Verdad" (SST).
 
-| Etapa / Requerimiento | Estado | Cumplimiento | Resumen del Análisis |
+*   **Branding Dinámico:** Los colores `primary`, `secondary` y `accent` se inyectan desde `apiService` a variables CSS (`--primary-rgb`, etc.), permitiendo cambios de marca sin recompilar.
+*   **Aislamiento de Sedes:** Implementado a nivel de servicio. Los usuarios sin el permiso `verTodo` solo reciben y visualizan datos filtrados por su propiedad `sede`.
+*   **RBAC Estricto:** Matriz de 5 perfiles controlada por el hook `usePermissions` que desaparece botones de acción del DOM si el usuario no tiene los bits `puedeCrear`, `puedeEditar` o `puedeEliminar`.
+
+---
+
+### 1. Módulo: PACIENTES
+**👶 ¿Qué es y para qué sirve?**
+Es el archivo clínico central. Aquí se registra a toda persona que recibirá terapia, gestionando su identidad y vinculación con la clínica.
+
+**🖼️ ¿Qué veo en pantalla?**
+*   **DataTable:** Lista con avatares (iniciales), nombres completos, documentos y sede.
+*   **Chips de Estado:** Indicadores visuales de estado Activo/Inactivo.
+*   **Acciones:** Botón flotante "Nuevo Paciente", filtros rápidos y buscador predictivo.
+
+**📝 Formulario de Registro**
+*   **Identidad:** Nombres, Apellidos (Paterno/Materno).
+*   **Documentación:** Tipo (DNI/CE/PAS) y número de documento.
+*   **Contacto:** Teléfono, Email y Dirección.
+*   **Clínico:** Fecha de Nacimiento (calcula edad) y Género.
+*   **Control:** Sede de origen (asignada por defecto al Admin de Sede).
+
+**⚡ Acciones y Filtros**
+*   **Botón Editar:** Permite modificar todos los campos excepto la fecha de creación.
+*   **Botón Eliminar:** Cambio de estado (Soft Delete) para preservar integridad histórica.
+*   **Filtros:** Por Sede (si tiene `verTodo`) y Estado.
+
+**🔒 Permisos y Gaps**
+*   **Accesos:** SuperAdmin (Total), Admin (Sede), Recepción (Registro/Lectura).
+*   **Gap Identificado:** Falta historial de parentesco/apoderado (esencial para pediatría).
+
+---
+
+### 2. Módulo: TERAPEUTAS
+**👶 ¿Qué es y para qué sirve?**
+Es el directorio de especialistas. Define quiénes pueden atender, en qué especialidades y en qué sede laboran.
+
+**🖼️ ¿Qué veo en pantalla?**
+*   **Tarjetas/Tabla:** Muestra especialidad principal, sede y cantidad de especialidades vinculadas.
+*   **Badge de Sede:** Identificador visual de la base de operaciones del profesional.
+
+**📝 Formulario de Registro**
+*   **Datos Personales:** Nombre completo y DNI.
+*   **Especialidades:** Selección múltiple de especialidades (Maestras definidas en Configuración).
+*   **Asignación:** Sede fija de trabajo.
+
+**🔒 Permisos y Gaps**
+*   **Accesos:** Solo Administradores pueden gestionar el staff.
+*   **Gap Identificado:** No existe "Cargo" o "Role Interno" dentro del staff (ej: Coordinador).
+
+---
+
+### 3. Módulo: USUARIOS (Acceso al Sistema)
+**👶 ¿Qué es y para qué sirve?**
+Controla quién entra al software. No son pacientes ni terapeutas, son los operadores del sistema.
+
+**🖼️ ¿Qué veo en pantalla?**
+*   **Lista de Seguridad:** Muestra nombre de usuario, perfil (RBAC) y última conexión (auditoría).
+
+**📝 Formulario de Registro**
+*   **Credenciales:** Username y Password inicial.
+*   **Perfil:** Selección de uno de los 5 roles predefinidos.
+*   **Aislamiento:** Sede a la que pertenece (limita su visión).
+
+---
+
+### 4. Módulo: CONFIGURACIÓN (7 Sub-Menús)
+Este es el "Cerebro" del sistema, estructurado en pestañas independientes:
+
+1.  **BRANDING:** Carga de Logo y colores Hexadecimales. Actualiza el SST en tiempo real.
+2.  **SEDES:** CRUD de locales físicos. Define direcciones y horarios maestros del local.
+3.  **ESPECIALIDADES:** Definición de servicios clínicos (ej: Terapia Física). Aquí se gestiona el catálogo, no en Terapeutas.
+4.  **SEGURIDAD:** Matriz de permisos. Define qué módulos ve cada perfil y qué acciones (CRUD) puede ejecutar.
+5.  **AGENDA:** Ajustes globales de tiempos. Define colores por estado de cita y duraciones por defecto.
+6.  **DICCIONARIOS:** Listas desplegables (Tipos de documento, Géneros, etc.).
+7.  **AUDITORÍA:** Log inmutable de quién hizo qué, cuándo y qué datos cambió.
+
+---
+
+### 5. Módulo: CATÁLOGO DE PAQUETES
+**👶 ¿Qué es y para qué sirve?**
+Define las "ofertas" o moldes. Son plantillas para vender bloques de citas (ej: "Paquete 12 Sesiones").
+
+**🖼️ ¿Qué veo en pantalla?**
+*   **Tabla de Plantillas:** Muestra cantidad de citas, precio sugerido y frecuencia (Semanal/Quincenal).
+
+---
+
+### 6. Módulo: CONTROL DE PAQUETES (Ventas y Proyección)
+**👶 ¿Qué es y para qué sirve?**
+Es el motor comercial. Aquí se "vende" un paquete a un paciente real.
+
+**⚙️ Lógica de Negocio (Package Engine)**
+Al asignar un paquete:
+1.  **Venta:** Se crea un contrato inmutable con el precio de ese momento.
+2.  **Proyección de Citas:** El sistema genera automáticamente `N` citas (ej: 12) basadas en la frecuencia.
+3.  **Trigger Financiero:** Se genera una cuenta por cobrar (Debt) en el módulo de Tesorería por el total.
+
+---
+
+### 7. Módulo: TESORERÍA / CAJA
+**👶 ¿Qué es y para qué sirve?**
+Controla el flujo de dinero. Gestiona lo que los pacientes deben y lo que han pagado.
+
+**📝 Funcionamiento de Abonos**
+*   **Saldo Pendiente:** Calcula `Total Ventas - Total Pagado`.
+*   **Registro de Pago:** Botón "Cobrar" permite abonos parciales o totales.
+*   **Validación:** El sistema bloquea citas si el estado de pago es "Pendiente" (Configurable).
+
+---
+
+### 8. Módulo: HORARIOS Y AGENDA
+**👶 ¿Qué es y para qué sirve?**
+Gestión de tiempos. Los terapeutas definen su disponibilidad mensual para que la agenda pueda recibir citas.
+
+**🖼️ Vista Calendario (Agenda)**
+*   **Grid de Tiempos:** Visualización por Día/Semana/Mes.
+*   **Colores dinámicos:** Los bloques cambian de color según su estado (Mañana, Tarde, Pausa, Trabajo) configurado en el SST.
+
+---
+
+## 🏗️ II. TABLA DE CUMPLIMIENTO Y GAP ANALYSIS (ROADMAP)
+
+# 🏥 CliniGest Pro — Matriz de Cumplimiento v2.1
+
+| Módulo | Alcance / Funcionalidad | % Avance | Gaps Pendientes |
 | :--- | :--- | :--- | :--- |
-| **1. Personas (Terapeutas/Pacientes)** | 🟢 Completado | 100% | CRUDs operativos con RBAC y validaciones de DNI/Email. |
-| **2. Especialidades & Paquetes** | 🟢 Completado | 95% | Catálogo maestro y venta operativos. Pendiente: Restricción de especialidades por tamaño. |
-| **3. Horarios Avanzados** | 🟢 Completado | 90% | Bloques mensuales y solapamientos validados. Pendiente: Forzado de media jornada sábados. |
-| **4. Gestión de Citas** | 🟡 En Proceso | 60% | Citas manuales con colores. Pendiente: Vínculo automático a saldo de paquetes. |
-| **5. Reprogramaciones** | 🔴 Pendiente | 0% | Falta lógica de 1 estándar / 1 excepcional con carga de archivos. |
-| **6. Paquetes (Automatización)** | 🟡 En Proceso | 50% | Registro de consumo manual. Pendiente: Motor de generación masiva de citas. |
-| **7. Gestión Financiera** | 🟡 En Proceso | 20% | Generación de deuda al vender. Pendiente: Transacciones parciales y abonos. |
-| **8. Auditoría & Trazabilidad** | 🟡 En Proceso | 40% | Registro de logs en backend (O(1)). Pendiente: Módulo de visualización historial. |
-| **9. WhatsApp (n8n)** | 🔴 Pendiente | 0% | Roadmap estratégico para integración con agente externo. |
+| **PACIENTES** | CRUD, Filtros sede, Edad auto, DNI único. | 95% | Datos de apoderado. |
+| **USUARIOS** | RBAC, Perfiles inmutables, Login. | 100% | - |
+| **TERAPEUTAS** | Especialidades múltiples, Sede fija. | 90% | Bio/Foto del especialista. |
+| **CONFIGURACIÓN** | Branding, Sedes, Seguridad, Logs. | 98% | Backup manual de base de datos. |
+| **CATÁLOGO** | Moldes comerciales, Precios, Frecuencia. | 100% | - |
+| **CONTROL PQ** | Venta, Proyección, Contrato inmutable. | 85% | Validación de disponibilidad (Colisiones). |
+| **TESORERÍA** | Ingresos, Abonos, Saldos, Deudas. | 70% | Módulo de Egresos (Gastos). |
+| **HORARIOS** | Bloques, Meses, Vista Calendario. | 90% | Reprogramación masiva. |
+| **AGENDA** | Estados, Colores dinámicos, Timeline. | 80% | Subvención de documentos de evidencia. |
 
-### 📝 Gaps Críticos e Identificación de Pendientes
-1.  **Motor de Generación de Citas (Punto 6):** El sistema permite vender paquetes, pero no "agendarlos" masivamente siguiendo la frecuencia seleccionada (Semanal/Quincenal).
-2.  **Reprogramaciones con Evidencia (Punto 5):** Requerimiento legal y administrativo para evitar fraudes; se requiere un componente de subida de archivos vinculada a la reprogramación.
-3.  **Transacciones Múltiples (Punto 7):** Actualmente una venta genera una deuda. Falta que se puedan registrar abonos parciales (ej: S/50 Yape, S/50 Efectivo) hasta completar el monto del paquete.
+---
 
-### 🗺️ Roadmap: Evolución por Etapas Priorizadas
-
-#### **Etapa 1: Consolidación Operativa (1, 2, 3, 4, 5, 6)**
-*   **Faltante:** Implementar el "Generador de Citas" en `ControlPaquetes.tsx` o `Agenda.tsx`.
-*   **Faltante:** Lógica de bloqueo de reprogramaciones extras sin motivo justificado.
-*   **Faltante:** Restricción de selección de especialidades según el tope contratado en el paquete.
-
-#### **Etapa 2: Gestión Financiera & Auditoría (7, 8)**
-*   **Faltante:** Módulo de 'Caja/Tesorería' para registro de transacciones asociadas a deudas.
-*   **Faltante:** Dashboard de Auditoría Global para SuperAdmin (Visualización de Before/After).
-
-#### **Etapa 3: Automatización & Notificaciones (9)**
-*   **Integración:** Conexión vía Webhooks a n8n para envío de recordatorios y confirmación de citas automática.
+### ⚠️ GAPS CRÍTICOS IDENTIFICADOS (Visión 2.1)
+1.  **Motor de Colisiones (Agenda):** La generación de citas de paquetes es "ciega"; genera la cita a las 09:00 sin validar si el terapeuta está libre.
+2.  **Gestión de Egresos:** El sistema solo registra ingresos (Ventas). Falta el módulo de Gastos para calcular rentabilidad real.
+3.  **Evidencia de Reprogramación:** No existe el input para subir archivo/foto al mover una cita.
 
 ---
 
