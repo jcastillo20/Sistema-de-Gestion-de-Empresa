@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
   Plus, 
@@ -8,10 +8,13 @@ import {
   ChevronUp, 
   ChevronsUpDown,
   Filter,
-  Download
+  Download,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { AlertModal } from './AlertModal';
+import { apiService } from '../../services/apiService';
 
 interface Column<T> {
   header: string;
@@ -51,10 +54,28 @@ export function DataTable<T>({
   showFilters = true
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
     key: '',
     direction: null
   });
+
+  // Cargar configuración de registros por página
+  useEffect(() => {
+    const loadPageSize = async () => {
+      try {
+        const configs = await apiService.getConfiguracion();
+        const configPageSize = configs.find(c => c.clave === 'REGISTROS_PAGINA')?.valor;
+        if (configPageSize) setPageSize(Number(configPageSize));
+      } catch (e) {
+        console.error("Error loading page size", e);
+      }
+    };
+    loadPageSize();
+    window.addEventListener('configUpdated', loadPageSize);
+    return () => window.removeEventListener('configUpdated', loadPageSize);
+  }, []);
 
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' | null = 'asc';
@@ -74,7 +95,7 @@ export function DataTable<T>({
       result = result.filter(item => {
         const valuesToSearch = searchFields 
           ? searchFields.map(f => String(item[f] || '').toLowerCase())
-          : Object.values(item).map(v => String(v || '').toLowerCase());
+          : Object.values(item as any).map(v => String(v || '').toLowerCase());
         
         return valuesToSearch.some(val => val.includes(searchTerm.toLowerCase()));
       });
@@ -95,6 +116,20 @@ export function DataTable<T>({
     return result;
   }, [data, searchTerm, sortConfig, searchFields]);
 
+  // Paginación
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedData.length / pageSize));
+  
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredAndSortedData.slice(start, start + pageSize);
+  }, [filteredAndSortedData, currentPage, pageSize]);
+
   const [itemToDelete, setItemToDelete] = useState<T | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
@@ -112,7 +147,7 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-[var(--sys-radius-3xl)] border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full animate-in fade-in duration-500">
       {/* Delete Confirmation Modal */}
       <AlertModal
         isOpen={isDeleteModalOpen}
@@ -122,20 +157,20 @@ export function DataTable<T>({
         type="warning"
         onConfirm={confirmDelete}
       />
-      <div className="p-6 border-b border-slate-50 space-y-4 sticky top-0 z-20 bg-white/95 backdrop-blur-sm">
+      <div className="p-6 border-b border-slate-50 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-            <p className="text-sm text-slate-500">Total: {data.length} registros</p>
+            <h3 className="text-lg font-black text-slate-900 tracking-tight">{title}</h3>
+            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Total: {data.length} registros</p>
           </div>
           <div className="flex items-center gap-3">
             {onAdd && (
               <button 
                 onClick={onAdd}
-                className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition-all shadow-md shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
+                className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wider hover:opacity-90 transition-all shadow-lg shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0"
               >
-                <Plus size={18} />
-                <span className="hidden sm:inline">Nuevo Registro</span>
+                <Plus size={16} strokeWidth={3} />
+                <span>Nuevo Registro</span>
               </button>
             )}
           </div>
@@ -145,22 +180,22 @@ export function DataTable<T>({
           <div className="flex flex-col sm:flex-row gap-4">
             {showSearch && (
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="text" 
                   placeholder={searchPlaceholder}
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-slate-50/50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 w-full transition-all"
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                  className="pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
                 />
               </div>
             )}
             {showFilters && (
               <div className="flex items-center gap-2">
-                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all" title="Filtrar">
+                <button className="p-2.5 rounded-2xl border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all" title="Filtrar">
                   <Filter size={18} />
                 </button>
-                <button className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all" title="Exportar">
+                <button className="p-2.5 rounded-2xl border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all" title="Exportar">
                   <Download size={18} />
                 </button>
               </div>
@@ -169,15 +204,15 @@ export function DataTable<T>({
         )}
       </div>
 
-      <div className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin">
-        <table className="w-full text-left border-collapse">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-slate-50/95 backdrop-blur-md text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-wider border-b border-slate-200 shadow-sm">
+      <div className="overflow-x-auto min-h-0 flex-1">
+        <table className="pg-table w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-slate-50/50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
               {columns.map((column, idx) => (
                 <th 
                   key={idx} 
                   className={cn(
-                    "px-4 sm:px-6 py-4 whitespace-nowrap",
+                    "px-6 py-5 whitespace-nowrap",
                     column.sortable && "cursor-pointer hover:text-primary transition-colors",
                     column.className
                   )}
@@ -198,7 +233,7 @@ export function DataTable<T>({
                 </th>
               ))}
               {(onEdit || onDelete || customActions) && (
-                <th className="px-4 sm:px-6 py-4 text-right min-w-[100px] sm:min-w-[120px] bg-slate-50/95">
+                <th className="px-6 py-5 text-right font-black uppercase tracking-widest bg-slate-50/50">
                   Acciones
                 </th>
               )}
@@ -207,28 +242,28 @@ export function DataTable<T>({
           <tbody className="divide-y divide-slate-50">
             {isLoading ? (
               <tr>
-                <td colSpan={columns.length + 1} className="px-6 py-12 text-center">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                <td colSpan={columns.length + 1} className="px-6 py-20 text-center">
+                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
                 </td>
               </tr>
-            ) : filteredAndSortedData.length > 0 ? (
-              filteredAndSortedData.map((item, rowIdx) => (
-                <tr key={rowIdx} className="hover:bg-slate-50/50 transition-colors group">
+            ) : paginatedData.length > 0 ? (
+              paginatedData.map((item, rowIdx) => (
+                <tr key={rowIdx} className="hover:bg-slate-50/30 transition-colors group">
                   {columns.map((column, colIdx) => (
-                    <td key={colIdx} className={cn("px-4 sm:px-6 py-4 text-sm text-slate-600", column.className)}>
+                    <td key={colIdx} className={cn("px-6 py-4 text-xs font-medium text-slate-600", column.className)}>
                       {typeof column.accessor === 'function' 
                         ? column.accessor(item) 
                         : (item[column.accessor] as any)}
                     </td>
                   ))}
                   {(onEdit || onDelete || customActions) && (
-                    <td className="px-4 sm:px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 sm:gap-2">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         {customActions && customActions(item)}
                         {onEdit && (
                           <button 
                             onClick={() => onEdit(item)}
-                            className="p-2 rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors active:scale-95"
+                            className="p-2 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all active:scale-90"
                             title="Editar"
                           >
                             <Edit2 size={16} />
@@ -237,7 +272,7 @@ export function DataTable<T>({
                         {onDelete && (
                           <button 
                             onClick={() => handleDeleteClick(item)}
-                            className="p-2 rounded-lg text-rose-600 bg-rose-50 hover:bg-rose-100 transition-colors active:scale-95"
+                            className="p-2 rounded-xl text-rose-500 bg-rose-50 hover:bg-rose-100 transition-all active:scale-90"
                             title="Cambiar Estado"
                           >
                             <Trash2 size={16} />
@@ -250,11 +285,15 @@ export function DataTable<T>({
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length + 1} className="px-6 py-12 text-center">
-                  <div className="flex flex-col items-center gap-3 text-slate-400">
-                    <Search size={48} strokeWidth={1} />
-                    <p className="text-lg font-medium">No se encontraron resultados</p>
-                    <p className="text-sm">Intenta con otros términos de búsqueda</p>
+                <td colSpan={columns.length + 1} className="px-6 py-20 text-center">
+                  <div className="flex flex-col items-center gap-4 text-slate-300">
+                    <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center">
+                      <Search size={40} strokeWidth={1} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-lg font-black text-slate-800 uppercase tracking-tight">Sin resultados</p>
+                      <p className="text-xs font-medium text-slate-400">Prueba ajustando tus filtros de búsqueda.</p>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -263,11 +302,52 @@ export function DataTable<T>({
         </table>
       </div>
       
-      <div className="p-4 border-t border-slate-50 bg-slate-50/30 flex items-center justify-between text-xs text-slate-500">
-        <p>Mostrando {filteredAndSortedData.length} de {data.length} registros</p>
+      <div className="p-5 border-t border-slate-50 bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Página <span className="text-primary">{currentPage}</span> de {totalPages}
+          </p>
+          <div className="flex items-center gap-1.5 p-1.5 bg-slate-50 rounded-2xl">
+            {[...Array(totalPages)].map((_, i) => {
+              const page = i + 1;
+              // Only show some pages if many
+              if (totalPages > 5 && Math.abs(page - currentPage) > 1 && page !== 1 && page !== totalPages) {
+                if (Math.abs(page - currentPage) === 2) return <span key={i} className="px-1 text-slate-300">...</span>;
+                return null;
+              }
+              return (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(page)}
+                  className={cn(
+                    "w-8 h-8 rounded-xl text-[10px] font-black transition-all",
+                    currentPage === page ? "bg-primary text-white shadow-md shadow-primary/20" : "text-slate-500 hover:bg-white"
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex items-center gap-2">
-          <button disabled className="px-3 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-50">Anterior</button>
-          <button disabled className="px-3 py-1 rounded-lg border border-slate-200 bg-white disabled:opacity-50">Siguiente</button>
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(prev => prev - 1)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-100 bg-white text-[10px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={14} strokeWidth={3} />
+            Anterior
+          </button>
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-100 bg-white text-[10px] font-black uppercase tracking-wider text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            Siguiente
+            <ChevronRight size={14} strokeWidth={3} />
+          </button>
         </div>
       </div>
     </div>

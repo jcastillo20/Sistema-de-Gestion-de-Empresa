@@ -41,6 +41,7 @@ export default function App() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [displayNameInfo, setDisplayNameInfo] = useState({ sede: '', perfil: '' });
   const [clinicLogo, setClinicLogo] = useState('');
+  const [availableModules, setAvailableModules] = useState<Record<string, boolean>>({});
 
   // Helper function to convert hex to RGB
   const hexToRgb = (hex: string) => {
@@ -50,55 +51,92 @@ export default function App() {
     return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : null;
   };
 
-  useEffect(() => {
-    const loadConfig = async () => {
-      const [configs, sedes] = await Promise.all([
-        apiService.getConfiguracion(),
-        apiService.getSedes()
-      ]);
+  const loadConfig = async () => {
+    const [configs, sedes, allPermisos] = await Promise.all([
+      apiService.getConfiguracion(),
+      apiService.getSedes(),
+      apiService.getPermisos()
+    ]);
+    
+    // ... rest of the logic ...
+    const name = configs.find(c => c.clave === 'CLINICA_NOMBRE')?.valor;
+    if (name) setClinicName(name);
+
+    const logo = configs.find(c => c.clave === 'CLINICA_LOGO')?.valor;
+    if (logo) setClinicLogo(logo);
+
+    // Aplicar colores dinámicos al entorno global
+    const primary = configs.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
+    if (primary) {
+      document.documentElement.style.setProperty('--primary-color', primary);
+      const primaryRgb = hexToRgb(primary);
+      if (primaryRgb) document.documentElement.style.setProperty('--primary-rgb', primaryRgb);
+    }
+    const secondary = configs.find(c => c.clave === 'COLOR_SECUNDARIO')?.valor;
+    if (secondary) {
+      document.documentElement.style.setProperty('--secondary-color', secondary);
+      const secondaryRgb = hexToRgb(secondary);
+      if (secondaryRgb) document.documentElement.style.setProperty('--secondary-rgb', secondaryRgb);
+    }
+    const accent = configs.find(c => c.clave === 'COLOR_ACCENT')?.valor;
+    if (accent) {
+      document.documentElement.style.setProperty('--accent-color', accent);
+      const accentRgb = hexToRgb(accent);
+      if (accentRgb) document.documentElement.style.setProperty('--accent-rgb', accentRgb);
+    }
+
+    if (user) {
+      // Refresh user permissions from the database
+      const userPerms = allPermisos
+        .filter(p => p.perfil === user.perfil)
+        .reduce((acc, p) => {
+          acc[p.modulo.toLowerCase()] = p;
+          return acc;
+        }, {} as any);
+
+      // Calculamos módulos permitidos reactivamente
+      const modules: Record<string, boolean> = {
+        'dashboard': true // Dashboard siempre visible
+      };
+
+      const menuIds = [
+        'pacientes', 'terapeutas', 'horarios', 'paquetes_catalogo', 
+        'paquetes_control', 'usuarios', 'configuracion'
+      ];
+
+      menuIds.forEach(id => {
+        const hasAccess = userPerms[id]?.acceso === true;
+        modules[id] = hasAccess;
+      });
+
+      setAvailableModules(modules);
+
+      // Si la página activa ya no es accesible, redirigir al Dashboard
+      if (activePage !== 'dashboard' && !modules[activePage]) {
+        setActivePage('dashboard');
+      }
+
+      // Lógica unificada para determinar si el usuario es global
+      const isGlobalUser = user.sede?.toUpperCase() === 'ALL' || 
+                         user.perfil?.toUpperCase() === 'SUPERADMIN' ||
+                         user.perfil?.toUpperCase() === 'ADMINISTRADOR' || 
+                         userPerms?.dashboard?.verTodo === true;
+
+      const sedeName = isGlobalUser 
+        ? 'Todas las Sedes' 
+        : sedes.find(s => s.idSede === user.sede || s.nombreSede === user.sede)?.nombreSede || user.sede;
       
-      const name = configs.find(c => c.clave === 'CLINICA_NOMBRE')?.valor;
-      if (name) setClinicName(name);
-
-      const logo = configs.find(c => c.clave === 'CLINICA_LOGO')?.valor;
-      if (logo) setClinicLogo(logo);
-
-      // Aplicar colores dinámicos al entorno global
-      const primary = configs.find(c => c.clave === 'COLOR_PRIMARIO')?.valor;
-      if (primary) {
-        document.documentElement.style.setProperty('--primary-color', primary);
-        const primaryRgb = hexToRgb(primary);
-        if (primaryRgb) document.documentElement.style.setProperty('--primary-rgb', primaryRgb);
+      const perfilName = configs.find(c => c.valor === user.perfil || c.id === user.perfil)?.etiqueta?.replace('Perfil: ', '') || user.perfil;
+      setDisplayNameInfo({ sede: sedeName, perfil: perfilName });
+      
+      // Actualizar el objeto user con los nuevos permisos si es necesario para los subcomponentes
+      if (JSON.stringify(user.permisos) !== JSON.stringify(userPerms)) {
+        setUser({ ...user, permisos: userPerms });
       }
-      const secondary = configs.find(c => c.clave === 'COLOR_SECUNDARIO')?.valor;
-      if (secondary) {
-        document.documentElement.style.setProperty('--secondary-color', secondary);
-        const secondaryRgb = hexToRgb(secondary);
-        if (secondaryRgb) document.documentElement.style.setProperty('--secondary-rgb', secondaryRgb);
-      }
-      const accent = configs.find(c => c.clave === 'COLOR_ACCENT')?.valor;
-      if (accent) {
-        document.documentElement.style.setProperty('--accent-color', accent);
-        const accentRgb = hexToRgb(accent);
-        if (accentRgb) document.documentElement.style.setProperty('--accent-rgb', accentRgb);
-      }
+    }
+  };
 
-      if (user) {
-        // Lógica unificada para determinar si el usuario es global
-        const isGlobalUser = user.sede?.toUpperCase() === 'ALL' || 
-                           user.perfil?.toUpperCase() === 'SUPERADMIN' ||
-                           user.perfil?.toUpperCase() === 'ADMINISTRADOR' || 
-                           user.permisos?.dashboard?.verTodo === true;
-
-        const sedeName = isGlobalUser 
-          ? 'Todas las Sedes' 
-          : sedes.find(s => s.idSede === user.sede || s.nombreSede === user.sede)?.nombreSede || user.sede;
-        
-        const perfilName = configs.find(c => c.valor === user.perfil || c.id === user.perfil)?.etiqueta?.replace('Perfil: ', '') || user.perfil;
-        setDisplayNameInfo({ sede: sedeName, perfil: perfilName });
-      }
-    };
-
+  useEffect(() => {
     loadConfig(); // Cargar la configuración inicial al montar el componente
 
     // Escuchar el evento 'configUpdated' para recargar la configuración
@@ -107,7 +145,7 @@ export default function App() {
     return () => {
       window.removeEventListener('configUpdated', loadConfig);
     };
-  }, [user]);
+  }, [user?.id, user?.perfil]); // Depender del perfil también para recargas correctas
 
   const handleLogout = () => {
     setUser(null);
@@ -149,7 +187,7 @@ export default function App() {
         <nav className="clini-sidebar-nav">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const hasAccess = user.permisos?.[item.id]?.acceso !== false;
+            const hasAccess = availableModules[item.id] !== false;
             if (!hasAccess) return null;
 
             return (

@@ -4,6 +4,7 @@ import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
 import { Paciente, Sede, PaqueteMaestro, PaquetePaciente } from '../types';
 import { UserPlus, Mail, Phone, User, Building2, ShieldCheck, UserCheck, Package, ShoppingCart, Plus, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '@/src/lib/utils';
@@ -27,6 +28,9 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   const [masterPackages, setMasterPackages] = useState<PaqueteMaestro[]>([]);
   const [isAssigning, setIsAssigning] = useState(false);
   const [showAllPackages, setShowAllPackages] = useState(false);
+  const [isConfirmAssignOpen, setIsConfirmAssignOpen] = useState(false);
+  const [packageToAssign, setPackageToAssign] = useState<string | null>(null);
+  const [packageNameToAssign, setPackageNameToAssign] = useState<string>('');
 
   const permissions = usePermissions(currentUser, 'pacientes');
 
@@ -81,24 +85,32 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     setIsPackModalOpen(true);
   };
 
-  const handleAssignPackage = async (idMaestro: string) => {
-    if (!selectedPaciente) return;
+  const handleAssignPackageClick = (idMaestro: string, nombreMaestro: string) => {
+    setPackageToAssign(idMaestro);
+    setPackageNameToAssign(nombreMaestro);
+    setIsConfirmAssignOpen(true);
+  };
+
+  const handleConfirmAssign = async () => {
+    if (!selectedPaciente || !packageToAssign) return;
+    setIsConfirmAssignOpen(false);
     setIsAssigning(true);
     try {
       await apiService.asignarPaqueteAPaciente(
         selectedPaciente.id,
-        idMaestro,
+        packageToAssign,
         selectedPaciente.sede || currentUser.sede,
         currentUser.nombreUsuario
       );
       await loadPatientPackages(selectedPaciente.id);
-      setAlertConfig({ title: 'Paquete Asignado', message: 'El paquete se ha vinculado al paciente y se ha generado el cargo financiero.', type: 'success' });
+      setAlertConfig({ title: 'Paquete Asignado', message: `El paquete "${packageNameToAssign}" se ha vinculado al paciente y se ha generado el cargo financiero.`, type: 'success' });
       setIsAlertOpen(true);
     } catch (error: any) {
       setAlertConfig({ title: 'Error', message: error.message || 'No se pudo asignar el paquete.', type: 'error' });
       setIsAlertOpen(true);
     } finally {
       setIsAssigning(false);
+      setPackageToAssign(null);
     }
   };
 
@@ -295,33 +307,83 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         size="lg"
       >
         <div className="space-y-8 py-4">
-          {/* Listado de Paquetes Contratados */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">
                 <ShoppingCart size={18} className="text-primary" />
                 Suscripciones y Contratos
               </h4>
-              <span className="text-xs font-bold text-slate-400">{patientPackages.length} Encontrados</span>
+              {patientPackages.length > 0 && (
+                <button
+                  onClick={() => setShowAllPackages(!showAllPackages)}
+                  className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline transition-all"
+                >
+                  {showAllPackages ? 'Ver Cards Recientes' : 'Ver Historial Completo'}
+                </button>
+              )}
             </div>
 
             {patientPackages.length > 0 ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(showAllPackages ? (patientPackages as PaquetePaciente[]) : (patientPackages.slice(0, 4) as PaquetePaciente[])).map((pack: PaquetePaciente) => (
+              showAllPackages ? (
+                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <DataTable 
+                    title="Historial Completo"
+                    data={patientPackages}
+                    showSearch={false}
+                    showFilters={false}
+                    columns={[
+                      { 
+                        header: 'Fecha', 
+                        accessor: (p: PaquetePaciente) => <span className="font-medium text-slate-500">{new Date(p.fechaContrato).toLocaleDateString()}</span>,
+                        sortable: true,
+                        sortKey: 'fechaContrato'
+                      },
+                      { 
+                        header: 'Paquete', 
+                        accessor: 'nombre' as any,
+                        className: 'font-bold text-slate-700',
+                        sortable: true
+                      },
+                      { 
+                        header: 'Estado', 
+                        accessor: (p: PaquetePaciente) => (
+                          <div className="flex justify-center">
+                            <span className={cn(
+                              "px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-tighter",
+                              p.estado === 'ACTIVO' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
+                            )}>
+                              {p.estado}
+                            </span>
+                          </div>
+                        ),
+                        sortable: true,
+                        sortKey: 'estado'
+                      },
+                      { 
+                        header: 'Progreso', 
+                        accessor: (p: PaquetePaciente) => (
+                          <div className="flex items-center gap-3">
+                            <span className="font-black text-primary min-w-[35px] text-right">{Math.round((p.citasConsumidas / p.cantCitas) * 100)}%</span>
+                            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(p.citasConsumidas / p.cantCitas) * 100}%` }}
+                                className="h-full bg-primary" 
+                              />
+                            </div>
+                          </div>
+                        )
+                      }
+                    ]}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {patientPackages.slice(0, 4).map((pack: PaquetePaciente) => (
                     <PackageCard key={pack.id} pack={pack} />
                   ))}
                 </div>
-
-                {patientPackages.length > 4 && (
-                  <button
-                    onClick={() => setShowAllPackages(!showAllPackages)}
-                    className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-500 font-bold text-xs uppercase tracking-widest rounded-2xl border border-slate-200 transition-all active:scale-[0.99]"
-                  >
-                    {showAllPackages ? 'Ver menos' : `Ver historial completo (${patientPackages.length - 4} más)`}
-                  </button>
-                )}
-              </div>
+              )
             ) : (
               <div className="p-12 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
                 <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4 text-slate-400">
@@ -345,7 +407,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
                 <button
                   key={master.id}
                   disabled={isAssigning}
-                  onClick={() => handleAssignPackage(master.id)}
+                  onClick={() => handleAssignPackageClick(master.id, master.nombre)}
                   className="p-4 rounded-3xl border border-slate-200 text-left hover:border-primary hover:shadow-lg hover:shadow-primary/5 transition-all group relative overflow-hidden"
                 >
                   <div className="flex flex-col gap-1">
@@ -493,6 +555,15 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type as any}
+      />
+
+      <AlertModal
+        isOpen={isConfirmAssignOpen}
+        onClose={() => setIsConfirmAssignOpen(false)}
+        title="Confirmación de Asignación"
+        message={`¿Deseas asignar el paquete "${packageNameToAssign}" al paciente "${selectedPaciente?.nombres}"? Esta acción generará un cobro pendiente automáticamente.`}
+        type="warning"
+        onConfirm={handleConfirmAssign}
       />
     </div>
   );

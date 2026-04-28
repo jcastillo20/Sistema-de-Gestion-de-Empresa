@@ -13,7 +13,7 @@ export default function PackageCard({ pack, className }: PackageCardProps) {
   const progress = (pack.citasConsumidas / pack.cantCitas) * 100;
   
   return (
-    <div className={cn("pg-card overflow-hidden group border border-slate-100 flex flex-col h-full hover:shadow-lg hover:shadow-primary/5 transition-all duration-300", className)}>
+    <div className={cn("pg-card overflow-hidden group border border-slate-100 flex flex-col h-full hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 rounded-[var(--sys-radius-3xl)]", className)}>
       <div className="p-5 flex flex-col gap-4 flex-1">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">

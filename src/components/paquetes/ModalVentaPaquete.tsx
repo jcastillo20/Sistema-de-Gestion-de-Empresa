@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Search, User, Package, Plus, Info, Check, X } from 'lucide-react';
 import { Modal } from '../common/Modal';
+import { AlertModal } from '../common/AlertModal';
 import { apiService } from '../../services/apiService';
 import { Paciente, PaqueteMaestro } from '../../types';
 import { cn } from '../../lib/utils';
@@ -24,6 +25,9 @@ export default function ModalVentaPaquete({ isOpen, onClose, currentUser, onSucc
   const [showPatientList, setShowPatientList] = useState(false);
 
   const [selectedMaestro, setSelectedMaestro] = useState<PaqueteMaestro | null>(null);
+  const [packageNameToAssign, setPackageNameToAssign] = useState<string>('');
+
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -55,8 +59,14 @@ export default function ModalVentaPaquete({ isOpen, onClose, currentUser, onSucc
     p.documentoIdentidad.includes(patientSearch)
   );
 
-  const handleConfirm = async () => {
+  const handleConfirmClick = () => {
     if (!selectedPatient || !selectedMaestro) return;
+    setIsConfirmOpen(true);
+  };
+
+  const handleExecuteAssign = async () => {
+    if (!selectedPatient || !selectedMaestro) return;
+    setIsConfirmOpen(false);
     setIsProcessing(true);
     try {
       await apiService.asignarPaqueteAPaciente(
@@ -239,7 +249,7 @@ export default function ModalVentaPaquete({ isOpen, onClose, currentUser, onSucc
           </button>
           <button
             disabled={!selectedPatient || !selectedMaestro || isProcessing}
-            onClick={handleConfirm}
+            onClick={handleConfirmClick}
             className="flex-2 py-4 px-6 rounded-[var(--sys-radius-3xl)] bg-primary text-white font-black uppercase text-xs tracking-widest hover:opacity-90 shadow-xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isProcessing ? (
@@ -253,6 +263,15 @@ export default function ModalVentaPaquete({ isOpen, onClose, currentUser, onSucc
           </button>
         </div>
       </div>
+
+      <AlertModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        title="Confirmación de Venta"
+        message={`¿Deseas asignar el paquete "${selectedMaestro?.nombre}" al paciente "${selectedPatient?.nombres}"? Esta acción generará un cobro pendiente automáticamente.`}
+        type="warning"
+        onConfirm={handleExecuteAssign}
+      />
     </Modal>
   );
 }

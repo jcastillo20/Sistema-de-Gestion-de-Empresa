@@ -158,6 +158,7 @@ export const MOCK_CONFIG_DINAMICA: ConfiguracionDinamica[] = [
   { id: 'CONF-03', clave: 'COLOR_SECUNDARIO', valor: '#10b981', etiqueta: 'Color Secundario', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 3 },
   { id: 'CONF-04', clave: 'COLOR_ACCENT', valor: '#f59e0b', etiqueta: 'Color Accent (Destacados)', categoria: 'BRANDING', tipoControl: 'COLOR', orden: 4 },
   { id: 'CONF-05', clave: 'CLINICA_LOGO', valor: '', etiqueta: 'Logo Corporativo', categoria: 'BRANDING', tipoControl: 'IMAGE', orden: 5 },
+  { id: 'CONF-12', clave: 'REGISTROS_PAGINA', valor: 10, etiqueta: 'Registros por Página (Tablas)', categoria: 'BRANDING', tipoControl: 'NUMBER', orden: 6 },
 
   // --- CATEGORIA: SEGURIDAD (PWD + PERFILES + MODULOS) ---
   { id: 'CONF-06', clave: 'PWD_MIN_LENGTH', valor: 8, etiqueta: 'Longitud Mínima de Contraseña', categoria: 'SEGURIDAD', tipoControl: 'NUMBER', orden: 1 },

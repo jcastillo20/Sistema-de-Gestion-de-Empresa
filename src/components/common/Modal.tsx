@@ -36,7 +36,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className={cn(
-              "relative w-full bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col",
+              "relative w-full bg-white rounded-[var(--sys-radius-3xl)] shadow-2xl overflow-hidden flex flex-col",
               sizeClasses[size]
             )}
           >

@@ -42,7 +42,7 @@ export function AlertModal({ isOpen, onClose, title, message, type = 'error', on
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden p-8 text-center"
+            className="relative w-full max-w-sm bg-white rounded-[var(--sys-radius-3xl)] shadow-2xl overflow-hidden p-8 text-center"
           >
             <div className={cn("mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 border", colors[type])}>
               <Icon size={32} />
