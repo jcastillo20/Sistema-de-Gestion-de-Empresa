@@ -1220,8 +1220,8 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                   const dayBloques = blocksToUse.filter(b => {
                                     if (!b.diasSemana.includes(dayName)) return false;
                                     
-                                    const [bStartH, bStartM] = b.horaInicio.split(':').map(Number);
-                                    const [bEndH, bEndM] = b.horaFin.split(':').map(Number);
+                                    const [bStartH, bStartM] = (b.horaInicio || "00:00").split(':').map(Number);
+                                    const [bEndH, bEndM] = (b.horaFin || "00:00").split(':').map(Number);
                                     const bStartTotal = bStartH * 60 + bStartM;
                                     const bEndTotal = bEndH * 60 + bEndM;
                                     const slotTotal = hour * 60 + minute;
@@ -1236,8 +1236,8 @@ export default function Terapeutas({ currentUser }: TerapeutasProps) {
                                   let isWithinCenterHours = false;
                                   if (isSedeOpen && sedeDayConfig) {
                                     const slotTotal = hour * 60 + minute;
-                                    const [hStart, mStart] = sedeDayConfig.horaInicio.split(':').map(Number);
-                                    const [hEnd, mEnd] = sedeDayConfig.horaFin.split(':').map(Number);
+                                    const [hStart, mStart] = (sedeDayConfig.horaInicio || "00:00").split(':').map(Number);
+                                    const [hEnd, mEnd] = (sedeDayConfig.horaFin || "00:00").split(':').map(Number);
                                     const centerStart = hStart * 60 + mStart;
                                     const centerEnd = hEnd * 60 + mEnd;
                                     isWithinCenterHours = slotTotal >= centerStart && slotTotal < centerEnd;

@@ -557,7 +557,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                                 }}
                               >
                                 <span className="text-[7px] font-black text-white uppercase leading-none truncate">
-                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta.split(' ')[0]}
+                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta?.split(' ')[0]}
                                 </span>
                               </div>
                             ))}

@@ -45,7 +45,7 @@ export default function Dashboard() {
       <div className="clini-page-header mb-8">
         <div>
           <h2 className="clini-title-main font-black">
-            Hola, {user.nombres.split(' ')[0]} 👋
+            Hola, {user.nombres?.split(' ')[0] || 'Usuario'} 👋
           </h2>
           <p className="clini-subtitle">
             {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} • {displayNameInfo.sede}

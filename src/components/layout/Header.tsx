@@ -65,7 +65,7 @@ export default function Header({ isSidebarCollapsed, setIsSidebarCollapsed }: He
             >
               <LayoutDashboard size={14} />
               <span className="text-[10px] font-black uppercase tracking-widest">
-                Modo: {viewOptions.find(o => o.id === viewMode)?.label.split(' ')[1] || viewMode}
+                Modo: {viewOptions.find(o => o.id === viewMode)?.label?.split(' ')?.at(1) || viewMode}
               </span>
               <ChevronDown size={12} className={cn("transition-transform", isViewSelectorOpen && "rotate-180")} />
             </button>

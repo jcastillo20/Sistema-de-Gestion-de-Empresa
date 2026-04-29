@@ -122,13 +122,15 @@ export interface Pago {
 
 export interface Transaccion {
   idTransaccion: string;
-  idPago: string;
+  idPago: string; // Puede ser vacío para EGRESOS
+  idPaciente?: string;
   monto: number;
   fecha: string;
   medio: 'EFECTIVO' | 'TRANSFERENCIA' | 'TARJETA' | 'YAPE' | 'PLIN';
   estado: string;
   comprobante?: string;
   tipoTransaccion: 'INGRESO' | 'EGRESO';
+  concepto?: string;
   observaciones?: string;
   idSede: string;
   fechaCreacion: string;

@@ -134,7 +134,7 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
         header: 'Paciente / Contrato', 
         accessor: (v: PaquetePaciente) => {
           const initials = v.pacienteNombre 
-            ? v.pacienteNombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+            ? (v.pacienteNombre || 'P').split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
             : v.idPaciente.substring(0, 2).toUpperCase();
 
           return (

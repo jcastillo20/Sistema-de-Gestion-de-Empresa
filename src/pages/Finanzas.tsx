@@ -19,6 +19,7 @@ import { apiService } from '../services/apiService';
 import { Pago, Transaccion, Paciente } from '../types';
 import { cn } from '../lib/utils';
 import ModalAbono from '../components/finanzas/ModalAbono';
+import ModalGasto from '../components/finanzas/ModalGasto';
 
 interface FinanzasProps {
   currentUser: any;
@@ -31,6 +32,7 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
+  const [isGastoModalOpen, setIsGastoModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
   const loadData = async () => {
@@ -170,6 +172,13 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
         </div>
         <div className="flex items-center gap-4 z-10">
           <button 
+            onClick={() => setIsGastoModalOpen(true)}
+            className="btn-primary bg-rose-500 hover:bg-rose-600 shadow-rose-200 flex items-center gap-2"
+          >
+            <ArrowDownLeft size={20} />
+            Registrar Egreso
+          </button>
+          <button 
             onClick={loadData}
             className="p-3 rounded-2xl border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all hover:rotate-180 duration-500"
             title="Sincronizar Datos"
@@ -262,6 +271,13 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
           saldoPendiente={selectedPago.monto - transacciones.filter(t => t.idPago === selectedPago.idPago).reduce((s, t) => s + t.monto, 0)}
         />
       )}
+
+      <ModalGasto 
+        isOpen={isGastoModalOpen}
+        onClose={() => setIsGastoModalOpen(false)}
+        onSuccess={loadData}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

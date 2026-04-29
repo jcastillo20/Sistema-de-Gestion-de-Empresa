@@ -614,13 +614,123 @@ class ApiService {
    * 
    * @throws Error si el paquete o el paciente no existen.
    */
-  async asignarPaqueteAPaciente(idPaciente: string, idMaestro: string, sede: string, currentUser: string) {
+  /**
+   * Valida si un terapeuta tiene disponibilidad en una fecha y hora específica.
+   * Ahora incluye validación de horario laboral del terapeuta.
+   */
+  async validarDisponibilidad(idTerapeuta: string, fecha: string, horaInicio: string, horaFin?: string) {
+    if (!idTerapeuta) return { libre: true };
+
+    const terapeuta = this.terapeutas.find(t => t.id === idTerapeuta);
+    if (!terapeuta) return { libre: false, motivo: 'Terapeuta no encontrado' };
+
+    // 1. Verificar Horario Laboral en this.horarios
+    const fechaObj = new Date(fecha + 'T12:00:00');
+    const diaNombre = fechaObj.toLocaleDateString('es-ES', { weekday: 'long' });
+    const diaCapitalizado = diaNombre.charAt(0).toUpperCase() + diaNombre.slice(1);
+
+    // Buscar horario del terapeuta para este mes/año (o cualquier horario activo)
+    const horario = this.horarios.find(h => h.idTerapeuta === idTerapeuta && h.estado);
+    
+    if (horario) {
+      const bloque = horario.bloques.find(b => 
+        b.diasSemana.includes(diaCapitalizado) && b.tipo === 'TRABAJO'
+      );
+
+      if (!bloque) {
+        return { libre: false, motivo: `El terapeuta no labora los días ${diaCapitalizado}` };
+      }
+
+      const [hReq, mReq] = horaInicio.split(':').map(Number);
+      const [hIni, mIni] = bloque.horaInicio.split(':').map(Number);
+      const [hFin, mFin] = bloque.horaFin.split(':').map(Number);
+
+      const minReq = hReq * 60 + mReq;
+      const minIni = hIni * 60 + mIni;
+      const minFin = hFin * 60 + mFin;
+
+      if (minReq < minIni || minReq >= minFin) {
+        return { libre: false, motivo: `Fuera de horario laboral (${bloque.horaInicio} - ${bloque.horaFin})` };
+      }
+    }
+
+    // 2. Verificar Colisión con otras citas
+    const citaExistente = this.citas.find(c => 
+      c.idTerapeuta === idTerapeuta && 
+      c.fecha === fecha && 
+      c.horaInicio === horaInicio && 
+      c.estadoCita !== 'CANCELADA'
+    );
+
+    if (citaExistente) {
+      return { libre: false, motivo: `Cita ya programada con ${citaExistente.nombrePaciente}` };
+    }
+
+    return { libre: true };
+  }
+
+  /**
+   * Realiza un pre-chequeo de todas las citas que se generarían con un paquete.
+   */
+  async checkPackageCollisions(idTerapeuta: string, idMaestro: string, fechaBase: string, horaInicio: string) {
+    const maestro = this.paquetesMaestros.find(m => m.id === idMaestro);
+    if (!maestro) throw new Error("Paquete no encontrado");
+
+    const proyecciones = [];
+    const baseDate = new Date(fechaBase + 'T00:00:00');
+
+    for (let i = 0; i < maestro.cantCitas; i++) {
+        const fechaCita = new Date(baseDate);
+        if (maestro.frecuencia === 'SEMANAL') {
+            fechaCita.setDate(baseDate.getDate() + (i * 7));
+        } else if (maestro.frecuencia === 'QUINCENAL') {
+            fechaCita.setDate(baseDate.getDate() + (i * 14));
+        } else if (maestro.frecuencia === 'MENSUAL') {
+            fechaCita.setMonth(baseDate.getMonth() + i);
+        }
+
+        const dateStr = fechaCita.toISOString().split('T')[0];
+        const validation = await this.validarDisponibilidad(idTerapeuta, dateStr, horaInicio);
+        
+        proyecciones.push({
+            indice: i + 1,
+            fecha: dateStr,
+            hora: horaInicio,
+            disponible: validation.libre,
+            motivo: validation.motivo
+        });
+    }
+
+    return proyecciones;
+  }
+
+  /**
+   * CORE FLOW: ASIGNACIÓN DE PAQUETE A PACIENTE
+   * 
+   * @throws Error si hay colisiones críticas o falta de datos.
+   */
+  async asignarPaqueteAPaciente(idPaciente: string, idMaestro: string, sede: string, currentUser: string, idTerapeuta?: string, horaInicio?: string, customProyecciones?: any[]) {
     await this.delay();
     const maestro = this.paquetesMaestros.find(m => m.id === idMaestro);
     if (!maestro) throw new Error("Paquete maestro no encontrado");
 
     const paciente = this.pacientes.find(p => p.id === idPaciente);
     if (!paciente) throw new Error("Paciente no encontrado");
+
+    const terapeuta = idTerapeuta ? this.terapeutas.find(t => t.id === idTerapeuta) : null;
+
+    // Verificar colisión inicial si se provee terapeuta y hora
+    if (idTerapeuta && horaInicio) {
+        const fechaHoy = new Date().toISOString().split('T')[0];
+        const isLibre = await this.validarDisponibilidad(idTerapeuta, fechaHoy, horaInicio);
+        // Nota: Solo validamos la primera, pero el motor debería ser proactivo.
+    }
+
+    // BLOQUEO: No permitir asignación si hay colisiones en los datos finales
+    const finalProyecciones = customProyecciones || [];
+    if (finalProyecciones.length > 0 && finalProyecciones.some(p => !p.disponible)) {
+        throw new Error("No se puede asignar el paquete: Existen colisiones de horario que deben resolverse.");
+    }
 
     const newPaquetePaciente: PaquetePaciente = {
       id: `PP-${Math.random().toString(36).substr(2, 9)}`,
@@ -643,39 +753,79 @@ class ApiService {
     this.addAudit('PAQUETES_PACIENTES', newPaquetePaciente.id, 'INSERT', currentUser, null, newPaquetePaciente);
 
     // --- MOTOR DE GENERACIÓN DE CITAS ---
-    // Proyectar citas automáticamente basadas en la frecuencia del paquete
     const citasGeneradas: any[] = [];
-    const fechaBase = new Date();
     
-    for(let i = 0; i < maestro.cantCitas; i++) {
-        const fechaCita = new Date(fechaBase);
-        if (maestro.frecuencia === 'SEMANAL') {
-            fechaCita.setDate(fechaBase.getDate() + (i * 7) + 1); // +1 para no empezar hoy mismo
-        } else if (maestro.frecuencia === 'QUINCENAL') {
-            fechaCita.setDate(fechaBase.getDate() + (i * 14) + 1);
-        } else if (maestro.frecuencia === 'MENSUAL') {
-            fechaCita.setMonth(fechaBase.getMonth() + i + 1);
-        }
+    if (finalProyecciones.length > 0) {
+        // Usar proyecciones validadas
+        finalProyecciones.forEach((p, i) => {
+            const newCita = {
+                id: `CT-${Math.random().toString(36).substr(2, 9)}`,
+                idPaciente,
+                nombrePaciente: `${paciente.nombres} ${paciente.apellidoPaterno}`,
+                idTerapeuta: idTerapeuta || '',
+                nombreTerapeuta: terapeuta ? `${terapeuta.nombres} ${terapeuta.apellidoPaterno}` : 'Sin Asignar',
+                idPaquete: newPaquetePaciente.id,
+                fecha: p.fecha,
+                horaInicio: p.hora,
+                horaFin: '09:45',
+                sede,
+                estadoCita: 'PENDIENTE',
+                estadoPago: 'PENDIENTE',
+                montoPagado: 0,
+                notas: '',
+                usuarioCreacion: currentUser,
+                fechaCreacion: new Date().toISOString()
+            };
+            citasGeneradas.push(newCita);
+            this.citas.push(newCita);
+        });
+    } else {
+        // Fallback lógica antigua pero con chequeo estricto
+        const fechaBase = new Date();
+        for(let i = 0; i < maestro.cantCitas; i++) {
+            const fechaCita = new Date(fechaBase);
+            if (maestro.frecuencia === 'SEMANAL') {
+                fechaCita.setDate(fechaBase.getDate() + (i * 7) + 1);
+            } else if (maestro.frecuencia === 'QUINCENAL') {
+                fechaCita.setDate(fechaBase.getDate() + (i * 14) + 1);
+            } else if (maestro.frecuencia === 'MENSUAL') {
+                fechaCita.setMonth(fechaBase.getMonth() + i + 1);
+            }
 
-        const newCita = {
-            id: `CT-${Math.random().toString(36).substr(2, 9)}`,
-            idPaciente,
-            nombrePaciente: `${paciente.nombres} ${paciente.apellidoPaterno}`,
-            idPaquete: newPaquetePaciente.id,
-            fecha: fechaCita.toISOString().split('T')[0],
-            horaInicio: '09:00', // Default propuesto
-            horaFin: '09:45',
-            sede,
-            estadoCita: 'PENDIENTE',
-            estadoPago: 'PENDIENTE',
-            montoPagado: 0,
-            usuarioCreacion: currentUser,
-            fechaCreacion: new Date().toISOString()
-        };
-        citasGeneradas.push(newCita);
-        this.citas.push(newCita);
+            const dateStr = fechaCita.toISOString().split('T')[0];
+            const hora = horaInicio || '09:00';
+
+            const validation = idTerapeuta ? await this.validarDisponibilidad(idTerapeuta, dateStr, hora) : { libre: true };
+            if (!validation.libre) {
+                throw new Error(`Colisión en sesión ${i+1} (${dateStr}): ${validation.motivo}`);
+            }
+
+            const newCita = {
+                id: `CT-${Math.random().toString(36).substr(2, 9)}`,
+                idPaciente,
+                nombrePaciente: `${paciente.nombres} ${paciente.apellidoPaterno}`,
+                idTerapeuta: idTerapeuta || '',
+                nombreTerapeuta: terapeuta ? `${terapeuta.nombres} ${terapeuta.apellidoPaterno}` : 'Sin Asignar',
+                idPaquete: newPaquetePaciente.id,
+                fecha: dateStr,
+                horaInicio: hora,
+                horaFin: '09:45',
+                sede,
+                estadoCita: 'PENDIENTE',
+                estadoPago: 'PENDIENTE',
+                montoPagado: 0,
+                notas: '',
+                usuarioCreacion: currentUser,
+                fechaCreacion: new Date().toISOString()
+            };
+            citasGeneradas.push(newCita);
+            this.citas.push(newCita);
+        }
     }
-    this.addAudit('CITAS', newPaquetePaciente.id, 'BULK_INSERT', currentUser, null, { count: citasGeneradas.length });
+    
+    this.addAudit('CITAS', newPaquetePaciente.id, 'BULK_INSERT', currentUser, null, { 
+      count: citasGeneradas.length
+    });
 
     // TRIGGER FINANCIERO: Crear pago automático
     const newPago: Pago = {
@@ -696,6 +846,30 @@ class ApiService {
 
     this.saveToStorage();
     return newPaquetePaciente;
+  }
+
+  async registrarGasto(monto: number, concepto: string, idSede: string, medio: Transaccion['medio'], currentUser: string, comprobante?: string) {
+    await this.delay();
+    
+    const newTransaccion: Transaccion = {
+      idTransaccion: `EXP-${Math.random().toString(36).substr(2, 9)}`,
+      idPago: '', 
+      monto: monto,
+      fecha: new Date().toISOString(),
+      medio,
+      comprobante: comprobante || 'S/N',
+      tipoTransaccion: 'EGRESO',
+      estado: 'COMPLETADO',
+      idSede,
+      concepto,
+      fechaCreacion: new Date().toISOString(),
+      usuarioCreacion: currentUser
+    };
+
+    this.transacciones.push(newTransaccion);
+    this.addAudit('TRANSACCIONES', newTransaccion.idTransaccion, 'INSERT', currentUser, null, newTransaccion);
+    this.saveToStorage();
+    return newTransaccion;
   }
 
   // --- PAGOS ---

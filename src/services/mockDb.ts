@@ -343,6 +343,16 @@ export const MOCK_PERMISOS: Permiso[] = [
   },
   {
     perfil: 'ADMINISTRADOR',
+    modulo: 'AGENDA',
+    acceso: true,
+    verTodo: true,
+    puedeCrear: true,
+    puedeEditar: true,
+    puedeEliminar: true,
+    filtrarPersonas: false
+  },
+  {
+    perfil: 'ADMINISTRADOR',
     modulo: 'FINANZAS',
     acceso: true,
     verTodo: true,

@@ -614,7 +614,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                   className={cn("clini-config-nav-item", activeSection === section.id ? "clini-config-nav-item-active" : "clini-config-nav-item-inactive")}
                 >
                   <Icon size={18} />
-                  {section.label.split(' ').slice(1).join(' ')}
+                  {section.label?.split(' ')?.slice(1).join(' ') || section.label}
                 </button>
               );
             })}
@@ -868,7 +868,7 @@ export default function Configuracion({ currentUser }: ConfiguracionProps) {
                     {/* Sidebar de Grupos de Diccionarios */}
                     <div className="clini-dict-sidebar-container">
                       <p className="clini-dict-sidebar-title">Maestros del Sistema</p>
-                      {Array.from(new Set(config.filter(c => c.categoria === 'DICCIONARIOS').map(c => c.id.split('-')[0]))).sort().map(prefix => {
+                      {Array.from(new Set(config.filter(c => c.categoria === 'DICCIONARIOS').map(c => c.id?.split('-')[0] || 'MISC'))).sort().map(prefix => {
                         const groupTitle = {
                           'DOC': 'Tipos de Documento',
                           'PAY': 'Medios de Pago',

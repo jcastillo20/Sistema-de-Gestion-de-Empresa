@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/src/lib/utils';
+import { cn } from '../../lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -13,6 +14,20 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }: ModalProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const sizeClasses = {
     sm: 'max-w-md',
     md: 'max-w-2xl',
@@ -20,10 +35,10 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
     xl: 'max-w-6xl',
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -42,7 +57,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
           >
             {/* Header */}
             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{title}</h3>
               <button 
                 onClick={onClose}
                 className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all"
@@ -52,7 +67,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
             </div>
 
             {/* Content */}
-            <div className="px-8 py-6 overflow-y-auto max-h-[70vh]">
+            <div className="px-8 py-6 overflow-y-auto max-h-[80vh]">
               {children}
             </div>
 
@@ -67,4 +82,8 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
       )}
     </AnimatePresence>
   );
+
+  if (!mounted) return null;
+
+  return createPortal(modalContent, document.body);
 }

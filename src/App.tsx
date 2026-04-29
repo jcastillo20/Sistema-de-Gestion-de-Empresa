@@ -13,6 +13,7 @@ import Configuracion from './pages/Configuracion';
 import CatalogoPaquetes from './pages/paquetes/CatalogoPaquetes';
 import ControlPaquetes from './pages/paquetes/ControlPaquetes';
 import Finanzas from './pages/Finanzas';
+import Agenda from './pages/Agenda';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useAuth } from './context/AuthContext';
@@ -117,6 +118,7 @@ export default function App() {
           {activePage === 'horarios' && <Horarios currentUser={user} />}
           {activePage === 'paquetes_catalogo' && <CatalogoPaquetes currentUser={user} />}
           {activePage === 'paquetes_control' && <ControlPaquetes currentUser={user} />}
+          {activePage === 'agenda' && <Agenda currentUser={user} />}
           {activePage === 'finanzas' && <Finanzas currentUser={user} />}
           {activePage === 'usuarios' && <Usuarios currentUser={user} />}
           {activePage === 'configuracion' && <Configuracion currentUser={user} />}
