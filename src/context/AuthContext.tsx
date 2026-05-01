@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const menuIds = [
         'pacientes', 'terapeutas', 'horarios', 'paquetes_catalogo', 
-        'paquetes_control', 'finanzas', 'usuarios', 'configuracion'
+        'paquetes_control', 'finanzas', 'usuarios', 'configuracion', 'auditoria'
       ];
 
       menuIds.forEach(id => {

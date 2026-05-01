@@ -11,6 +11,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  X,
   AlertCircle,
   LayoutGrid,
   MoreVertical,
@@ -18,10 +19,14 @@ import {
   Trash2,
   ExternalLink,
   MapPin,
-  Stethoscope
+  Stethoscope,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { apiService } from '../services/apiService';
+import { exportService } from '../services/exportService';
+import { ExportButton } from '../components/common/ExportButton';
+import { getExportContext } from '../utils/exportUtils';
 import { Cita, Paciente, Terapeuta, Sede, Especialidad } from '../types';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
@@ -49,7 +54,7 @@ export default function Agenda({ currentUser }: AgendaProps) {
   // Filters
   const [filters, setFilters] = useState({
     search: '',
-    sede: currentUser?.sede || 'ALL',
+    sede: 'ALL',
     terapeuta: 'ALL',
     estado: 'ALL'
   });
@@ -81,6 +86,51 @@ export default function Agenda({ currentUser }: AgendaProps) {
     }
   };
 
+  const handleExportExcel = async (filteredData?: any[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || filteredCitas;
+    const dataToExport = sourceData.map(c => {
+      const row: any = {
+        'Fecha': c.fecha,
+        'Horario': `${c.horaInicio} - ${c.horaFin}`,
+        'Paciente': c.nombrePaciente,
+        'Terapeuta': c.nombreTerapeuta,
+        'Estado': c.estadoCita
+      };
+      if (permissions.verTodo) row['Sede'] = c.sede;
+      return row;
+    });
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Agenda de Consultas',
+      fileName: 'Listado_Agenda',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: any[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || filteredCitas;
+    const dataToExport = sourceData.map(c => {
+      const row: any = {
+        'Fecha': c.fecha,
+        'Horario': `${c.horaInicio} - ${c.horaFin}`,
+        'Paciente': c.nombrePaciente,
+        'Estado': c.estadoCita
+      };
+      if (permissions.verTodo) row['Sede'] = c.sede;
+      return row;
+    });
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Agenda de Consultas',
+      fileName: 'Listado_Agenda',
+      branding: branding as any,
+      context
+    });
+  };
+
   useEffect(() => {
     loadData();
   }, [currentUser]);
@@ -88,8 +138,8 @@ export default function Agenda({ currentUser }: AgendaProps) {
   const filteredCitas = useMemo(() => {
     return citas.filter(c => {
       const matchSearch = filters.search === '' || 
-        c.nombrePaciente.toLowerCase().includes(filters.search.toLowerCase()) ||
-        c.nombreTerapeuta.toLowerCase().includes(filters.search.toLowerCase());
+        (c.nombrePaciente || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (c.nombreTerapeuta || '').toLowerCase().includes(filters.search.toLowerCase());
       const matchSede = filters.sede === 'ALL' || c.sede === filters.sede;
       const matchTerapeuta = filters.terapeuta === 'ALL' || c.idTerapeuta === filters.terapeuta;
       const matchEstado = filters.estado === 'ALL' || c.estadoCita === filters.estado;
@@ -132,9 +182,12 @@ export default function Agenda({ currentUser }: AgendaProps) {
 
   const timeSlots = useMemo(() => {
     const slots = [];
-    for (let h = 8; h <= 20; h++) {
-      slots.push(`${h.toString().padStart(2, '0')}:00`);
-      slots.push(`${h.toString().padStart(2, '0')}:30`);
+    // From 8 AM to 9 PM, every 15 minutes to support 45m or other durations better
+    for (let h = 8; h <= 21; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        if (h === 21 && m > 0) break;
+        slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      }
     }
     return slots;
   }, []);
@@ -177,53 +230,62 @@ export default function Agenda({ currentUser }: AgendaProps) {
 
         <div className="flex-1 overflow-y-auto no-scrollbar relative">
           <div className="absolute inset-0">
-             {timeSlots.map((time, idx) => (
-               <div key={time} className={cn("grid border-b border-slate-50 min-h-[60px]", gridCols)}>
-                 <div className="p-3 text-right bg-slate-50/20 border-r border-slate-100">
-                    <span className="text-[10px] font-black text-slate-400 tracking-tighter">{time}</span>
-                 </div>
-                 {days.map((date, dIdx) => {
-                   const dateStr = date.toISOString().split('T')[0];
-                   const slotCitas = filteredCitas.filter(c => c.fecha === dateStr && c.horaInicio.startsWith(time.split(':')[0]));
-                   
-                   return (
-                     <div key={dIdx} className="relative p-1 border-r border-slate-50 last:border-r-0 group hover:bg-slate-50/50 transition-colors">
-                        {slotCitas.map(cita => (
-                          <div 
-                            key={cita.id}
-                            onClick={() => {
-                              setSelectedCita(cita);
-                              setIsCitaModalOpen(true);
-                            }}
-                            className={cn(
-                              "absolute inset-x-1 rounded-2xl p-2 cursor-pointer transition-all hover:scale-[1.02] hover:z-20 shadow-sm border border-white/20 active:scale-95",
-                              getStatusColor(cita.estadoCita)
-                            )}
-                            style={{ 
-                              top: '4px', 
-                              height: 'calc(100% - 8px)',
-                              opacity: 0.95
-                            }}
-                          >
-                             <div className="flex flex-col h-full text-white">
-                               <span className="text-[9px] font-black uppercase tracking-widest opacity-80 truncate">
-                                 {cita.horaInicio} - {cita.horaFin}
-                               </span>
-                               <span className="text-[11px] font-bold leading-tight line-clamp-1 mt-0.5">
-                                 {cita.nombrePaciente}
-                               </span>
-                               <span className="text-[8px] font-black uppercase opacity-60 mt-auto flex items-center gap-1 truncate">
-                                 <Stethoscope size={10} />
-                                 {cita.nombreTerapeuta?.split(' ')[0] || 'S/A'}
-                               </span>
-                             </div>
-                          </div>
-                        ))}
-                     </div>
-                   );
-                 })}
-               </div>
-             ))}
+            {timeSlots.map((time, idx) => (
+              <div key={time} className={cn("grid border-b border-slate-50 min-h-[40px]", gridCols)}>
+                <div className="p-2 text-right bg-slate-50/20 border-r border-slate-100">
+                   <span className="text-[9px] font-black text-slate-400 tracking-tighter">
+                      {time.endsWith(':00') || time.endsWith(':30') ? time : ''}
+                   </span>
+                </div>
+                {days.map((date, dIdx) => {
+                  const dateStr = date.toISOString().split('T')[0];
+                  const slotCitas = filteredCitas.filter(c => c.fecha === dateStr && c.horaInicio === time);
+                  
+                  return (
+                    <div key={dIdx} className="relative border-r border-slate-50 last:border-r-0 group hover:bg-slate-50/10 transition-colors">
+                       {slotCitas.map(cita => {
+                         const start = new Date(`2000-01-01T${cita.horaInicio}`);
+                         const end = new Date(`2000-01-01T${cita.horaFin}`);
+                         const durationMin = (end.getTime() - start.getTime()) / (1000 * 60);
+                         const slotsCount = Math.ceil(durationMin / 15);
+                         
+                         return (
+                           <div 
+                             key={cita.id}
+                             onClick={() => {
+                               setSelectedCita(cita);
+                               setIsCitaModalOpen(true);
+                             }}
+                             className={cn(
+                               "absolute inset-x-0.5 rounded-xl px-2 py-1 cursor-pointer transition-all hover:scale-[1.01] hover:z-20 shadow-sm border border-white/20 active:scale-95",
+                               getStatusColor(cita.estadoCita)
+                             )}
+                             style={{ 
+                               top: '2px', 
+                               height: `calc(${slotsCount * 100}% - 4px)`,
+                               opacity: 0.95,
+                               zIndex: 10
+                             }}
+                           >
+                              <div className="flex flex-col h-full text-white overflow-hidden">
+                                <span className="text-[7px] font-black uppercase tracking-tighter opacity-80 truncate leading-none mb-0.5">
+                                  {cita.horaInicio} - {cita.horaFin}
+                                </span>
+                                <span className="text-[10px] font-bold leading-none line-clamp-2 mt-0.5">
+                                  {cita.nombrePaciente}
+                                </span>
+                                <span className="text-[7px] font-black uppercase opacity-60 truncate mt-auto">
+                                  {cita.nombreTerapeuta?.split(' ')[0]}
+                                </span>
+                              </div>
+                           </div>
+                         );
+                       })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -233,7 +295,7 @@ export default function Agenda({ currentUser }: AgendaProps) {
   return (
     <div className="clini-animate-fade space-y-8 pb-20">
       {/* Header Section */}
-      <div className="clini-page-header">
+      <div className="clini-page-header clini-flex-between-center">
         <div>
            <div className="flex items-center gap-3 mb-1">
              <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -264,118 +326,85 @@ export default function Agenda({ currentUser }: AgendaProps) {
               Listado
             </button>
           </div>
-          {permissions.puedeCrear && (
-            <button className="btn-primary flex items-center gap-2">
-              <Plus size={20} />
-              Agendar Cita
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Control Area: Navigation & Filters */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Navigation & View Selection */}
-        <div className="lg:col-span-5 clini-card p-4 flex items-center justify-between border border-slate-100 bg-white/50 backdrop-blur-sm">
-           <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <button onClick={() => handleNavigate('prev')} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-500">
-                  <ChevronLeft size={20} />
-                </button>
-                <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1.5 text-[10px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 rounded-lg transition-all">
-                  Hoy
-                </button>
-                <button onClick={() => handleNavigate('next')} className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-500">
-                  <ChevronRight size={20} />
-                </button>
-              </div>
-              <h3 className="font-black text-slate-800 text-sm uppercase tracking-tight">
-                {calendarView === 'day' ? currentDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : getWeekRange(currentDate)}
-              </h3>
+      {/* Control Area: Navigation, Filters & Actions */}
+      <div className="flex flex-col xl:flex-row gap-4 items-stretch">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-100 shadow-sm shrink-0 h-[44px]">
+           <button onClick={() => handleNavigate('prev')} className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-primary cursor-pointer active:scale-90">
+              <ChevronLeft size={18} />
+           </button>
+           <div className="px-2 text-center min-w-[130px]">
+              <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight whitespace-nowrap">
+                {getWeekRange(currentDate)}
+              </span>
            </div>
-
-           <div className="flex bg-slate-100 p-1 rounded-xl">
-             <button 
-               onClick={() => setCalendarView('day')}
-               className={cn("px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all", calendarView === 'day' ? "bg-white text-primary shadow-sm" : "text-slate-500")}
-             >
-               Día
-             </button>
-             <button 
-               onClick={() => setCalendarView('week')}
-               className={cn("px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all", calendarView === 'week' ? "bg-white text-primary shadow-sm" : "text-slate-500")}
-             >
-               Semana
-             </button>
-           </div>
+           <button onClick={() => handleNavigate('next')} className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-primary cursor-pointer active:scale-90">
+              <ChevronRight size={18} />
+           </button>
         </div>
 
-        {/* Dynamic Filters */}
-        <div className="lg:col-span-7 clini-card p-5 border border-slate-100 bg-white shadow-lg shadow-slate-200/40">
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 group-focus-within:text-primary transition-colors">Búsqueda</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
-                  <input 
-                    type="text" 
-                    className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none"
-                    placeholder="Paciente..."
-                    value={filters.search}
-                    onChange={e => setFilters({...filters, search: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 group-focus-within:text-primary transition-colors">Sede</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
-                  <select 
-                    className="w-full pl-9 pr-8 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none appearance-none"
-                    value={filters.sede}
-                    onChange={e => setFilters({...filters, sede: e.target.value})}
-                    disabled={!permissions.verTodo}
-                  >
-                    <option value="ALL">Todas las Sedes</option>
-                    {sedes.map(s => <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 group-focus-within:text-primary transition-colors">Terapeuta</label>
-                <div className="relative">
-                  <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
-                  <select 
-                    className="w-full pl-9 pr-8 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none appearance-none"
-                    value={filters.terapeuta}
-                    onChange={e => setFilters({...filters, terapeuta: e.target.value})}
-                  >
-                    <option value="ALL">Todos los Terapeutas</option>
-                    {terapeutas.map(t => <option key={t.id} value={t.id}>{t.nombres} {t.apellidoPaterno}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2 group">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1 group-focus-within:text-primary transition-colors">Estado</label>
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={16} />
-                  <select 
-                    className="w-full pl-9 pr-8 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all outline-none appearance-none"
-                    value={filters.estado}
-                    onChange={e => setFilters({...filters, estado: e.target.value})}
-                  >
-                    <option value="ALL">Estados</option>
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="CONFIRMADA">Confirmada</option>
-                    <option value="COMPLETADA">Completada</option>
-                    <option value="CANCELADA">Cancelada</option>
-                  </select>
-                </div>
-              </div>
+        <div className="flex-1 bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md flex flex-wrap md:flex-nowrap items-center gap-2 h-[44px]">
+           <div className="relative flex-1 min-w-[120px] group/search">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={13} />
+              <input 
+                type="text" 
+                className="w-full pl-8 pr-3 py-2 bg-slate-50 border-none rounded-[var(--sys-radius-3xl)] text-[10px] font-bold outline-none focus:ring-4 focus:ring-primary/5 transition-all"
+                placeholder="Paciente o Terapeuta..."
+                value={filters.search}
+                onChange={e => setFilters({...filters, search: e.target.value})}
+              />
            </div>
+           <div className="flex items-center gap-1">
+             <select 
+               className="px-2 py-2 bg-slate-50 border-none rounded-xl text-[9px] font-black uppercase text-slate-600 outline-none cursor-pointer min-w-[80px]"
+               value={filters.sede}
+               onChange={e => setFilters({...filters, sede: e.target.value})}
+               disabled={!permissions.verTodo}
+             >
+               <option value="ALL">Sedes</option>
+               {sedes.map(s => <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>)}
+             </select>
+             <select 
+               className="px-2 py-2 bg-slate-50 border-none rounded-xl text-[9px] font-black uppercase text-slate-600 outline-none cursor-pointer min-w-[90px]"
+               value={filters.terapeuta}
+               onChange={e => setFilters({...filters, terapeuta: e.target.value})}
+             >
+               <option value="ALL">Personal</option>
+               {terapeutas.map(t => <option key={t.id} value={t.id}>{t.nombres} {t.apellidoPaterno.split(' ')[0]}</option>)}
+             </select>
+          </div>
+          {(filters.search !== '' || filters.sede !== 'ALL' || filters.terapeuta !== 'ALL' || filters.estado !== 'ALL') && (
+            <button 
+              onClick={() => setFilters({search: '', sede: 'ALL', terapeuta: 'ALL', estado: 'ALL'})}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredCitas)}
+            onPdf={() => handleExportPDF(filteredCitas)}
+            showLabel={false}
+            className="rounded-full h-[40px] w-[40px] shadow-sm hover:shadow-md"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+           {permissions.puedeCrear && (
+              <button 
+                onClick={() => { setSelectedCita(null); setIsCitaModalOpen(true); }}
+                className="btn-primary flex items-center gap-2 py-2 px-4 whitespace-nowrap text-[11px] font-black uppercase h-[44px] rounded-xl shadow-lg shadow-primary/20"
+              >
+                <Plus size={16} />
+                Agendar
+              </button>
+           )}
         </div>
       </div>
 
@@ -387,6 +416,8 @@ export default function Agenda({ currentUser }: AgendaProps) {
           title="Listado Maestro de Citas"
           data={filteredCitas}
           isLoading={isLoading}
+          showSearch={false}
+          showFilters={false}
           columns={[
             { 
               header: 'Paciente', 

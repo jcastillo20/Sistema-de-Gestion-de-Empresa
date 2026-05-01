@@ -603,6 +603,24 @@ class ApiService {
     return filtered;
   }
 
+  async getPaquetePaciente(id: string) {
+    await this.delay();
+    return this.paquetesPacientes.find(p => p.id === id) || null;
+  }
+
+  async updatePaquetePaciente(id: string, data: Partial<PaquetePaciente>, currentUser: string) {
+    await this.delay();
+    const index = this.paquetesPacientes.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const oldData = { ...this.paquetesPacientes[index] };
+      const updated = { ...this.paquetesPacientes[index], ...data };
+      this.paquetesPacientes[index] = updated;
+      this.addAudit('PAQUETES_PACIENTES', id, 'UPDATE', currentUser, oldData, updated);
+      this.saveToStorage();
+    }
+    return this.paquetesPacientes[index];
+  }
+
   /**
    * CORE FLOW: ASIGNACIÓN DE PAQUETE A PACIENTE
    * 

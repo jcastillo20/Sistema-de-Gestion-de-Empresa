@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Pacientes from './pages/Pacientes';
@@ -14,21 +15,21 @@ import CatalogoPaquetes from './pages/paquetes/CatalogoPaquetes';
 import ControlPaquetes from './pages/paquetes/ControlPaquetes';
 import Finanzas from './pages/Finanzas';
 import Agenda from './pages/Agenda';
+import AuditoriaPage from './pages/Auditoria';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import { useAuth } from './context/AuthContext';
 import { apiService } from './services/apiService';
 
+// New Pages
+import GestionHorarios from './pages/terapeutas/GestionHorarios';
+import PlanificarHorario from './pages/horarios/PlanificarHorario';
+import DetallePaquetes from './pages/pacientes/DetallePaquetes';
+import NuevaVenta from './pages/ventas/NuevaVenta';
+
 export default function App() {
   const { user, setUser, isLoading, availableModules } = useAuth();
-  const [activePage, setActivePage] = useState('dashboard');
-
-  // Redirección reactiva por permisos
-  useEffect(() => {
-    if (activePage !== 'dashboard' && availableModules[activePage] === false) {
-      setActivePage('dashboard');
-    }
-  }, [activePage, availableModules]);
+  const location = useLocation();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [clinicName, setClinicName] = useState('CliniGest Pro');
   const [clinicLogo, setClinicLogo] = useState('');
@@ -97,8 +98,6 @@ export default function App() {
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans selection:bg-primary/10 selection:text-primary">
       <Sidebar 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
         isCollapsed={isSidebarCollapsed} 
         setIsCollapsed={setIsSidebarCollapsed}
         clinicName={clinicName}
@@ -112,18 +111,29 @@ export default function App() {
         />
 
         <main className="flex-1 overflow-y-auto px-5 py-5 md:px-7 md:py-7 lg:px-8 lg:py-8 bg-slate-50/20 relative">
-          {activePage === 'dashboard' && <Dashboard />}
-          {activePage === 'pacientes' && <Pacientes currentUser={user} />}
-          {activePage === 'terapeutas' && <Terapeutas currentUser={user} />}
-          {activePage === 'horarios' && <Horarios currentUser={user} />}
-          {activePage === 'paquetes_catalogo' && <CatalogoPaquetes currentUser={user} />}
-          {activePage === 'paquetes_control' && <ControlPaquetes currentUser={user} />}
-          {activePage === 'agenda' && <Agenda currentUser={user} />}
-          {activePage === 'finanzas' && <Finanzas currentUser={user} />}
-          {activePage === 'usuarios' && <Usuarios currentUser={user} />}
-          {activePage === 'configuracion' && <Configuracion currentUser={user} />}
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/pacientes" element={<Pacientes currentUser={user} />} />
+            <Route path="/pacientes/:id/paquetes" element={<DetallePaquetes />} />
+            <Route path="/terapeutas" element={<Terapeutas currentUser={user} />} />
+            <Route path="/terapeutas/:id/horarios" element={<GestionHorarios />} />
+            <Route path="/horarios" element={<Horarios currentUser={user} />} />
+            <Route path="/horarios/nuevo" element={<PlanificarHorario />} />
+            <Route path="/paquetes_catalogo" element={<CatalogoPaquetes currentUser={user} />} />
+            <Route path="/paquetes_control" element={<ControlPaquetes currentUser={user} />} />
+            <Route path="/ventas/nueva" element={<NuevaVenta />} />
+            <Route path="/ventas/editar/:id" element={<NuevaVenta />} />
+            <Route path="/agenda" element={<Agenda currentUser={user} />} />
+            <Route path="/finanzas" element={<Finanzas currentUser={user} />} />
+            <Route path="/usuarios" element={<Usuarios currentUser={user} />} />
+            <Route path="/configuracion" element={<Configuracion currentUser={user} />} />
+            <Route path="/auditoria" element={<AuditoriaPage currentUser={user} />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </main>
       </div>
     </div>
   );
 }
+

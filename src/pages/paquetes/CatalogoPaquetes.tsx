@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Plus, Layers, Info, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Package, Plus, Layers, Info, BookOpen, Search, Filter, X, Download } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
 import { apiService } from '../../services/apiService';
+import { exportService } from '../../services/exportService';
+import { getExportContext } from '../../utils/exportUtils';
+import { useAuth } from '../../context/AuthContext';
 import { PaqueteMaestro } from '../../types';
+import { ExportButton } from '../../components/common/ExportButton';
 
 interface CatalogoPaquetesProps {
   currentUser: any;
 }
 
 export default function CatalogoPaquetes({ currentUser }: CatalogoPaquetesProps) {
+  const { user: authUser } = useAuth();
   const [paquetes, setPaquetes] = useState<PaqueteMaestro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPaquete, setEditingPaquete] = useState<PaqueteMaestro | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form State
   const [formData, setFormData] = useState<Partial<PaqueteMaestro>>({
@@ -39,6 +45,49 @@ export default function CatalogoPaquetes({ currentUser }: CatalogoPaquetesProps)
   useEffect(() => {
     loadPaquetes();
   }, []);
+
+  const filteredPaquetes = useMemo(() => {
+    return paquetes.filter(p => 
+      (p.nombre || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [paquetes, searchTerm]);
+
+  const handleExportExcel = async (filteredData?: PaqueteMaestro[]) => {
+    const { branding, context } = await getExportContext(authUser);
+    const sourceData = filteredData || filteredPaquetes;
+    const dataToExport = sourceData.map(p => ({
+      'Nombre del Paquete': p.nombre,
+      'Cantidad Citas': p.cantCitas,
+      'Precio Sugerido': p.precioSugerido,
+      'Frecuencia': p.frecuencia,
+      'Límite Especialidades': p.limiteEspecialidades
+    }));
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Catálogo de Paquetes',
+      fileName: 'Catalogo_Paquetes',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: PaqueteMaestro[]) => {
+    const { branding, context } = await getExportContext(authUser);
+    const sourceData = filteredData || filteredPaquetes;
+    const dataToExport = sourceData.map(p => ({
+      'Paquete': p.nombre,
+      'Citas': p.cantCitas,
+      'Precio': `S/ ${p.precioSugerido.toFixed(2)}`,
+      'Frecuencia': p.frecuencia
+    }));
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Catálogo de Paquetes',
+      fileName: 'Catalogo_Paquetes',
+      branding: branding as any,
+      context
+    });
+  };
 
   const handleAdd = () => {
     setEditingPaquete(null);
@@ -115,7 +164,7 @@ export default function CatalogoPaquetes({ currentUser }: CatalogoPaquetesProps)
     { 
       header: 'Frecuencia', 
       accessor: (p: PaqueteMaestro) => (
-        <span className="text-sm font-medium text-slate-600 capitalize">{p.frecuencia.toLowerCase()}</span>
+        <span className="text-sm font-medium text-slate-600 capitalize">{(p.frecuencia || '').toLowerCase()}</span>
       )
     },
     { 
@@ -144,16 +193,50 @@ export default function CatalogoPaquetes({ currentUser }: CatalogoPaquetesProps)
         </div>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+        <div className="relative flex-1 group/search">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre de paquete..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-12 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-[11px] font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white w-full transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 pr-2">
+          {searchTerm !== '' && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar Filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredPaquetes)}
+            onPdf={() => handleExportPDF(filteredPaquetes)}
+            showLabel={false}
+            className="rounded-full h-[44px] w-[44px] shadow-sm hover:shadow-md"
+          />
+        </div>
+      </div>
+
       <DataTable
         title="Plantillas Maestras"
-        data={paquetes}
+        data={filteredPaquetes}
         columns={columns as any}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
         isLoading={isLoading}
-        searchPlaceholder="Buscar plantilla..."
-        searchFields={['nombre']}
+        showSearch={false}
+        showFilters={false}
       />
 
       {/* Modal CRUD Maestros */}

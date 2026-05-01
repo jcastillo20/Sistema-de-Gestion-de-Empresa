@@ -12,11 +12,17 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
+import { useMemo } from 'react';
 import { DataTable } from '../components/common/DataTable';
 import { apiService } from '../services/apiService';
-import { Pago, Transaccion, Paciente } from '../types';
+import { exportService } from '../services/exportService';
+import { getExportContext } from '../utils/exportUtils';
+import { ExportButton } from '../components/common/ExportButton';
+import { Pago, Transaccion, Paciente, Sede } from '../types';
+import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '../lib/utils';
 import ModalAbono from '../components/finanzas/ModalAbono';
 import ModalGasto from '../components/finanzas/ModalGasto';
@@ -29,24 +35,33 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPago, setSelectedPago] = useState<Pago | null>(null);
   const [isAbonoModalOpen, setIsAbonoModalOpen] = useState(false);
   const [isGastoModalOpen, setIsGastoModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    sede: 'ALL'
+  });
   const [searchTerm, setSearchTerm] = useState('');
+
+  const permissions = usePermissions(currentUser, 'finanzas');
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const sede = currentUser.sede === 'ALL' ? undefined : currentUser.sede;
-      const [pagosData, todasTransacciones, pacientesData] = await Promise.all([
+      const sede = permissions.verTodo ? undefined : currentUser.sede;
+      const [pagosData, todasTransacciones, pacientesData, sedesData] = await Promise.all([
         apiService.getPagos(undefined, sede),
         apiService.getTransacciones(),
-        apiService.getPacientes(sede)
+        apiService.getPacientes(sede),
+        apiService.getSedes()
       ]);
       setPagos(pagosData);
       setTransacciones(todasTransacciones);
       setPacientes(pacientesData);
+      setSedes(sedesData);
     } catch (error) {
       console.error("Error al cargar datos financieros", error);
     } finally {
@@ -71,6 +86,68 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
     setSelectedPago(pago);
     setIsAbonoModalOpen(true);
   };
+
+  const handleExportExcel = async (filteredData?: Pago[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || pagos;
+    const dataToExport = sourceData.map(p => {
+      const abonos = transacciones.filter(t => t.idPago === p.idPago).reduce((s, t) => s + t.monto, 0);
+      const row: any = {
+        'Paciente': getPacienteName(p.idPaciente),
+        'Concepto': p.concepto,
+        'Monto Total': p.monto,
+        'Cobrado': abonos,
+        'Saldo': p.monto - abonos,
+        'Estado': p.estado,
+        'Fecha': p.fechaReferencial ? new Date(p.fechaReferencial) : 'N/A'
+      };
+      if (permissions.verTodo) row['Sede'] = p.idSede;
+      return row;
+    });
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Gestión Financiera',
+      fileName: 'Reporte_Finanzas',
+      branding: branding as any,
+      context,
+      showSummary: true
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: Pago[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || pagos;
+    const dataToExport = sourceData.map(p => {
+      const abonos = transacciones.filter(t => t.idPago === p.idPago).reduce((s, t) => s + t.monto, 0);
+      const row: any = {
+        'Paciente': getPacienteName(p.idPaciente),
+        'Concepto': p.concepto,
+        'Monto Total': `S/ ${p.monto.toFixed(2)}`,
+        'Saldo': `S/ ${(p.monto - abonos).toFixed(2)}`,
+        'Estado': p.estado
+      };
+      if (permissions.verTodo) row['Sede'] = p.idSede;
+      return row;
+    });
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Gestión Financiera',
+      fileName: 'Reporte_Finanzas',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const filteredPagos = useMemo(() => {
+    return pagos.filter(p => {
+      const matchSearch = filters.search === '' || 
+        (p.concepto || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (getPacienteName(p.idPaciente) || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (p.idPago || '').toLowerCase().includes(filters.search.toLowerCase());
+      const matchSede = filters.sede === 'ALL' || p.idSede === filters.sede;
+      return matchSearch && matchSede;
+    });
+  }, [pagos, filters, pacientes]);
 
   const columns = [
     {
@@ -233,14 +310,63 @@ export default function Finanzas({ currentUser }: FinanzasProps) {
         </div>
       </div>
 
+      {/* Barra de Filtros */}
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+        <div className="relative flex-1 group/search">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
+          <input 
+            type="text" 
+            placeholder="Buscar por paciente, concepto o ID..."
+            value={filters.search}
+            onChange={(e) => setFilters({...filters, search: e.target.value})}
+            className="pl-12 pr-10 py-2.5 bg-slate-50/50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 pr-2">
+          {permissions.verTodo && (
+            <select 
+              className="px-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-[11px] font-black uppercase text-slate-600 outline-none cursor-pointer min-w-[150px] focus:ring-4 focus:ring-primary/5 transition-all"
+              value={filters.sede}
+              onChange={e => setFilters({...filters, sede: e.target.value})}
+            >
+              <option value="ALL">Todas las sedes</option>
+              {sedes.map(s => (
+                <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
+              ))}
+            </select>
+          )}
+
+          {(filters.search !== '' || (permissions.verTodo && filters.sede !== 'ALL')) && (
+            <button 
+              onClick={() => setFilters({search: '', sede: 'ALL'})}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar Filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredPagos)}
+            onPdf={() => handleExportPDF(filteredPagos)}
+            showLabel={false}
+            className="rounded-full h-[44px] w-[44px] shadow-sm hover:shadow-md"
+          />
+        </div>
+      </div>
+
       {/* Tabla de Pagos */}
       <DataTable
         title="Control de Cuentas por Cobrar"
-        data={pagos}
+        data={filteredPagos}
         columns={columns}
         isLoading={isLoading}
-        searchPlaceholder="Buscar por paciente o concepto..."
-        searchFields={['idPago', 'idPaciente', 'concepto']}
+        showSearch={false}
+        showFilters={false}
+        onAdd={undefined}
         customActions={(p: Pago) => (
           <div className="flex items-center gap-2">
             {p.estado !== 'PAGADO' && (

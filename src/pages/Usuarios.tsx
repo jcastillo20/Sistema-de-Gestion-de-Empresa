@@ -1,13 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
 import { Usuario, Sede, ConfiguracionDinamica } from '../types';
-import { User, Mail, Phone, Shield, Eye, EyeOff, Building2, Calendar, UserCheck, ShieldCheck } from 'lucide-react';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  Shield, 
+  Eye, 
+  EyeOff, 
+  Building2, 
+  Calendar, 
+  UserCheck, 
+  ShieldCheck,
+  FileSpreadsheet,
+  FileText,
+  Search,
+  X
+} from 'lucide-react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
 import { cn } from '@/src/lib/utils';
 import { apiService } from '../services/apiService';
+import { exportService } from '../services/exportService';
+import { getExportContext } from '../utils/exportUtils';
+import { ExportButton } from '../components/common/ExportButton';
+import { useAuth } from '../context/AuthContext';
 
 interface UsuariosProps {
   currentUser: any;
@@ -23,8 +42,58 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [allProfilesConfig, setAllProfilesConfig] = useState<ConfiguracionDinamica[]>([]);
+  const [filters, setFilters] = useState({
+    search: '',
+    sede: 'ALL'
+  });
 
   const permissions = usePermissions(currentUser, 'usuarios');
+
+  const handleExportExcel = async (filteredData?: Usuario[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || usuarios;
+    const dataToExport = sourceData.map(u => {
+      const row: any = {
+        'Usuario': u.nombreUsuario,
+        'Nombre Completo': `${u.nombres} ${u.apellidoPaterno}`,
+        'Perfil': u.perfil,
+        'Correo': u.correo,
+        'Teléfono': u.telefono,
+        'Estado': u.estado ? 'Activo' : 'Inactivo'
+      };
+      if (permissions.verTodo) row['Sede'] = u.sede;
+      return row;
+    });
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Usuarios del Sistema',
+      fileName: 'Listado_Usuarios',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: Usuario[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || usuarios;
+    const dataToExport = sourceData.map(u => {
+      const row: any = {
+        'Usuario': u.nombreUsuario,
+        'Perfil': u.perfil,
+        'Correo': u.correo,
+        'Estado': u.estado ? 'Activo' : 'Inactivo'
+      };
+      if (permissions.verTodo) row['Sede'] = u.sede;
+      return row;
+    });
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Usuarios del Sistema',
+      fileName: 'Listado_Usuarios',
+      branding: branding as any,
+      context
+    });
+  };
 
   if (!permissions.acceso) {
     return (
@@ -63,6 +132,18 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
       setIsLoading(false);
     }
   };
+
+  const filteredUsuarios = useMemo(() => {
+    return usuarios.filter(u => {
+      const matchSearch = filters.search === '' || 
+        (u.nombreUsuario || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (u.nombres || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (u.apellidoPaterno || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (u.perfil || '').toLowerCase().includes(filters.search.toLowerCase());
+      const matchSede = filters.sede === 'ALL' || u.sede === filters.sede;
+      return matchSearch && matchSede;
+    });
+  }, [usuarios, filters]);
 
   const validateForm = (formData: any) => {
     if (!formData.nombres || !formData.apellidoPaterno || !formData.nombreUsuario) {
@@ -241,20 +322,65 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
   });
 
   return (
-    <div className="clini-page-container">
-      <div className="clini-page-header">
+    <div className="clini-page-container clini-space-y-ui-g">
+      <div className="clini-page-header clini-flex-between-center">
         <div>
           <h2 className="clini-title-main">Gestión de Usuarios</h2>
           <p className="clini-subtitle">Administra los accesos y perfiles del personal del sistema.</p>
         </div>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+        <div className="relative flex-1 group/search">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
+          <input 
+            type="text" 
+            placeholder="Buscar por usuario, nombre real o perfil..."
+            value={filters.search}
+            onChange={(e) => setFilters({...filters, search: e.target.value})}
+            className="pl-12 pr-10 py-2.5 bg-slate-50/50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 pr-2">
+          {permissions.verTodo && (
+            <select 
+              className="px-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-[11px] font-black uppercase text-slate-600 outline-none cursor-pointer min-w-[150px] focus:ring-4 focus:ring-primary/5 transition-all"
+              value={filters.sede}
+              onChange={e => setFilters({...filters, sede: e.target.value})}
+            >
+              <option value="ALL">Todas las sedes</option>
+              {sedes.map(s => <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>)}
+            </select>
+          )}
+
+          {(filters.search !== '' || (permissions.verTodo && filters.sede !== 'ALL')) && (
+            <button 
+              onClick={() => setFilters({search: '', sede: 'ALL'})}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar Filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredUsuarios)}
+            onPdf={() => handleExportPDF(filteredUsuarios)}
+            showLabel={false}
+            className="rounded-full h-[44px] w-[44px] shadow-sm hover:shadow-md"
+          />
+        </div>
+      </div>
+
       <DataTable 
         title="Listado de Usuarios"
-        data={usuarios}
+        data={filteredUsuarios}
         columns={columns}
-        searchPlaceholder="Buscar por nombre de usuario, nombre real o perfil..."
-        searchFields={['nombreUsuario', 'nombres', 'apellidoPaterno', 'perfil']}
+        showSearch={false}
+        showFilters={false}
         onAdd={permissions.puedeCrear ? () => {
           setSelectedUsuario(null);
           setIsModalOpen(true);

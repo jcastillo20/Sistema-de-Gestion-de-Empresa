@@ -29,12 +29,17 @@ import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
 import { usePermissions } from '../hooks/usePermissions';
 import { apiService } from '../services/apiService';
+import { exportService } from '../services/exportService';
+import { getExportContext } from '../utils/exportUtils';
+import { ExportButton } from '../components/common/ExportButton';
+import { useAuth } from '../context/AuthContext';
 
 interface HorariosProps {
   currentUser: any;
 }
 
 export default function Horarios({ currentUser }: HorariosProps) {
+  const { user: authUser } = useAuth();
   const permissions = usePermissions(currentUser, 'horarios');
   const [horarios, setHorarios] = useState<Horario[]>([]);
   const [terapeutas, setTerapeutas] = useState<Terapeuta[]>([]);
@@ -56,6 +61,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
   // Filters State
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTerapeuta, setFilterTerapeuta] = useState('');
+  const [filterSede, setFilterSede] = useState('ALL');
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [filterEspecialidad, setFilterEspecialidad] = useState('');
@@ -76,6 +82,44 @@ export default function Horarios({ currentUser }: HorariosProps) {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleExportExcel = async (filteredData?: Horario[]) => {
+    const { branding, context } = await getExportContext(authUser);
+    const sourceData = filteredData || filteredHorariosData;
+    const dataToExport = sourceData.map(h => ({
+      'Terapeuta': h.nombreTerapeuta,
+      'Mes': meses[h.mes - 1],
+      'Año': h.año,
+      'Sede': h.sede,
+      'Bloques': h.bloques.map(b => `${b.horaInicio}-${b.horaFin} (${b.estado})`).join(', '),
+      'Estado': h.estado ? 'Activo' : 'Inactivo'
+    }));
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Planificación de Horarios',
+      fileName: 'Horarios_Terapeutas',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: Horario[]) => {
+    const { branding, context } = await getExportContext(authUser);
+    const sourceData = filteredData || filteredHorariosData;
+    const dataToExport = sourceData.map(h => ({
+      'Terapeuta': h.nombreTerapeuta,
+      'Mes': `${meses[h.mes - 1]} ${h.año}`,
+      'Sede': h.sede,
+      'Estado': h.estado ? 'Activo' : 'Inactivo'
+    }));
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Planificación de Horarios',
+      fileName: 'Horarios_Terapeutas',
+      branding: branding as any,
+      context
+    });
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -272,6 +316,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
 
   const filteredHorariosData = horarios.filter(h => {
     const matchTerapeuta = !filterTerapeuta || h.idTerapeuta === filterTerapeuta;
+    const matchSede = filterSede === 'ALL' || h.sede === filterSede;
     const matchMes = !filterMonth || h.mes === filterMonth;
     const matchAño = !filterYear || h.año === filterYear;
     
@@ -282,8 +327,8 @@ export default function Horarios({ currentUser }: HorariosProps) {
     }
 
     const matchSearch = !searchTerm || 
-      h.nombreTerapeuta.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      h.sede.toLowerCase().includes(searchTerm.toLowerCase());
+      (h.nombreTerapeuta || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (h.sede || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchTerapeuta && matchMes && matchAño && matchEspecialidad && matchSearch;
   });
@@ -351,48 +396,84 @@ export default function Horarios({ currentUser }: HorariosProps) {
           <h2 className="clini-title-main">Horarios de Terapeutas</h2>
           <p className="clini-subtitle">Gestiona los turnos rotativos y pausas mensuales.</p>
         </div>
-        {permissions.puedeCrear && (
-          <button onClick={() => handleOpenModal()} className="btn-primary flex items-center gap-2">
-            <Plus size={18} />
-            Planificar Horario
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {permissions.puedeCrear && (
+            <button onClick={() => handleOpenModal()} className="btn-primary flex items-center gap-2">
+              <Plus size={18} />
+              Planificar Horario
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filtros Avanzados */}
       <div className="clini-card clini-form-stack mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border pb-4 mb-5 gap-4">
-          <div className="clini-label-with-icon">
-            <Filter size={18} className="text-primary" />
-            <span className="text-base font-bold uppercase tracking-tight text-slate-900">Filtros de Búsqueda</span>
-          </div>
-          <div className="relative w-full max-w-sm">
-            <div className="clini-input-icon">
-              <Search size={18} />
+          <div className="flex items-center gap-4">
+            <div className="clini-label-with-icon">
+              <Filter size={18} className="text-primary" />
+              <span className="text-base font-bold uppercase tracking-tight text-slate-900">Filtros de Búsqueda</span>
             </div>
-            <input 
-              type="text"
-              placeholder="Buscar terapeuta o especialidad..."
-              className="clini-input-field-icon-left"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+            
+            {(searchTerm !== '' || filterTerapeuta !== '' || filterSede !== 'ALL' || filterEspecialidad !== '' || filterMonth !== (new Date().getMonth() + 1) || filterYear !== new Date().getFullYear()) && (
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterTerapeuta('');
+                  setFilterSede('ALL');
+                  setFilterEspecialidad('');
+                  setFilterMonth(new Date().getMonth() + 1);
+                  setFilterYear(new Date().getFullYear());
+                }}
+                className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+                title="Limpiar Filtros"
+              >
+                <X size={20} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <ExportButton 
+              onExcel={() => handleExportExcel(filteredHorariosData)}
+              onPdf={() => handleExportPDF(filteredHorariosData)}
+              showLabel={false}
+              className="rounded-full h-[40px] w-[40px] shadow-sm hover:shadow-md"
             />
           </div>
         </div>
-        <div className="clini-form-grid md:grid-cols-4 gap-6">
+        <div className="clini-form-grid md:grid-cols-6 gap-6">
           <div className="clini-form-group">
-            <label className="clini-label">Terapeuta</label>
-            <SearchableSelect 
-              options={[
-                { value: '', label: 'Todos los Terapeutas' },
-                ...terapeutas.map(t => ({ value: t.id, label: `${t.nombres} ${t.apellidoPaterno}` }))
-              ]}
-              value={filterTerapeuta}
-              onChange={(val) => setFilterTerapeuta(val as string)}
-              placeholder="Todos los Terapeutas"
-              className="w-full"
-              icon={<User size={18} />}
-            />
+            <label className="clini-label px-1 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Buscar Terapeuta</label>
+            <div className="relative group/search">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
+              <input 
+                type="text" 
+                placeholder="Nombre o Sede..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white transition-all"
+              />
+            </div>
+          </div>
+          <div className="clini-form-group">
+            <label className="clini-label px-1 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">Filtrar Sede</label>
+            <div className="clini-input-group clini-relative">
+              <div className="clini-input-icon">
+                <Building2 size={18} />
+              </div>
+              <select 
+                className="clini-input-field-icon-left"
+                value={filterSede}
+                onChange={(e) => setFilterSede(e.target.value)}
+                disabled={!permissions?.verTodo}
+              >
+                <option value="ALL">Todas las Sedes</option>
+                {sedes.map(s => (
+                  <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div className="clini-form-group">
             <label className="clini-label">Especialidad</label>
@@ -403,7 +484,17 @@ export default function Horarios({ currentUser }: HorariosProps) {
               <select 
                 className="clini-input-field-icon-left"
                 value={filterEspecialidad}
-                onChange={(e) => setFilterEspecialidad(e.target.value)}
+                onChange={(e) => {
+                  const newSpec = e.target.value;
+                  setFilterEspecialidad(newSpec);
+                  // Limpiar el filtro de terapeuta si no pertenece a la nueva especialidad seleccionada
+                  if (newSpec && filterTerapeuta) {
+                    const tera = terapeutas.find(t => t.id === filterTerapeuta);
+                    if (!tera?.especialidades?.includes(newSpec)) {
+                      setFilterTerapeuta('');
+                    }
+                  }
+                }}
               >
                 <option value="">Todas las Especialidades</option>
                 {especialidades.map(e => (
@@ -411,6 +502,23 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 ))}
               </select>
             </div>
+          </div>
+          <div className="clini-form-group">
+            <label className="clini-label">Terapeuta</label>
+            <SearchableSelect 
+              options={[
+                { value: '', label: 'Todos los Terapeutas' },
+                ...(filterEspecialidad 
+                  ? terapeutas.filter(t => t.especialidades?.includes(filterEspecialidad))
+                  : terapeutas
+                ).map(t => ({ value: t.id, label: `${t.nombres} ${t.apellidoPaterno}` }))
+              ]}
+              value={filterTerapeuta}
+              onChange={(val) => setFilterTerapeuta(val as string)}
+              placeholder="Todos los Terapeutas"
+              className="w-full"
+              icon={<User size={18} />}
+            />
           </div>
           <div className="clini-form-group">
             <label className="clini-label">Mes</label>
@@ -440,7 +548,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 value={filterYear}
                 onChange={(e) => setFilterYear(Number(e.target.value))}
               >
-                {[2024, 2025, 2026].map(y => (
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map(y => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
@@ -577,6 +685,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
           data={filteredHorariosData}
           showSearch={false}
           showFilters={false}
+          isLoading={isLoading}
           columns={[
             { 
               header: 'Terapeuta', 

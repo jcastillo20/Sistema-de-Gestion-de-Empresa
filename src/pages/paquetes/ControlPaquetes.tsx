@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ClipboardCheck, Plus, Search, Filter, Building2 as SedeIcon, Info, Package, User, Building2, ChevronDown, Trash2 } from 'lucide-react';
+import { ClipboardCheck, Plus, Search, Filter, Building2 as SedeIcon, Info, Package, User, Building2, ChevronDown, Trash2, Edit, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../../components/common/DataTable';
 import { AlertModal } from '../../components/common/AlertModal';
 import { apiService } from '../../services/apiService';
+import { exportService } from '../../services/exportService';
+import { getExportContext } from '../../utils/exportUtils';
+import { ExportButton } from '../../components/common/ExportButton';
 import { PaquetePaciente, Sede, PaqueteMaestro } from '../../types';
 import ModalVentaPaquete from '../../components/paquetes/ModalVentaPaquete';
 import { cn } from '../../lib/utils';
@@ -13,11 +17,11 @@ interface ControlPaquetesProps {
 }
 
 export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
+  const navigate = useNavigate();
   const [ventas, setVentas] = useState<PaquetePaciente[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [maestros, setMaestros] = useState<PaqueteMaestro[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVentaModalOpen, setIsVentaModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [ventaToCancel, setVentaToCancel] = useState<PaquetePaciente | null>(null);
 
@@ -30,12 +34,6 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
     maestro: 'ALL',
     estado: 'ALL'
   });
-
-  useEffect(() => {
-    if (!permissions.verTodo && currentUser?.sede) {
-      setFilters(f => ({ ...f, sede: currentUser.sede }));
-    }
-  }, [permissions.verTodo, currentUser?.sede]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -96,6 +94,63 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
     }
   };
 
+  const handleExportExcel = async (filteredData?: PaquetePaciente[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || filteredVentas;
+    const dataToExport = sourceData.map(v => {
+      const row: any = {
+        'ID Venta': v.id,
+        'Paciente': v.pacienteNombre,
+        'Paquete': v.nombre,
+        'Sesiones Totales': v.cantCitas,
+        'Sesiones Consumidas': v.citasConsumidas,
+        'Precio Venta': v.precioVenta,
+        'Estado': v.estado
+      };
+      if (permissions.verTodo) row['Sede'] = v.sede;
+      return row;
+    });
+
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Control de Paquetes y Ventas',
+      fileName: 'Control_Ventas',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleExportPDF = async (filteredData?: PaquetePaciente[]) => {
+    const { branding, context = null } = await getExportContext(currentUser);
+    const sourceData = filteredData || filteredVentas;
+    const dataToExport = sourceData.map(v => {
+      const row: any = {
+        'Paciente': v.pacienteNombre,
+        'Paquete': v.nombre,
+        'Progreso': `${v.citasConsumidas}/${v.cantCitas}`,
+        'Precio': `S/ ${v.precioVenta}`,
+        'Estado': v.estado
+      };
+      if (permissions.verTodo) row['Sede'] = v.sede;
+      return row;
+    });
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Control de Paquetes y Ventas',
+      fileName: 'Control_Ventas',
+      branding: branding as any,
+      context
+    });
+  };
+
+  const handleGlobalReset = () => {
+    setFilters({
+      search: '',
+      sede: 'ALL',
+      maestro: 'ALL',
+      estado: 'ALL'
+    });
+  };
+
   const filteredVentas = useMemo(() => {
     let result = ventas;
 
@@ -106,10 +161,10 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
 
     return result.filter(v => {
       const patientName = v.pacienteNombre?.toLowerCase() || "";
-      const matchesSearch = v.nombre.toLowerCase().includes(filters.search.toLowerCase()) || 
-                           v.idPaciente.toLowerCase().includes(filters.search.toLowerCase()) ||
+      const matchesSearch = (v.nombre || '').toLowerCase().includes(filters.search.toLowerCase()) || 
+                           (v.idPaciente || '').toLowerCase().includes(filters.search.toLowerCase()) ||
                            patientName.includes(filters.search.toLowerCase()) ||
-                           v.id.toLowerCase().includes(filters.search.toLowerCase());
+                           (v.id || '').toLowerCase().includes(filters.search.toLowerCase());
       
       // Match using nombreSede (string) or idSede
       const matchesSede = filters.sede === 'ALL' || 
@@ -221,28 +276,54 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
           <h2 className="clini-title-main font-black">Control de Paquetes</h2>
           <p className="clini-subtitle">Seguimiento de ventas, consumo y estados de contratos.</p>
         </div>
-        <button 
-          onClick={() => setIsVentaModalOpen(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus size={20} />
-          Nueva Venta
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => navigate('/ventas/nueva')}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus size={20} />
+            Nueva Venta
+          </button>
+        </div>
       </div>
 
       {/* Área de Filtros pg-card */}
       <div className="clini-card p-6 border border-slate-100 bg-white/50 backdrop-blur-sm shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <Filter size={18} className="text-primary" />
+            <span className="text-sm font-black uppercase tracking-tight text-slate-700">Filtros de Control</span>
+          </div>
+          {(filters.search !== '' || filters.sede !== 'ALL' || filters.maestro !== 'ALL' || filters.estado !== 'ALL') && (
+            <button 
+              onClick={handleGlobalReset}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar Filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredVentas)}
+            onPdf={() => handleExportPDF(filteredVentas)}
+            showLabel={false}
+            className="rounded-full h-[44px] w-[44px] shadow-sm hover:shadow-md"
+          />
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="space-y-2">
-            <label className="clini-label px-1">Buscar Paciente</label>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" size={16} />
+          <div className="space-y-2 lg:col-span-1">
+            <label className="clini-label px-1">Buscar Venta</label>
+            <div className="relative group/search">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
               <input 
                 type="text" 
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white focus:border-primary/20 transition-all placeholder:text-slate-300"
-                placeholder="Nombre, Paquete o ID..."
+                placeholder="Paciente o Contrato..."
                 value={filters.search}
-                onChange={e => setFilters({...filters, search: e.target.value})}
+                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                className="w-full pl-11 pr-10 py-2.5 bg-slate-50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 focus:bg-white focus:border-primary/20 transition-all"
               />
             </div>
           </div>
@@ -311,7 +392,10 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
         data={filteredVentas}
         columns={columns as any}
         isLoading={isLoading}
+        onEdit={(v) => navigate(`/ventas/editar/${v.id}`)}
         onDelete={permissions.puedeEliminar ? handleCancelClick : undefined}
+        showSearch={false}
+        showFilters={false}
       />
 
       <AlertModal
@@ -332,13 +416,6 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
            <p className="text-sm text-slate-400 font-medium">Usa el botón superior para realizar la primera venta de un paquete.</p>
         </div>
       )}
-
-      <ModalVentaPaquete 
-        isOpen={isVentaModalOpen}
-        onClose={() => setIsVentaModalOpen(false)}
-        currentUser={currentUser}
-        onSuccess={loadData}
-      />
     </div>
   );
 }

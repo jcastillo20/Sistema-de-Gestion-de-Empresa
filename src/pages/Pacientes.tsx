@@ -1,21 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { AlertModal } from '../components/common/AlertModal';
-import { Paciente, Sede, PaqueteMaestro, PaquetePaciente } from '../types';
-import { UserPlus, Mail, Phone, User, Building2, ShieldCheck, UserCheck, Package, ShoppingCart, Plus, Info } from 'lucide-react';
+import { Paciente, Sede } from '../types';
+import { 
+  UserPlus, 
+  Mail, 
+  Phone, 
+  User, 
+  Building2, 
+  ShieldCheck, 
+  Package, 
+  ShoppingCart, 
+  Plus, 
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Search,
+  X
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { VALIDATION_RULES, PROFILES_WITH_SEDE_ACCESS } from '../constants';
 import { usePermissions } from '../hooks/usePermissions';
-import { cn } from '@/src/lib/utils';
+import { cn } from '../lib/utils';
 import { apiService } from '../services/apiService';
-import PackageCard from '../components/paquetes/PackageCard';
+import { exportService } from '../services/exportService';
+import { getExportContext } from '../utils/exportUtils';
+import { ExportButton } from '../components/common/ExportButton';
 
 interface PacientesProps {
   currentUser: any;
 }
 
 export default function Pacientes({ currentUser }: PacientesProps) {
+  const navigate = useNavigate();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,14 +42,10 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'error' as 'error' | 'success' });
   const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPackModalOpen, setIsPackModalOpen] = useState(false);
-  const [patientPackages, setPatientPackages] = useState<PaquetePaciente[]>([]);
-  const [masterPackages, setMasterPackages] = useState<PaqueteMaestro[]>([]);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [showAllPackages, setShowAllPackages] = useState(false);
-  const [isConfirmAssignOpen, setIsConfirmAssignOpen] = useState(false);
-  const [packageToAssign, setPackageToAssign] = useState<string | null>(null);
-  const [packageNameToAssign, setPackageNameToAssign] = useState<string>('');
+  const [filters, setFilters] = useState({
+    search: '',
+    sede: 'ALL'
+  });
 
   const permissions = usePermissions(currentUser, 'pacientes');
 
@@ -56,16 +71,13 @@ export default function Pacientes({ currentUser }: PacientesProps) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Use permission verTodo to decide if we filter by sede
       const sedeFilter = permissions.verTodo ? undefined : currentUser.sede;
-      const [pacientesData, sedesData, masters] = await Promise.all([
+      const [pacientesData, sedesData] = await Promise.all([
         apiService.getPacientes(sedeFilter),
-        apiService.getSedes(),
-        apiService.getPaquetesMaestros()
+        apiService.getSedes()
       ]);
       setPacientes(pacientesData);
       setSedes(sedesData);
-      setMasterPackages(masters);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -73,75 +85,53 @@ export default function Pacientes({ currentUser }: PacientesProps) {
     }
   };
 
-  const [patientStats, setPatientStats] = useState({
-    totalCitas: 0,
-    asistencias: 0,
-    deuda: 0,
-    paquetesActivos: 0
-  });
+  const handleExportExcel = async (filteredData?: Paciente[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || pacientes;
+    const dataToExport = sourceData.map(p => {
+      const row: any = {
+        'Paciente': `${p.nombres} ${p.apellidoPaterno} ${p.apellidoMaterno}`,
+        'Documento': `${p.tipoDocumento} ${p.documentoIdentidad}`,
+        'Correo': p.correo || 'N/A',
+        'Teléfono': p.telefono || 'N/A',
+        'Estado': p.estado ? 'Activo' : 'Inactivo'
+      };
+      if (permissions.verTodo) row['Sede'] = p.sede;
+      return row;
+    });
 
-  const [patientCitas, setPatientCitas] = useState<any[]>([]);
-
-  const loadPatientStats = async (pacienteId: string) => {
-    const [packs, pagos, citas, transacciones] = await Promise.all([
-      apiService.getPaquetesPacientes(pacienteId),
-      apiService.getPagos(pacienteId), // Note: apiService.getPagos arg order is idPaciente, sede? 
-      apiService.getCitas(undefined, pacienteId),
-      apiService.getTransacciones()
-    ]);
-    
-    setPatientPackages(packs);
-    setPatientCitas(citas);
-    
-    // Calcular deuda: Suma de montos de pagos menos suma de transacciones vinculadas
-    const stats = {
-      totalCitas: citas.length,
-      asistencias: citas.filter(c => c.estadoCita === 'ASISTIÓ' || c.estadoCita === 'FINALIZADO').length,
-      deuda: pagos.reduce((acc, p) => {
-        const pagado = transacciones
-          .filter(t => t.idPago === p.idPago)
-          .reduce((sum, t) => sum + t.monto, 0);
-        return acc + (p.monto - pagado);
-      }, 0),
-      paquetesActivos: packs.filter(p => p.estado === 'ACTIVO').length
-    };
-    setPatientStats(stats);
+    exportService.exportToExcel(dataToExport, {
+      moduleName: 'Maestro de Pacientes',
+      fileName: 'Listado_Pacientes',
+      branding: branding as any,
+      context
+    });
   };
 
-  const handleOpenPackages = async (p: Paciente) => {
-    setSelectedPaciente(p);
-    setShowAllPackages(false);
-    loadPatientStats(p.id);
-    setIsPackModalOpen(true);
+  const handleExportPDF = async (filteredData?: Paciente[]) => {
+    const { branding, context } = await getExportContext(currentUser);
+    const sourceData = filteredData || pacientes;
+    const dataToExport = sourceData.map(p => {
+      const row: any = {
+        'Paciente': `${p.nombres} ${p.apellidoPaterno}`,
+        'Documento': `${p.documentoIdentidad}`,
+        'Correo': p.correo || '-',
+        'Estado': p.estado ? 'Activo' : 'Inactivo'
+      };
+      if (permissions.verTodo) row['Sede'] = p.sede;
+      return row;
+    });
+
+    exportService.exportToPDF(dataToExport, {
+      moduleName: 'Maestro de Pacientes',
+      fileName: 'Listado_Pacientes',
+      branding: branding as any,
+      context
+    });
   };
 
-  const handleAssignPackageClick = (idMaestro: string, nombreMaestro: string) => {
-    setPackageToAssign(idMaestro);
-    setPackageNameToAssign(nombreMaestro);
-    setIsConfirmAssignOpen(true);
-  };
-
-  const handleConfirmAssign = async () => {
-    if (!selectedPaciente || !packageToAssign) return;
-    setIsConfirmAssignOpen(false);
-    setIsAssigning(true);
-    try {
-      await apiService.asignarPaqueteAPaciente(
-        selectedPaciente.id,
-        packageToAssign,
-        selectedPaciente.sede || currentUser.sede,
-        currentUser.nombreUsuario
-      );
-      await loadPatientStats(selectedPaciente.id);
-      setAlertConfig({ title: 'Paquete Asignado', message: `El paquete "${packageNameToAssign}" se ha vinculado al paciente y se ha generado el cargo financiero.`, type: 'success' });
-      setIsAlertOpen(true);
-    } catch (error: any) {
-      setAlertConfig({ title: 'Error', message: error.message || 'No se pudo asignar el paquete.', type: 'error' });
-      setIsAlertOpen(true);
-    } finally {
-      setIsAssigning(false);
-      setPackageToAssign(null);
-    }
+  const handleOpenPackages = (p: Paciente) => {
+    navigate(`/pacientes/${p.id}/paquetes`);
   };
 
   const validateForm = (formData: any) => {
@@ -220,6 +210,17 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       setIsAlertOpen(true);
     }
   };
+
+  const filteredPacientes = useMemo(() => {
+    return pacientes.filter(p => {
+      const matchSearch = filters.search === '' || 
+        (p.nombres || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (p.apellidoPaterno || '').toLowerCase().includes(filters.search.toLowerCase()) ||
+        (p.documentoIdentidad || '').toLowerCase().includes(filters.search.toLowerCase());
+      const matchSede = filters.sede === 'ALL' || p.sede === filters.sede;
+      return matchSearch && matchSede;
+    });
+  }, [pacientes, filters]);
 
   const columns: any[] = [
     { 
@@ -303,12 +304,57 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         </div>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-1 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+        <div className="relative flex-1 group/search">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre, apellido o DNI..."
+            value={filters.search}
+            onChange={(e) => setFilters({...filters, search: e.target.value})}
+            className="pl-12 pr-10 py-2.5 bg-slate-50/50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2 pr-2">
+          {permissions.verTodo && (
+            <select 
+              className="px-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-[11px] font-black uppercase text-slate-600 outline-none cursor-pointer min-w-[150px] focus:ring-4 focus:ring-primary/5 transition-all"
+              value={filters.sede}
+              onChange={e => setFilters({...filters, sede: e.target.value})}
+            >
+              <option value="ALL">Todas las sedes</option>
+              {sedes.map(s => <option key={s.idSede} value={s.nombreSede}>{s.nombreSede}</option>)}
+            </select>
+          )}
+
+          {(filters.search !== '' || (permissions.verTodo && filters.sede !== 'ALL')) && (
+            <button 
+              onClick={() => setFilters({search: '', sede: 'ALL'})}
+              className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+              title="Limpiar Filtros"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          )}
+
+          <div className="h-8 w-px bg-slate-100 mx-1" />
+
+          <ExportButton 
+            onExcel={() => handleExportExcel(filteredPacientes)}
+            onPdf={() => handleExportPDF(filteredPacientes)}
+            showLabel={false}
+            className="rounded-full h-[44px] w-[44px] shadow-sm hover:shadow-md"
+          />
+        </div>
+      </div>
+
       <DataTable 
         title="Listado de Pacientes"
-        data={pacientes}
+        data={filteredPacientes}
         columns={columns}
-        searchPlaceholder="Buscar por nombre, apellido o DNI..."
-        searchFields={['nombres', 'apellidoPaterno', 'apellidoMaterno', 'documentoIdentidad']}
+        showSearch={false}
+        showFilters={false}
         onAdd={permissions.puedeCrear ? () => {
           setSelectedPaciente(null);
           setIsModalOpen(true);
@@ -319,210 +365,24 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         } : undefined}
         onDelete={permissions.puedeEliminar ? handleDelete : undefined}
         customActions={(p) => (
-          <button 
-            onClick={() => handleOpenPackages(p)}
-            className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors active:scale-95"
-            title="Paquetes del Paciente"
-          >
-            <Package size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => handleOpenPackages(p)}
+              className="p-2 rounded-lg text-amber-600 bg-amber-50 hover:bg-amber-100 transition-colors active:scale-95"
+              title="Ver Expediente"
+            >
+              <Package size={16} />
+            </button>
+            <button 
+              onClick={() => navigate('/ventas/nueva')}
+              className="p-2 rounded-lg text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-colors active:scale-95"
+              title="Nueva Venta"
+            >
+              <ShoppingCart size={16} />
+            </button>
+          </div>
         )}
       />
-
-      <Modal
-        isOpen={isPackModalOpen}
-        onClose={() => setIsPackModalOpen(false)}
-        title={`Expediente: ${selectedPaciente?.nombres} ${selectedPaciente?.apellidoPaterno}`}
-        size="lg"
-      >
-        <div className="space-y-8 py-4">
-          {/* Top 4 Cards - Expediente Híbrido */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 rounded-3xl bg-slate-50 border border-slate-100">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Citas Totales</p>
-              <p className="text-2xl font-black text-slate-900">{patientStats.totalCitas}</p>
-            </div>
-            <div className="p-4 rounded-3xl bg-emerald-50 border border-emerald-100">
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Asistencias</p>
-              <p className="text-2xl font-black text-emerald-700">{patientStats.asistencias}</p>
-            </div>
-            <div className="p-4 rounded-3xl bg-rose-50 border border-rose-100">
-              <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-1">Deuda Pendiente</p>
-              <p className="text-2xl font-black text-rose-700">S/ {patientStats.deuda}</p>
-            </div>
-            <div className="p-4 rounded-3xl bg-amber-50 border border-amber-100">
-              <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Paquetes Activos</p>
-              <p className="text-2xl font-black text-amber-700">{patientStats.paquetesActivos}</p>
-            </div>
-          </div>
-
-          {/* Listado de Citas Recientes/Próximas */}
-          <section className="space-y-4">
-            <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">
-              <ShieldCheck size={18} className="text-primary" />
-              Agenda y Seguimiento
-            </h4>
-            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
-               {patientCitas.length > 0 ? (
-                 <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto">
-                   {patientCitas.sort((a,b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).map(cita => (
-                     <div key={cita.id} className="p-4 flex items-center justify-between hover:bg-white transition-colors">
-                        <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex flex-col items-center justify-center">
-                              <span className="text-[10px] font-black text-primary leading-none">{new Date(cita.fecha).getDate()}</span>
-                              <span className="text-[8px] font-bold text-slate-400 uppercase leading-none">{new Date(cita.fecha).toLocaleDateString('es', { month: 'short' })}</span>
-                           </div>
-                           <div>
-                              <p className="text-xs font-black text-slate-700">{cita.horaInicio} - {cita.horaFin}</p>
-                              <p className="text-[10px] text-slate-400 font-medium">{cita.sede}</p>
-                           </div>
-                        </div>
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter",
-                          cita.estadoCita === 'PENDIENTE' ? "bg-amber-100 text-amber-600" :
-                          cita.estadoCita === 'ASISTIÓ' ? "bg-emerald-100 text-emerald-600" :
-                          "bg-slate-100 text-slate-400"
-                        )}>
-                          {cita.estadoCita}
-                        </span>
-                     </div>
-                   ))}
-                 </div>
-               ) : (
-                 <div className="p-8 text-center text-slate-400 italic text-xs">
-                    No se registran citas para este paciente.
-                 </div>
-               )}
-            </div>
-          </section>
-
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="flex items-center gap-2 font-black text-slate-800 uppercase tracking-tight">
-                <ShoppingCart size={18} className="text-primary" />
-                Suscripciones y Contratos
-              </h4>
-              {patientPackages.length > 0 && (
-                <button
-                  onClick={() => setShowAllPackages(!showAllPackages)}
-                  className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline transition-all"
-                >
-                  {showAllPackages ? 'Ver Cards Recientes' : 'Ver Historial Completo'}
-                </button>
-              )}
-            </div>
-
-            {patientPackages.length > 0 ? (
-              showAllPackages ? (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <DataTable 
-                    title="Historial Completo"
-                    data={patientPackages}
-                    showSearch={false}
-                    showFilters={false}
-                    columns={[
-                      { 
-                        header: 'Fecha', 
-                        accessor: (p: PaquetePaciente) => <span className="font-medium text-slate-500">{new Date(p.fechaContrato).toLocaleDateString()}</span>,
-                        sortable: true,
-                        sortKey: 'fechaContrato'
-                      },
-                      { 
-                        header: 'Paquete', 
-                        accessor: 'nombre' as any,
-                        className: 'font-bold text-slate-700',
-                        sortable: true
-                      },
-                      { 
-                        header: 'Estado', 
-                        accessor: (p: PaquetePaciente) => (
-                          <div className="flex justify-center">
-                            <span className={cn(
-                              "px-3 py-1 rounded-full font-black text-[9px] uppercase tracking-tighter",
-                              p.estado === 'ACTIVO' ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400"
-                            )}>
-                              {p.estado}
-                            </span>
-                          </div>
-                        ),
-                        sortable: true,
-                        sortKey: 'estado'
-                      },
-                      { 
-                        header: 'Progreso', 
-                        accessor: (p: PaquetePaciente) => (
-                          <div className="flex items-center gap-3">
-                            <span className="font-black text-primary min-w-[35px] text-right">{Math.round((p.citasConsumidas / p.cantCitas) * 100)}%</span>
-                            <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(p.citasConsumidas / p.cantCitas) * 100}%` }}
-                                className="h-full bg-primary" 
-                              />
-                            </div>
-                          </div>
-                        )
-                      }
-                    ]}
-                  />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {patientPackages.slice(0, 4).map((pack: PaquetePaciente) => (
-                    <PackageCard key={pack.id} pack={pack} />
-                  ))}
-                </div>
-              )
-            ) : (
-              <div className="p-12 text-center bg-slate-50/50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center mx-auto mb-4 text-slate-400">
-                  <Package size={32} />
-                </div>
-                <p className="text-slate-500 font-bold">Sin paquetes activos</p>
-                <p className="text-xs text-slate-400">El paciente aún no ha contratado ningún plan terapéutico.</p>
-              </div>
-            )}
-          </section>
-
-          {/* Buscador/Asignador de Paquetes Maestros */}
-          <section className="space-y-4 pt-6 border-t font-sans">
-            <div className="flex items-center gap-2">
-              <Plus size={18} className="text-primary" />
-              <h4 className="font-black text-slate-800 uppercase tracking-tight">Vincular Nuevo Paquete</h4>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {masterPackages.map(master => (
-                <button
-                  key={master.id}
-                  disabled={isAssigning}
-                  onClick={() => handleAssignPackageClick(master.id, master.nombre)}
-                  className="p-4 rounded-3xl border border-slate-200 text-left hover:border-primary hover:shadow-lg hover:shadow-primary/5 transition-all group relative overflow-hidden"
-                >
-                  <div className="flex flex-col gap-1">
-                    <p className="font-bold text-slate-900 group-hover:text-primary transition-colors">{master.nombre}</p>
-                    <div className="flex items-center justify-between mt-2">
-                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{master.cantCitas} Citas</span>
-                       <span className="text-primary font-black">S/ {master.precioSugerido}</span>
-                    </div>
-                  </div>
-                  <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Plus size={16} className="text-primary" />
-                  </div>
-                </button>
-              ))}
-            </div>
-            {masterPackages.length === 0 && (
-              <div className="flex items-center gap-3 p-4 bg-amber-50 text-amber-700 rounded-2xl border border-amber-200 shadow-sm">
-                <Info size={20} className="shrink-0" />
-                <p className="text-xs font-bold leading-tight">
-                  No hay "Paquetes Maestros" definidos. Debe crearlos primero en el módulo de Paquetes para poder venderlos.
-                </p>
-              </div>
-            )}
-          </section>
-        </div>
-      </Modal>
 
       <Modal
         isOpen={isModalOpen}
@@ -562,7 +422,7 @@ export default function Pacientes({ currentUser }: PacientesProps) {
               <label className="clini-label">Tipo de Documento *</label>
               <div className="clini-input-group clini-relative">
                 <div className="clini-input-icon">
-                  <UserCheck size={18} />
+                  <User size={18} />
                 </div>
                 <select name="tipoDocumento" className="clini-input-field-icon-left" defaultValue={selectedPaciente?.tipoDocumento || 'DNI'}>
                   <option value="DNI">DNI</option>
@@ -644,15 +504,6 @@ export default function Pacientes({ currentUser }: PacientesProps) {
         title={alertConfig.title}
         message={alertConfig.message}
         type={alertConfig.type as any}
-      />
-
-      <AlertModal
-        isOpen={isConfirmAssignOpen}
-        onClose={() => setIsConfirmAssignOpen(false)}
-        title="Confirmación de Asignación"
-        message={`¿Deseas asignar el paquete "${packageNameToAssign}" al paciente "${selectedPaciente?.nombres}"? Esta acción generará un cobro pendiente automáticamente.`}
-        type="warning"
-        onConfirm={handleConfirmAssign}
       />
     </div>
   );

@@ -37,9 +37,9 @@ const ICON_MAP: Record<string, any> = {
   'MOD_AUDITORIA': ClipboardList,
 };
 
+import { useNavigate, useLocation } from 'react-router-dom';
+
 interface SidebarProps {
-  activePage: string;
-  setActivePage: (page: string) => void;
   isCollapsed: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   clinicName: string;
@@ -47,13 +47,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ 
-  activePage, 
-  setActivePage, 
   isCollapsed, 
   setIsCollapsed,
   clinicName,
   clinicLogo
 }: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activePage = location.pathname.split('/')[1] || 'dashboard';
   const { availableModules, setUser } = useAuth();
   const [dynamicModules, setDynamicModules] = useState<ConfiguracionDinamica[]>([]);
 
@@ -70,7 +71,7 @@ export default function Sidebar({
 
   const handleLogout = () => {
     setUser(null);
-    setActivePage('dashboard');
+    navigate('/login');
   };
 
   // Obtener categorías únicas presentes en los módulos dinámicos (usando descripcion como agrupador del menú)
@@ -95,12 +96,12 @@ export default function Sidebar({
         <div className="space-y-1">
           {items.map((item) => {
             const Icon = ICON_MAP[item.clave] || LayoutDashboard;
-            const pageId = item.valor.toLowerCase();
+            const pageId = (item.valor || '').toLowerCase();
 
             return (
               <button
                 key={item.id}
-                onClick={() => setActivePage(pageId)}
+                onClick={() => navigate(`/${pageId}`)}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
                   activePage === pageId 
@@ -135,7 +136,7 @@ export default function Sidebar({
       )}
     >
       <div className="p-6 mb-4">
-        <div className="flex items-center gap-3 active:scale-95 transition-transform cursor-pointer" onClick={() => setActivePage('dashboard')}>
+        <div className="flex items-center gap-3 active:scale-95 transition-transform cursor-pointer" onClick={() => navigate('/dashboard')}>
           <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-white shrink-0 overflow-hidden shadow-lg shadow-primary/20">
             {clinicLogo ? (
               <img src={clinicLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -155,7 +156,7 @@ export default function Sidebar({
         {/* Siempre mostramos el dashboard al inicio */}
         <div className="mb-6">
            <button
-              onClick={() => setActivePage('dashboard')}
+              onClick={() => navigate('/dashboard')}
               className={cn(
                 "w-full flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300 group relative",
                 activePage === 'dashboard' 
@@ -172,6 +173,7 @@ export default function Sidebar({
 
         {categories.map(category => renderSection(category))}
       </nav>
+
 
       <div className="mt-auto p-4 border-t border-slate-50">
         {!isCollapsed && (

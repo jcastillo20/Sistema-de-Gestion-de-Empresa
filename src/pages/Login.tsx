@@ -181,7 +181,7 @@ export default function Login({ onLogin }: LoginProps) {
 
             <div className="clini-login-footer">
               <p className="clini-login-copyright">
-                © 2024 ST Clínica - Todos los derechos reservados
+                © {new Date().getFullYear()} {clinicName} - Todos los derechos reservados
               </p>
             </div>
           </div>

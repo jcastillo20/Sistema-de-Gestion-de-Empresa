@@ -10,11 +10,13 @@ import {
   Filter,
   Download,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { AlertModal } from './AlertModal';
 import { apiService } from '../../services/apiService';
+import { ExportButton } from './ExportButton';
 
 interface Column<T> {
   header: string;
@@ -37,6 +39,9 @@ interface DataTableProps<T> {
   searchFields?: (keyof T)[];
   showSearch?: boolean;
   showFilters?: boolean;
+  onExcel?: (data: T[]) => void;
+  onPdf?: (data: T[]) => void;
+  onReset?: () => void;
 }
 
 export function DataTable<T>({ 
@@ -51,7 +56,10 @@ export function DataTable<T>({
   searchPlaceholder = "Buscar...",
   searchFields,
   showSearch = true,
-  showFilters = true
+  showFilters = true,
+  onExcel,
+  onPdf,
+  onReset
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,9 +167,11 @@ export function DataTable<T>({
       />
       <div className="p-6 border-b border-slate-50 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="flex items-center gap-2">
             <h3 className="text-lg font-black text-slate-900 tracking-tight">{title}</h3>
-            <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Total: {data.length} registros</p>
+            <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-tight">
+              {data.length} Registros
+            </span>
           </div>
           <div className="flex items-center gap-3">
             {onAdd && (
@@ -179,25 +189,45 @@ export function DataTable<T>({
         {(showSearch || showFilters) && (
           <div className="flex flex-col sm:flex-row gap-4">
             {showSearch && (
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <div className="relative flex-1 group/search">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/search:text-primary transition-colors" size={16} />
                 <input 
                   type="text" 
                   placeholder={searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                  className="pl-12 pr-4 py-3 bg-slate-50/50 border border-slate-100 rounded-2xl text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
+                  className="pl-12 pr-10 py-2.5 bg-slate-50/50 border border-slate-100 rounded-[var(--sys-radius-3xl)] text-xs font-bold outline-none focus:ring-4 focus:ring-primary/5 w-full transition-all"
                 />
+                {searchTerm && (
+                  <button 
+                    onClick={() => { setSearchTerm(''); setCurrentPage(1); onReset?.(); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                    title="Limpiar búsqueda"
+                  >
+                    <X size={14} strokeWidth={3} />
+                  </button>
+                )}
               </div>
             )}
             {showFilters && (
               <div className="flex items-center gap-2">
-                <button className="p-2.5 rounded-2xl border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all" title="Filtrar">
-                  <Filter size={18} />
-                </button>
-                <button className="p-2.5 rounded-2xl border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all" title="Exportar">
-                  <Download size={18} />
-                </button>
+                {(searchTerm !== '' || onReset) && (
+                  <button 
+                    onClick={() => { setSearchTerm(''); setCurrentPage(1); onReset?.(); }}
+                    className="p-2.5 rounded-full border border-slate-100 text-rose-500 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-100 transition-all flex items-center justify-center h-[44px] w-[44px] shrink-0 active:scale-95 shadow-sm hover:shadow-md" 
+                    title="Limpiar Filtros"
+                  >
+                    <X size={20} strokeWidth={2.5} />
+                  </button>
+                )}
+                {(onExcel || onPdf) && (
+                  <ExportButton 
+                    onExcel={() => onExcel?.(filteredAndSortedData)} 
+                    onPdf={() => onPdf?.(filteredAndSortedData)} 
+                    showLabel={false}
+                    label="Exportar"
+                  />
+                )}
               </div>
             )}
           </div>
@@ -207,12 +237,12 @@ export function DataTable<T>({
       <div className="overflow-x-auto min-h-0 flex-1">
         <table className="pg-table w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50/50 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
+            <tr className="bg-slate-50/50 border-b border-slate-100">
               {columns.map((column, idx) => (
                 <th 
                   key={idx} 
                   className={cn(
-                    "px-6 py-5 whitespace-nowrap",
+                    "px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500 tracking-tight",
                     column.sortable && "cursor-pointer hover:text-primary transition-colors",
                     column.className
                   )}
@@ -233,7 +263,7 @@ export function DataTable<T>({
                 </th>
               ))}
               {(onEdit || onDelete || customActions) && (
-                <th className="px-6 py-5 text-right font-black uppercase tracking-widest bg-slate-50/50">
+                <th className="px-6 py-4 text-right text-sm font-medium text-slate-500 tracking-tight bg-slate-50/50">
                   Acciones
                 </th>
               )}
