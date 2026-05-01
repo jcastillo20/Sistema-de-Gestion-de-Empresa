@@ -105,7 +105,8 @@ export default function Agenda({ currentUser }: AgendaProps) {
       moduleName: 'Agenda de Consultas',
       fileName: 'Listado_Agenda',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 
@@ -158,14 +159,28 @@ export default function Agenda({ currentUser }: AgendaProps) {
   };
 
   const getWeekRange = (date: Date) => {
-    const start = new Date(date);
-    const day = start.getDay();
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1);
-    start.setDate(diff);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    
-    return `${start.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} - ${end.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    const curr = new Date(date);
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+    const first = new Date(curr.setDate(diff));
+    const last = new Date(first);
+    last.setDate(first.getDate() + 6);
+
+    const formatDayMonth = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    };
+
+    const formatFull = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    if (first.getFullYear() !== last.getFullYear()) {
+      return `${formatFull(first)} al ${formatFull(last)}`;
+    } else if (first.getMonth() !== last.getMonth()) {
+      return `${formatDayMonth(first)} al ${formatFull(last)}`;
+    } else {
+      return `${first.getDate()} al ${formatFull(last)}`;
+    }
   };
 
   const weekDates = useMemo(() => {
@@ -213,17 +228,12 @@ export default function Agenda({ currentUser }: AgendaProps) {
           <div className="p-4 bg-white border-r border-slate-100"></div>
           {days.map((date, i) => (
             <div key={i} className="p-4 text-center border-r border-slate-100 last:border-r-0 bg-white">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-1">
-                {date.toLocaleDateString('es-ES', { weekday: 'short' })}
-              </span>
-              <span className={cn(
-                "w-10 h-10 inline-flex items-center justify-center rounded-2xl font-black text-lg transition-all",
-                date.toDateString() === new Date().toDateString() 
-                  ? "bg-primary text-white shadow-lg shadow-primary/30 scale-110" 
-                  : "text-slate-700"
-              )}>
-                {date.getDate()}
-              </span>
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">
+                  {date.toLocaleDateString('es-ES', { weekday: 'short' })}
+               </span>
+               <span className="text-sm font-black text-primary block">
+                  {date.getDate()}
+               </span>
             </div>
           ))}
         </div>
@@ -335,8 +345,8 @@ export default function Agenda({ currentUser }: AgendaProps) {
            <button onClick={() => handleNavigate('prev')} className="p-2 hover:bg-slate-50 rounded-xl transition-all text-slate-400 hover:text-primary cursor-pointer active:scale-90">
               <ChevronLeft size={18} />
            </button>
-           <div className="px-2 text-center min-w-[130px]">
-              <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight whitespace-nowrap">
+           <div className="px-4 text-center min-w-[250px]">
+              <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest whitespace-nowrap">
                 {getWeekRange(currentDate)}
               </span>
            </div>

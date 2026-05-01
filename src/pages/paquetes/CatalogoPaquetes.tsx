@@ -67,7 +67,8 @@ export default function CatalogoPaquetes({ currentUser }: CatalogoPaquetesProps)
       moduleName: 'Catálogo de Paquetes',
       fileName: 'Catalogo_Paquetes',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 

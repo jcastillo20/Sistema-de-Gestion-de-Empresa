@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -11,10 +11,9 @@ import {
   ChevronLeft, 
   ChevronRight,
   AlertCircle,
-  Copy,
-  Check,
-  LayoutGrid,
-  Search
+  Coffee,
+  Briefcase,
+  LayoutGrid
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { apiService } from '../../services/apiService';
@@ -47,21 +46,13 @@ export default function GestionHorarios() {
   const [activeTab, setActiveTab] = useState<'listado' | 'calendario'>('listado');
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth() + 1);
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
-  const [isBulkAdding, setIsBulkAdding] = useState(false);
-  const [bulkFormData, setBulkFormData] = useState({
-    diasSemana: [] as string[],
-    tipo: 'TRABAJO' as 'TRABAJO' | 'PAUSA',
-    horaInicio: '08:00',
-    horaFin: '12:00',
-    estado: 'DISPONIBLE' as 'DISPONIBLE' | 'REFRIGERIO'
-  });
 
   const [calendarView, setCalendarView] = useState<'day' | 'week' | 'month'>('week');
   const [calendarDate, setCalendarDate] = useState(new Date());
   
   const [isLoading, setIsLoading] = useState(true);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'error' });
+  const [alertConfig, setAlertConfig] = useState({ title: '', message: '', type: 'error' as 'error' | 'success' });
 
   // Block Modal State
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
@@ -90,7 +81,7 @@ export default function GestionHorarios() {
 
       setTerapeuta(terapeutaData);
       setSedes(sedesData);
-      setEspecialidades(especData);
+      setEspecialidades(especData.filter(e => e.estado));
       
       const agendaConfig = configData.filter(c => c.categoria === 'AGENDA').reduce((acc, curr) => {
         acc[curr.clave] = curr.valor;
@@ -126,9 +117,16 @@ export default function GestionHorarios() {
     }
   };
 
-  const handleFilterChange = async (month: number, year: number) => {
+  const handleFilterChange = async (month: number, year: number, skipCalendarSync = false) => {
     setFilterMonth(month);
     setFilterYear(year);
+    
+    // Sincronizar tmbn la fecha del calendario a ese mes/año solo si no viene de una navegación directa del calendario
+    if (!skipCalendarSync) {
+      const newDate = new Date(year, month - 1, 1);
+      setCalendarDate(newDate);
+    }
+
     if (!id) return;
 
     const existing = allTerapeutaHorarios.find(h => h.mes === month && h.año === year && h.estado);
@@ -189,27 +187,6 @@ export default function GestionHorarios() {
     }));
   };
 
-  const handleBulkAdd = () => {
-    if (!bulkFormData.diasSemana.length) {
-      setAlertConfig({ title: 'Atención', message: 'Seleccione al menos un día.', type: 'error' });
-      setIsAlertOpen(true);
-      return;
-    }
-    const newBloque: BloqueHorario = {
-      id: Math.random().toString(36).substr(2, 9),
-      diasSemana: [...bulkFormData.diasSemana],
-      horaInicio: bulkFormData.horaInicio,
-      horaFin: bulkFormData.horaFin,
-      tipo: bulkFormData.tipo,
-      estado: bulkFormData.tipo === 'PAUSA' ? 'REFRIGERIO' : 'DISPONIBLE'
-    };
-    setHorarioFormData(prev => ({
-      ...prev,
-      bloques: [...(prev.bloques || []), newBloque]
-    }));
-    setIsBulkAdding(false);
-  };
-
   const handleSave = async () => {
     if (!user) return;
     try {
@@ -227,16 +204,88 @@ export default function GestionHorarios() {
     }
   };
 
-  const generateTimeSlots = () => {
+  const getTherapistSessionMinutes = () => {
+    // 1. Verificar si la configuración es Global
+    if (configAgenda?.TIPO_DURACION_SESION === 'GLOBAL') {
+      return Number(configAgenda.DURACION_SESION_GLOBAL) || 30;
+    }
+
+    // 2. Si es por sesión/especialidad, buscar todas las especialidades del terapeuta
+    if (!terapeuta || !terapeuta.especialidades || terapeuta.especialidades.length === 0) {
+      return Number(configAgenda?.DURACION_SESION_GLOBAL) || 30;
+    }
+    
+    const therapistSpecs = especialidades.filter(e => terapeuta.especialidades.includes(e.nombre));
+    
+    if (therapistSpecs.length === 0) {
+      return Number(configAgenda?.DURACION_SESION_GLOBAL) || 30;
+    }
+    
+    // Tomar la duración más alta entre sus especialidades (Requerimiento UX Premium)
+    const maxDuration = Math.max(...therapistSpecs.map(e => e.duracionSesion || 0));
+    
+    return maxDuration > 0 ? maxDuration : 30;
+  };
+
+  const generateTimeSlots = (intervalMinutes: number) => {
     const slots = [];
-    let curr = 8 * 60;
-    while (curr < 21 * 60) {
-      const h = Math.floor(curr / 60);
-      const m = curr % 60;
+    const startHour = 8;
+    const endHour = 21;
+    let currentInMinutes = startHour * 60;
+    const endInMinutes = endHour * 60;
+
+    while (currentInMinutes < endInMinutes) {
+      const h = Math.floor(currentInMinutes / 60);
+      const m = currentInMinutes % 60;
       slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-      curr += 15; // 15 min slots for better precision
+      currentInMinutes += intervalMinutes;
     }
     return slots;
+  };
+
+  const getWeekRange = (date: Date) => {
+    const curr = new Date(date);
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+    const first = new Date(curr.setDate(diff));
+    const last = new Date(first);
+    last.setDate(first.getDate() + 6);
+
+    const formatDayMonth = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    };
+
+    const formatFull = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    // Calcular número de semana
+    const startOfYear = new Date(first.getFullYear(), 0, 1);
+    const pastDaysOfYear = (first.getTime() - startOfYear.getTime()) / 86400000;
+    const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+
+    let rangeText = "";
+    if (first.getFullYear() !== last.getFullYear()) {
+      rangeText = `${formatFull(first)} al ${formatFull(last)}`;
+    } else if (first.getMonth() !== last.getMonth()) {
+      rangeText = `${formatDayMonth(first)} al ${formatFull(last)}`;
+    } else {
+      rangeText = `${first.getDate()} al ${formatFull(last)}`;
+    }
+
+    return `${rangeText} (Semana ${weekNum})`;
+  };
+
+  const getWeekDates = (date: Date) => {
+    const curr = new Date(date);
+    const day = curr.getDay();
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
+    const start = new Date(curr.setDate(diff));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
   };
 
   if (isLoading) return <div className="p-12 text-center text-slate-400 font-bold tracking-widest uppercase text-xs">Cargando configuración de horarios...</div>;
@@ -256,7 +305,13 @@ export default function GestionHorarios() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-primary font-black uppercase tracking-widest">{terapeuta?.nombres} {terapeuta?.apellidoPaterno}</span>
               <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-              <span className="text-xs text-slate-400 font-bold uppercase tracking-widest">{terapeuta?.sede}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{terapeuta?.sede}</span>
+              {terapeuta?.especialidades && terapeuta.especialidades.length > 0 && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span className="text-[10px] text-primary font-black uppercase tracking-widest">{terapeuta.especialidades.join(' / ')}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -268,7 +323,7 @@ export default function GestionHorarios() {
              className="bg-transparent border-none text-[10px] font-black uppercase text-slate-600 focus:ring-0 px-3 cursor-pointer"
            >
              {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
-               <option key={i} value={i + 1}>{m}</option>
+                <option key={i} value={i + 1}>{m}</option>
              ))}
            </select>
            <select 
@@ -276,7 +331,7 @@ export default function GestionHorarios() {
              onChange={(e) => handleFilterChange(filterMonth, Number(e.target.value))}
              className="bg-transparent border-none text-[10px] font-black uppercase text-slate-600 focus:ring-0 px-3 cursor-pointer"
            >
-             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 1 + i).map(y => (
+             {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(y => (
                <option key={y} value={y}>{y}</option>
              ))}
            </select>
@@ -285,7 +340,7 @@ export default function GestionHorarios() {
              className="ml-2 px-6 py-2 bg-primary text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2 hover:shadow-lg hover:shadow-primary/20 transition-all"
            >
              <Save size={14} />
-             Guardar
+             Guardar Planes
            </button>
         </div>
       </div>
@@ -314,76 +369,20 @@ export default function GestionHorarios() {
                    Vista Semanal
                  </button>
                </div>
-
+               
                {activeTab === 'listado' && (
                  <button 
-                   onClick={() => setIsBulkAdding(!isBulkAdding)}
-                   className={cn(
-                     "flex items-center gap-2 px-4 py-2 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                     isBulkAdding ? "bg-primary border-primary text-white" : "border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-primary"
-                   )}
+                   onClick={handleAddBloque}
+                   className="flex items-center gap-2 px-4 py-2 border border-primary text-primary rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-primary hover:text-white"
                  >
-                   {isBulkAdding ? <Check size={14} /> : <Plus size={14} />}
-                   {isBulkAdding ? 'Configurando...' : 'Asignación Masiva'}
+                   <Plus size={14} />
+                   Nuevo Bloque de Horario
                  </button>
                )}
             </div>
 
             {activeTab === 'listado' ? (
               <div className="space-y-6">
-                {isBulkAdding && (
-                  <div className="p-6 bg-primary/5 border border-primary/10 rounded-3xl animate-in fade-in slide-in-from-top-2 duration-300">
-                    <h4 className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Planificación por Día de la Semana</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div className="md:col-span-2 space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Días Aplicables</label>
-                        <div className="flex flex-wrap gap-1">
-                          {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
-                            <button
-                              key={d}
-                              onClick={() => setBulkFormData(prev => ({
-                                ...prev,
-                                diasSemana: prev.diasSemana.includes(d) ? prev.diasSemana.filter(x => x !== d) : [...prev.diasSemana, d]
-                              }))}
-                              className={cn(
-                                "px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all",
-                                bulkFormData.diasSemana.includes(d) ? "bg-primary border-primary text-white shadow-md shadow-primary/20" : "bg-white border-slate-200 text-slate-400"
-                              )}
-                            >
-                              {d.substring(0, 3)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Horario</label>
-                        <div className="flex items-center gap-2">
-                          <input 
-                            type="time" 
-                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                            value={bulkFormData.horaInicio}
-                            onChange={(e) => setBulkFormData(prev => ({ ...prev, horaInicio: e.target.value }))}
-                          />
-                          <input 
-                            type="time" 
-                            className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold"
-                            value={bulkFormData.horaFin}
-                            onChange={(e) => setBulkFormData(prev => ({ ...prev, horaFin: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-end">
-                        <button 
-                          onClick={handleBulkAdd}
-                          className="w-full py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/10"
-                        >
-                          Aplicar Bloque
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <div className="overflow-hidden border border-slate-100 rounded-2xl">
                   <table className="w-full text-left">
                     <thead className="bg-slate-50 border-b border-slate-100">
@@ -422,7 +421,7 @@ export default function GestionHorarios() {
                                  <button 
                                    onClick={() => handleEditBloque(b)}
                                    className="p-2 text-slate-300 hover:text-primary transition-colors"
-                                   title="Editar Bloque"
+                                   title="Editar"
                                  >
                                    <Edit size={16} />
                                  </button>
@@ -446,55 +445,83 @@ export default function GestionHorarios() {
                       )}
                     </tbody>
                   </table>
-                  <button 
-                    onClick={handleAddBloque}
-                    className="w-full py-4 bg-slate-50/50 border-t border-slate-100 text-[10px] font-black text-primary uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary/5 transition-all"
-                  >
-                    <Plus size={14} />
-                    Añadir Nuevo Bloque Manual
-                  </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-6">
                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
                     <div className="flex items-center gap-4">
-                       <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1">
-                          <button onClick={() => setCalendarDate(new Date(calendarDate.setDate(calendarDate.getDate() - 7)))} className="p-1.5 hover:bg-slate-50 rounded-lg transition-all"><ChevronLeft size={16} /></button>
-                          <span className="px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                            {calendarDate.toLocaleDateString('es', { month: 'long', year: 'numeric' })}
+                       <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+                          <button 
+                            onClick={() => {
+                              const newDate = new Date(calendarDate);
+                              newDate.setDate(newDate.getDate() - 7);
+                              setCalendarDate(newDate);
+                              // Sincronizar mes/año del plan si cambió (skip sync para evitar saltos al día 1)
+                              if (newDate.getMonth() + 1 !== filterMonth || newDate.getFullYear() !== filterYear) {
+                                handleFilterChange(newDate.getMonth() + 1, newDate.getFullYear(), true);
+                              }
+                            }} 
+                            className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-primary rounded-lg transition-all"
+                          >
+                            <ChevronLeft size={18} />
+                          </button>
+                          <span className="px-6 text-[10px] font-black text-slate-700 uppercase tracking-widest text-center min-w-[250px]">
+                            {getWeekRange(calendarDate)}
                           </span>
-                          <button onClick={() => setCalendarDate(new Date(calendarDate.setDate(calendarDate.getDate() + 7)))} className="p-1.5 hover:bg-slate-50 rounded-lg transition-all"><ChevronRight size={16} /></button>
+                          <button 
+                            onClick={() => {
+                              const newDate = new Date(calendarDate);
+                              newDate.setDate(newDate.getDate() + 7);
+                              setCalendarDate(newDate);
+                              // Sincronizar mes/año del plan si cambió (skip sync para evitar saltos al día 1)
+                              if (newDate.getMonth() + 1 !== filterMonth || newDate.getFullYear() !== filterYear) {
+                                handleFilterChange(newDate.getMonth() + 1, newDate.getFullYear(), true);
+                              }
+                            }} 
+                            className="p-1.5 hover:bg-slate-50 text-slate-400 hover:text-primary rounded-lg transition-all"
+                          >
+                            <ChevronRight size={18} />
+                          </button>
                        </div>
                     </div>
                  </div>
 
-                 <div className="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-inner">
+                 <div className="border border-slate-100 rounded-[var(--sys-radius-3xl)] overflow-hidden bg-white shadow-inner">
                     <div className="overflow-x-auto">
                         <div className="min-w-[800px]">
                            <div className="grid grid-cols-8 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm">
                               <div className="p-4 border-r border-slate-100"></div>
-                              {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
-                                <div key={d} className="p-4 text-center border-r border-slate-100 last:border-r-0">
-                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{d.substring(0, 3)}</span>
+                              {getWeekDates(calendarDate).map(d => (
+                                <div key={d.toISOString()} className="p-4 text-center border-r border-slate-100 last:border-r-0">
+                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{d.toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                   <span className="text-sm font-black text-primary mt-1 block">{d.getDate()}</span>
                                 </div>
                               ))}
                            </div>
                            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
-                              {generateTimeSlots().map(timeStr => (
+                              {generateTimeSlots(getTherapistSessionMinutes()).map(timeStr => (
                                 <div key={timeStr} className="grid grid-cols-8 border-b border-slate-50 last:border-b-0">
                                    <div className="p-2 text-right pr-4 border-r border-slate-100 bg-slate-50/50">
                                       <span className="text-[9px] font-black text-slate-400">
-                                         {timeStr.endsWith(':00') || timeStr.endsWith(':30') ? timeStr : ''}
+                                         {timeStr}
                                       </span>
                                    </div>
-                                   {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(dayName => {
-                                      const slotH = Number(timeStr.split(':')[0]);
-                                      const slotM = Number(timeStr.split(':')[1]);
-                                      const slotTotal = slotH * 60 + slotM;
+                                   {getWeekDates(calendarDate).map(d => {
+                                      const dayName = d.toLocaleDateString('es-ES', { weekday: 'long' });
+                                      const dayNameCap = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+                                      const month = d.getMonth() + 1;
+                                      const year = d.getFullYear();
 
-                                      const match = horarioFormData.bloques?.find(b => {
-                                        if (!b.diasSemana.includes(dayName)) return false;
+                                      // Buscar el plan que corresponde a este día específico (mes/año)
+                                      const dayPlan = allTerapeutaHorarios.find(h => h.mes === month && h.año === year && h.estado) || (month === filterMonth && year === filterYear ? horarioFormData : null);
+
+                                      const slotMins = getTherapistSessionMinutes();
+                                      const [slotH, slotM] = timeStr.split(':').map(Number);
+                                      const slotTotal = slotH * 60 + slotM;
+                                      
+                                      const match = dayPlan?.bloques?.find(b => {
+                                        if (!b.diasSemana.includes(dayNameCap)) return false;
                                         const [sH, sM] = b.horaInicio.split(':').map(Number);
                                         const [eH, eM] = b.horaFin.split(':').map(Number);
                                         const start = sH * 60 + sM;
@@ -503,16 +530,18 @@ export default function GestionHorarios() {
                                       });
 
                                       return (
-                                        <div key={dayName} className={cn(
+                                        <div key={d.toISOString()} className={cn(
                                           "p-1 border-r border-slate-50 relative min-h-[35px] transition-colors",
                                           match ? "z-10" : "bg-slate-50/10 hover:bg-slate-50/40"
                                         )}>
                                           {match && (
                                             <div 
-                                              className="absolute inset-[2px] rounded-lg border border-white/20 shadow-sm flex items-center justify-center overflow-hidden"
+                                              onClick={() => handleEditBloque(match)}
+                                              className="absolute inset-[2px] rounded-[var(--sys-radius-3xl)] border border-white/20 shadow-sm flex flex-col items-center justify-center overflow-hidden cursor-pointer transition-all hover:scale-[1.03] hover:z-20"
                                               style={{ backgroundColor: configAgenda[`COLOR_${match.estado}`] }}
                                             >
-                                              <span className="text-[7px] font-black text-white uppercase opacity-50">{match.estado}</span>
+                                              <span className="text-[7px] font-black text-white uppercase leading-none">{match.tipo === 'PAUSA' ? <Coffee size={8} /> : <Briefcase size={8} />}</span>
+                                              <span className="text-[6px] font-black text-white uppercase mt-0.5">{match.estado.substring(0, 4)}</span>
                                             </div>
                                           )}
                                         </div>
@@ -533,11 +562,11 @@ export default function GestionHorarios() {
            <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <AlertCircle size={16} className="text-primary" />
-                Resumen del Mes
+                Resumen de Carga
               </h3>
               <div className="space-y-4">
                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Carga Horaria</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Carga Horaria Estimada</p>
                     <p className="text-xl font-black text-slate-800">
                       {horarioFormData.bloques?.filter(b => b.tipo === 'TRABAJO').reduce((acc, b) => {
                         const [sH, sM] = b.horaInicio.split(':').map(Number);
@@ -548,13 +577,13 @@ export default function GestionHorarios() {
                     </p>
                  </div>
                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Sede de Operación</p>
-                    <p className="text-sm font-black text-slate-700 uppercase">{terapeuta?.sede}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Especialidad Principal</p>
+                    <p className="text-sm font-black text-slate-700 uppercase">{terapeuta?.especialidades?.[0] || 'No definida'}</p>
                  </div>
               </div>
            </div>
 
-           <div className="bg-slate-900 p-6 rounded-[2rem] text-white shadow-xl shadow-slate-200">
+           <div className="bg-slate-900 p-6 rounded-[2rem] text-white shadow-xl">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Leyenda</h3>
               <div className="space-y-4">
                 {[
@@ -567,14 +596,8 @@ export default function GestionHorarios() {
                       <div className="w-2.5 h-2.5 rounded-full ring-4 ring-white/5" style={{ backgroundColor: item.color }}></div>
                       <span className="text-[10px] font-bold text-slate-300 uppercase">{item.label}</span>
                     </div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/10"></div>
                   </div>
                 ))}
-              </div>
-              <div className="mt-8 pt-6 border-t border-white/5">
-                 <p className="text-[9px] font-medium text-slate-500 leading-relaxed italic">
-                   * La disponibilidad configurada impactará directamente en la Agenda.
-                 </p>
               </div>
            </div>
         </div>
@@ -585,19 +608,46 @@ export default function GestionHorarios() {
         onClose={() => setIsAlertOpen(false)}
         title={alertConfig.title}
         message={alertConfig.message}
-        type={alertConfig.type as any}
+        type={alertConfig.type}
       />
 
       <Modal
         isOpen={isBlockModalOpen}
         onClose={() => setIsBlockModalOpen(false)}
-        title={editingBloque?.id && horarioFormData.bloques?.some(b => b.id === editingBloque.id) ? "Editar Bloque" : "Nuevo Bloque de Horario"}
+        title="Configurar Bloque de Horario"
         size="md"
       >
         {editingBloque && (
           <div className="space-y-6 py-4">
+             <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Mes de Aplicación</label>
+                  <select 
+                    value={horarioFormData.mes}
+                    onChange={(e) => handleFilterChange(Number(e.target.value), horarioFormData.año || filterYear)}
+                    className="clini-input rounded-[var(--sys-radius-3xl)] border-slate-200 text-xs font-black"
+                  >
+                    {['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].map((m, i) => (
+                       <option key={i} value={i + 1}>{m}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Año</label>
+                  <select 
+                    value={horarioFormData.año}
+                    onChange={(e) => handleFilterChange(horarioFormData.mes || filterMonth, Number(e.target.value))}
+                    className="clini-input rounded-[var(--sys-radius-3xl)] border-slate-200 text-xs font-black"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+             </div>
+
              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Días Aplicables</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Días de la Semana (Multi-selección)</label>
                 <div className="flex flex-wrap gap-2">
                    {DIAS.map(d => (
                      <button
@@ -608,10 +658,10 @@ export default function GestionHorarios() {
                          setEditingBloque({...editingBloque, diasSemana: next});
                        }}
                        className={cn(
-                         "px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all border-2",
+                         "px-4 py-2 rounded-[var(--sys-radius-3xl)] text-[10px] font-black uppercase transition-all border-2",
                          editingBloque.diasSemana?.includes(d) 
-                          ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                          : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
+                           ? "bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105" 
+                           : "bg-white border-slate-100 text-slate-400 hover:border-slate-200"
                        )}
                      >
                        {d.substring(0, 3)}
@@ -625,7 +675,7 @@ export default function GestionHorarios() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-emerald-500">Hora Inicio</label>
                   <input 
                     type="time" 
-                    className="clini-input bg-emerald-50/30 font-black"
+                    className="clini-input bg-emerald-50/30 font-black border-2 border-emerald-100 focus:border-emerald-500 rounded-[var(--sys-radius-3xl)]"
                     value={editingBloque.horaInicio}
                     onChange={(e) => setEditingBloque({...editingBloque, horaInicio: e.target.value})}
                   />
@@ -634,7 +684,7 @@ export default function GestionHorarios() {
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-rose-500">Hora Fin</label>
                   <input 
                     type="time" 
-                    className="clini-input bg-rose-50/30 font-black"
+                    className="clini-input bg-rose-50/30 font-black border-2 border-rose-100 focus:border-rose-500 rounded-[var(--sys-radius-3xl)]"
                     value={editingBloque.horaFin}
                     onChange={(e) => setEditingBloque({...editingBloque, horaFin: e.target.value})}
                   />
@@ -643,9 +693,9 @@ export default function GestionHorarios() {
 
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Actividad</label>
                   <select 
-                    className="clini-input"
+                    className="clini-input rounded-[var(--sys-radius-3xl)] border-slate-200"
                     value={editingBloque.tipo}
                     onChange={(e) => {
                       const type = e.target.value as any;
@@ -661,9 +711,9 @@ export default function GestionHorarios() {
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Estado</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Disponibilidad</label>
                   <select 
-                    className="clini-input"
+                    className="clini-input rounded-[var(--sys-radius-3xl)] border-slate-200"
                     value={editingBloque.estado}
                     onChange={(e) => setEditingBloque({...editingBloque, estado: e.target.value as any})}
                   >
@@ -673,6 +723,7 @@ export default function GestionHorarios() {
                       <>
                         <option value="DISPONIBLE">🟢 Disponible</option>
                         <option value="OCUPADO">🔴 Ocupado</option>
+                        <option value="BLOQUEADO">🔒 Bloqueado</option>
                       </>
                     )}
                   </select>
@@ -682,13 +733,13 @@ export default function GestionHorarios() {
              <div className="flex gap-3 pt-4">
                 <button 
                   onClick={() => setIsBlockModalOpen(false)}
-                  className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest"
+                  className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-[var(--sys-radius-3xl)] font-black uppercase text-[10px] tracking-widest hover:bg-slate-200 transition-all"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleSaveBloque}
-                  className="flex-1 py-4 bg-primary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20"
+                  className="flex-1 py-4 bg-primary text-white rounded-[var(--sys-radius-3xl)] font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all"
                 >
                   Confirmar Bloque
                 </button>

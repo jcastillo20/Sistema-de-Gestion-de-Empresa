@@ -99,7 +99,8 @@ export default function Horarios({ currentUser }: HorariosProps) {
       moduleName: 'Planificación de Horarios',
       fileName: 'Horarios_Terapeutas',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 
@@ -336,23 +337,34 @@ export default function Horarios({ currentUser }: HorariosProps) {
   const getWeekRange = (date: Date) => {
     const curr = new Date(date);
     const day = curr.getDay();
-    const diff = curr.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Monday start
+    const diff = curr.getDate() - day + (day === 0 ? -6 : 1);
     const first = new Date(curr.setDate(diff));
-    const last = new Date(curr.setDate(diff + 6));
+    const last = new Date(first);
+    last.setDate(first.getDate() + 6);
 
-    const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
-    const monthOptions: Intl.DateTimeFormatOptions = { month: 'long' };
+    const formatDayMonth = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+    };
 
-    // Get week number
+    const formatFull = (d: Date) => {
+      return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+
+    // Calcular número de semana
     const startOfYear = new Date(first.getFullYear(), 0, 1);
     const pastDaysOfYear = (first.getTime() - startOfYear.getTime()) / 86400000;
     const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
 
-    if (first.getMonth() === last.getMonth()) {
-      return `${first.getDate()} al ${last.getDate()} de ${first.toLocaleDateString('es-ES', { month: 'long' })}, Semana ${weekNum}`;
+    let rangeText = "";
+    if (first.getFullYear() !== last.getFullYear()) {
+      rangeText = `${formatFull(first)} al ${formatFull(last)}`;
+    } else if (first.getMonth() !== last.getMonth()) {
+      rangeText = `${formatDayMonth(first)} al ${formatFull(last)}`;
     } else {
-      return `${first.toLocaleDateString('es-ES', options)} al ${last.toLocaleDateString('es-ES', options)}, Semana ${weekNum}`;
+      rangeText = `${first.getDate()} al ${formatFull(last)}`;
     }
+
+    return `${rangeText} (Semana ${weekNum})`;
   };
 
   const getWeekDates = (date: Date) => {
@@ -376,11 +388,27 @@ export default function Horarios({ currentUser }: HorariosProps) {
     setCalendarDate(newDate);
   };
 
-  const generateTimeSlots = () => {
+  const getTherapistSessionMinutes = (terapeutaId: string) => {
+    const tera = terapeutas.find(t => t.id === terapeutaId);
+    if (!tera || !tera.especialidades || tera.especialidades.length === 0) return 30; // Default
+    
+    const spec = especialidades.find(e => e.nombre === tera.especialidades[0]);
+    return spec?.minutosSesion || 30;
+  };
+
+  const generateTimeSlots = (intervalMinutes: number) => {
     const slots = [];
-    for (let h = 8; h <= 20; h++) {
-      slots.push(`${h.toString().padStart(2, '0')}:00`);
-      slots.push(`${h.toString().padStart(2, '0')}:30`);
+    const startHour = 8;
+    const endHour = 21;
+    
+    let currentInMinutes = startHour * 60;
+    const endInMinutes = endHour * 60;
+
+    while (currentInMinutes < endInMinutes) {
+      const h = Math.floor(currentInMinutes / 60);
+      const m = currentInMinutes % 60;
+      slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+      currentInMinutes += intervalMinutes;
     }
     return slots;
   };
@@ -593,7 +621,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 <div className="px-4 text-[10px] font-black text-text-secondary uppercase min-w-[280px] text-center tracking-widest leading-relaxed">
                   {calendarView === 'month' ? calendarDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 
                    calendarView === 'week' ? getWeekRange(calendarDate) :
-                   calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                   calendarDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </div>
                 <button onClick={() => handleNavigateCalendar('next')} className="p-1.5 text-text-muted hover:text-primary hover:bg-surface rounded-lg transition-all">
                   <ChevronRight size={18} />
@@ -623,11 +651,11 @@ export default function Horarios({ currentUser }: HorariosProps) {
                   <div className="p-4 border-r border-border"></div>
                   {(calendarView === 'week' 
                     ? getWeekDates(calendarDate).map(d => ({ 
-                        label: d.toLocaleDateString('es-ES', { weekday: 'long' }), 
+                        label: d.toLocaleDateString('es-ES', { weekday: 'short' }), 
                         num: d.getDate() 
                       })) 
                     : [{ 
-                        label: calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }), 
+                        label: calendarDate.toLocaleDateString('es-ES', { weekday: 'short' }), 
                         num: calendarDate.getDate() 
                       }]
                   ).map((d, i) => ( 
@@ -638,7 +666,7 @@ export default function Horarios({ currentUser }: HorariosProps) {
                   ))}
                 </div>
                 <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
-                  {generateTimeSlots().map(time => (
+                  {generateTimeSlots(filterTerapeuta ? getTherapistSessionMinutes(filterTerapeuta) : 30).map(time => (
                     <div key={time} className={cn("grid border-b border-slate-50 last:border-b-0", calendarView === 'week' ? "grid-cols-8" : "grid-cols-2")}>
                       <div className="p-3 text-right pr-4 border-r border-border bg-bg/50">
                         <span className="text-[10px] font-bold text-text-muted">{time}</span>
@@ -648,9 +676,23 @@ export default function Horarios({ currentUser }: HorariosProps) {
                         : [calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }).charAt(0).toUpperCase() + calendarDate.toLocaleDateString('es-ES', { weekday: 'long' }).slice(1)]
                       ).map(day => {
                         const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1);
+                        const sessionMinutes = filterTerapeuta ? getTherapistSessionMinutes(filterTerapeuta) : 30;
+                        
+                        // Parse current slot time
+                        const [hours, minutes] = time.split(':').map(Number);
+                        const currentSlotStartMinutes = hours * 60 + minutes;
+                        const currentSlotEndMinutes = currentSlotStartMinutes + sessionMinutes;
+
                         const slotBlocks = filteredHorariosData.flatMap(h => h.bloques.filter(b => {
                           if (!b.diasSemana.includes(capitalizedDay)) return false;
-                          return time >= b.horaInicio && time < b.horaFin;
+                          
+                          const [bHours, bMinutes] = b.horaInicio.split(':').map(Number);
+                          const [bEHours, bEMinutes] = b.horaFin.split(':').map(Number);
+                          const blockStart = bHours * 60 + bMinutes;
+                          const blockEnd = bEHours * 60 + bEMinutes;
+
+                          // Check if slot falls within block
+                          return currentSlotStartMinutes >= blockStart && currentSlotStartMinutes < blockEnd;
                         }));
 
                         return (
@@ -658,14 +700,20 @@ export default function Horarios({ currentUser }: HorariosProps) {
                             {slotBlocks.map((b, idx) => (
                               <div 
                                 key={idx}
-                                className="absolute inset-x-1 rounded-lg shadow-sm border border-white/20 p-1 flex flex-col justify-center overflow-hidden"
+                                className="absolute inset-x-1 rounded-[var(--sys-radius-3xl)] shadow-sm border border-white/20 p-1 flex flex-col justify-center overflow-hidden transition-all hover:scale-[1.02] hover:z-10"
                                 style={{ 
                                   backgroundColor: configAgenda[`COLOR_${b.estado}`],
                                   top: '2px', bottom: '2px', zIndex: 1
                                 }}
                               >
-                                <span className="text-[7px] font-black text-white uppercase leading-none truncate">
-                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta?.split(' ')[0]}
+                                <div className="flex items-center justify-between px-1">
+                                  <span className="text-[8px] font-black text-white uppercase leading-none truncate">
+                                    {(b.tipo === 'PAUSA' ? 'REFRIGERIO' : 'DISPONIBLE')}
+                                  </span>
+                                  {b.tipo === 'PAUSA' ? <Coffee size={8} className="text-white/80" /> : <Briefcase size={8} className="text-white/80" />}
+                                </div>
+                                <span className="text-[7px] font-bold text-white/90 leading-tight mt-0.5 truncate px-1">
+                                  {filteredHorariosData.find(h => h.bloques.includes(b))?.nombreTerapeuta}
                                 </span>
                               </div>
                             ))}
@@ -812,13 +860,16 @@ export default function Horarios({ currentUser }: HorariosProps) {
                 <Calendar size={16} />
                 Año
               </label>
-              <input 
-                type="number" 
+              <select 
                 className="input-field"
                 value={formData.año}
                 onChange={(e) => setFormData({ ...formData, año: Number(e.target.value) })}
                 disabled={!!selectedHorario}
-              />
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -869,8 +920,10 @@ export default function Horarios({ currentUser }: HorariosProps) {
                                     handleUpdateBloque(bloque.id, 'diasSemana', newDays);
                                   }}
                                   className={cn(
-                                    "w-6 h-6 rounded-md text-[9px] font-bold transition-all border",
-                                    isSelected ? "bg-primary border-primary text-white" : "bg-white border-border text-text-muted hover:border-primary/40"
+                                    "w-7 h-7 rounded-lg text-[10px] font-black transition-all border shadow-sm",
+                                    isSelected 
+                                      ? "bg-primary border-primary text-white scale-110 z-10" 
+                                      : "bg-slate-50 border-slate-100 text-slate-400 hover:border-primary/40 hover:bg-white"
                                   )}
                                 >
                                   {d.substring(0, 1)}
@@ -892,10 +945,16 @@ export default function Horarios({ currentUser }: HorariosProps) {
                           <input type="time" className="clini-time-input-inline" value={bloque.horaFin} onChange={(e) => handleUpdateBloque(bloque.id, 'horaFin', e.target.value)} />
                         </td>
                         <td className="clini-table-dense-td">
-                          <div className="clini-flex-center-gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: configAgenda[`COLOR_${bloque.estado}`] }}></div>
-                            <span className="clini-badge-status-small uppercase">{bloque.estado}</span>
-                          </div>
+                          <select 
+                            className="clini-time-input-inline font-bold" 
+                            value={bloque.estado} 
+                            onChange={(e) => handleUpdateBloque(bloque.id, 'estado', e.target.value)}
+                          >
+                            <option value="DISPONIBLE">Disponible</option>
+                            <option value="OCUPADO">Ocupado</option>
+                            <option value="REFRIGERIO">Refrigerio</option>
+                            <option value="BLOQUEADO">Bloqueado</option>
+                          </select>
                         </td>
                         <td className="clini-table-dense-td-center">
                           <button onClick={() => handleRemoveBloque(bloque.id)} className="clini-action-btn-icon clini-action-btn-icon-rose">

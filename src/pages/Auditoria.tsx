@@ -107,7 +107,8 @@ export default function AuditoriaPage({ currentUser }: AuditoriaPageProps) {
       moduleName: 'Auditoría del Sistema',
       fileName: 'Logs_Auditoria',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 

@@ -69,7 +69,8 @@ export default function Usuarios({ currentUser }: UsuariosProps) {
       moduleName: 'Usuarios del Sistema',
       fileName: 'Listado_Usuarios',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 

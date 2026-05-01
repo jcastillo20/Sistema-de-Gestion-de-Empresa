@@ -104,7 +104,8 @@ export default function Pacientes({ currentUser }: PacientesProps) {
       moduleName: 'Maestro de Pacientes',
       fileName: 'Listado_Pacientes',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 

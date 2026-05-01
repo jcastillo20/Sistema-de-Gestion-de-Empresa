@@ -115,7 +115,8 @@ export default function ControlPaquetes({ currentUser }: ControlPaquetesProps) {
       moduleName: 'Control de Paquetes y Ventas',
       fileName: 'Control_Ventas',
       branding: branding as any,
-      context
+      context,
+      showSummary: true
     });
   };
 
