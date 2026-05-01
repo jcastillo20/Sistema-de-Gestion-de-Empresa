@@ -395,7 +395,7 @@ export default function GestionHorarios() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {horarioFormData.bloques?.length ? (
-                        horarioFormData.bloques.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio)).map(b => (
+                        [...(horarioFormData.bloques || [])].sort((a, b) => (a.horaInicio || '').localeCompare(b.horaInicio || '')).map(b => (
                           <tr key={b.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-6 py-4">
                                <div className="flex flex-wrap gap-1">

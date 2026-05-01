@@ -215,7 +215,7 @@ export default function DetallePaquetes() {
                    <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Sin Historial de Paquetes</p>
                 </div>
               ) : (
-                paquetes.sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio)).map(paq => {
+                [...paquetes].sort((a, b) => (b.fechaInicio || '').localeCompare(a.fechaInicio || '')).map(paq => {
                    const citasPaq = citas.filter(c => c.idPaquete === paq.id);
                    const completadas = citasPaq.filter(c => c.estadoCita === 'COMPLETADA').length;
                    const porcentaje = (completadas / paq.cantCitas) * 100;
@@ -258,7 +258,7 @@ export default function DetallePaquetes() {
 
                         {/* Session Grid */}
                         <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                           {citasPaq.sort((a,b) => a.fecha.localeCompare(b.fecha)).map((cita, idx) => (
+                           {[...citasPaq].sort((a,b) => (a.fecha || '').localeCompare(b.fecha || '')).map((cita, idx) => (
                              <div 
                                key={cita.id} 
                                className={cn(
